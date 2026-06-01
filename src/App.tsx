@@ -369,8 +369,8 @@ export default function App() {
   const [selectedPackageId, setSelectedPackageId] = useState('classic-s');
   const [selectedTableTier, setSelectedTableTier] = useState(10);
 
-  // תוספות והובלה
-  const [includeDelivery] = useState(true);
+  // תוספות והובלה (הובלה כבויה כברירת מחדל — חובה לאשר ידנית)
+  const [includeDelivery, setIncludeDelivery] = useState(false);
   const [customUpgrades, setCustomUpgrades] = useState<Upgrade[]>([]); // [{ id, description, price }]
   const [newUpgradeDesc, setNewUpgradeDesc] = useState('');
   const [newUpgradePrice, setNewUpgradePrice] = useState('');
@@ -378,6 +378,7 @@ export default function App() {
   // שגיאות תקינות
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showSignatureError, setShowSignatureError] = useState(false);
+  const [showDeliveryError, setShowDeliveryError] = useState(false);
 
   // חתימות דיגיטליות (חתן וכלה בנפרד + תאריכים)
   const [isGroomSigned, setIsGroomSigned] = useState(false);
@@ -469,8 +470,13 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // אישור והדפסה — דורש חתימת חתן וכלה
+  // אישור והדפסה — דורש אישור הובלה + חתימת חתן וכלה
   const handlePrint = () => {
+    if (!includeDelivery) {
+      setShowDeliveryError(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     if (!isGroomSigned || !isBrideSigned) {
       setShowSignatureError(true);
       window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
@@ -1010,25 +1016,45 @@ export default function App() {
                 <p className="text-xs text-gray-500 mt-1">אחריות על הובלה, העמדה מקצועית ופירוק בסיום הערב</p>
               </div>
 
-              <div
-                className="flex items-center justify-between p-4 rounded-xl border bg-[#FAF7F2] border-[#B29259]"
+              <button
+                type="button"
+                onClick={() => {
+                  setIncludeDelivery(!includeDelivery);
+                  setShowDeliveryError(false);
+                }}
+                className={`w-full flex items-center justify-between p-4 rounded-xl border text-right transition-all ${
+                  includeDelivery
+                    ? 'bg-[#FAF7F2] border-[#B29259]'
+                    : showDeliveryError
+                      ? 'bg-red-50 border-red-400'
+                      : 'bg-white border-gray-200 hover:border-[#B29259]/50'
+                }`}
               >
                 <div className="flex items-center gap-3">
                   <div className="bg-white p-2 rounded-lg shadow-sm">
-                    <Truck className="w-5 h-5 text-[#B29259]" />
+                    <Truck className={`w-5 h-5 ${includeDelivery ? 'text-[#B29259]' : 'text-gray-400'}`} />
                   </div>
                   <div>
-                    <h4 className="font-bold text-gray-800 text-sm">הובלה, הרכבה ופירוק מלא בכל חלקי הארץ</h4>
+                    <h4 className="font-bold text-gray-800 text-sm">הובלה, הרכבה ופירוק מלא בכל חלקי הארץ *</h4>
                     <p className="text-[11px] text-gray-500">פירוק ופינוי מלא של כל פריטי העיצוב מהאולם בסיום האירוע</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-gray-700">₪500</span>
-                  <div className="w-5 h-5 rounded border bg-[#B29259] border-[#B29259] text-white flex items-center justify-center">
-                    <Check className="w-3.5 h-3.5" />
+                  <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
+                    includeDelivery ? 'bg-[#B29259] border-[#B29259] text-white' : 'bg-white border-gray-300'
+                  }`}>
+                    {includeDelivery && <Check className="w-3.5 h-3.5" />}
                   </div>
                 </div>
-              </div>
+              </button>
+
+              {showDeliveryError && !includeDelivery && (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-3 rounded-xl">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  חובה לאשר את שירות ההובלה, ההרכבה והפירוק כדי להמשיך.
+                </div>
+              )}
 
               {/* הוספת שדרוגים ותמחור ידני על ידי הלקוח/מעצב */}
               <div className="border-t border-gray-100 pt-5 space-y-4">
@@ -1161,10 +1187,12 @@ export default function App() {
                   </div>
                 ))}
 
-                <div className="flex justify-between items-center text-gray-600">
-                  <span>הובלה, הרכבה ופירוק בסיום האירוע</span>
-                  <span className="font-bold text-gray-800">₪500</span>
-                </div>
+                {includeDelivery && (
+                  <div className="flex justify-between items-center text-gray-600">
+                    <span>הובלה, הרכבה ופירוק בסיום האירוע</span>
+                    <span className="font-bold text-gray-800">₪500</span>
+                  </div>
+                )}
 
                 <div className="pt-4 border-t border-gray-200 flex justify-between items-center text-sm font-black text-gray-800">
                   <span>סך הכל סופי לתשלום:</span>
