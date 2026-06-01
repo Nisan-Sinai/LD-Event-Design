@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { isSupabaseConfigured } from './lib/supabase';
+import { submitOrder } from './lib/submitOrder';
 import {
   Sparkles,
   Calendar,
@@ -380,6 +382,10 @@ export default function App() {
   const [showSignatureError, setShowSignatureError] = useState(false);
   const [showDeliveryError, setShowDeliveryError] = useState(false);
 
+  // מצב שליחה/שמירה
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
   // חתימות דיגיטליות (חתן וכלה בנפרד + תאריכים)
   const [isGroomSigned, setIsGroomSigned] = useState(false);
   const [isBrideSigned, setIsBrideSigned] = useState(false);
@@ -453,6 +459,8 @@ export default function App() {
       if (!clientInfo.bridePhone.trim()) tempErrors.bridePhone = 'חובה להזין מספר טלפון כלה';
       if (!clientInfo.eventDate) tempErrors.eventDate = 'חובה להזין תאריך אירוע';
       if (!clientInfo.eventLocation.trim()) tempErrors.eventLocation = 'חובה להזין מיקום אולם/אירוע';
+      if (!clientInfo.email.trim()) tempErrors.email = 'חובה להזין כתובת אימייל';
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientInfo.email)) tempErrors.email = 'כתובת אימייל אינה תקינה';
     }
     setErrors(tempErrors);
     return Object.keys(tempErrors).length === 0;
@@ -470,8 +478,8 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // אישור והדפסה — דורש אישור הובלה + חתימת חתן וכלה
-  const handlePrint = () => {
+  // אישור — שומר ב-Supabase, מפעיל שליחת מיילים, ואז מדפיס
+  const handleConfirm = async () => {
     if (!includeDelivery) {
       setShowDeliveryError(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -483,7 +491,52 @@ export default function App() {
       return;
     }
     setShowSignatureError(false);
-    window.print();
+    setSubmitError(null);
+
+    // אם Supabase לא הוגדר עדיין — מדפיסים בלי לשמור (כדי שהאפליקציה תעבוד בינתיים)
+    if (!isSupabaseConfigured) {
+      window.print();
+      return;
+    }
+
+    const groomSignatureDataUrl = groomCanvasRef.current?.toDataURL('image/png') ?? '';
+    const brideSignatureDataUrl = brideCanvasRef.current?.toDataURL('image/png') ?? '';
+
+    setIsSubmitting(true);
+    try {
+      await submitOrder(
+        {
+          groomName: clientInfo.groomName,
+          brideName: clientInfo.brideName,
+          groomPhone: clientInfo.groomPhone,
+          bridePhone: clientInfo.bridePhone,
+          email: clientInfo.email,
+          eventDate: clientInfo.eventDate,
+          eventLocation: clientInfo.eventLocation,
+          packageId: selectedPackage.id,
+          packageTitle: selectedPackage.title,
+          tableTier: selectedPackage.pricingTiers ? selectedTableTier : null,
+          compositesCount: clientInfo.compositesCount,
+          spongeCount: clientInfo.spongeCount,
+          includeDelivery,
+          upgrades: customUpgrades.map(u => ({ description: u.description, price: u.price })),
+          basePrice: pricing.basePrice,
+          upgradesTotal: pricing.upgradesTotal,
+          deliveryPrice: pricing.deliveryPrice,
+          totalPrice: pricing.totalPrice,
+          groomSignDate,
+          brideSignDate
+        },
+        groomSignatureDataUrl,
+        brideSignatureDataUrl
+      );
+      window.print();
+    } catch (err) {
+      console.error('שמירת ההזמנה נכשלה:', err);
+      setSubmitError('שמירת ההזמנה נכשלה. בדקו את החיבור לאינטרנט ונסו שוב.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // אתחול קנבסים לחתימה דיגיטלית (חתן וכלה)
@@ -778,7 +831,7 @@ export default function App() {
 
               {/* אימייל */}
               <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">כתובת אימייל (רשות)</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">כתובת אימייל *</label>
                 <div className="relative">
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                     <Mail className="w-4 h-4" />
@@ -788,9 +841,10 @@ export default function App() {
                     value={clientInfo.email}
                     onChange={(e) => setClientInfo({ ...clientInfo, email: e.target.value })}
                     placeholder="name@example.com"
-                    className="w-full pr-9 pl-3 py-2.5 bg-[#FAF7F2] border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all"
+                    className={`w-full pr-9 pl-3 py-2.5 bg-[#FAF7F2] border ${errors.email ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all`}
                   />
                 </div>
+                {errors.email && <p className="text-[10px] text-red-500 mt-1">{errors.email}</p>}
               </div>
 
             </div>
@@ -1319,22 +1373,32 @@ export default function App() {
               )}
             </div>
 
+            {/* הודעת שגיאת שמירה */}
+            {submitError && (
+              <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-3 rounded-xl no-print">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                {submitError}
+              </div>
+            )}
+
             {/* בקרי ניווט שלב 3 */}
             <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-[#EAE3D2] shadow-sm no-print">
               <button
                 onClick={handleBack}
-                className="text-gray-600 hover:text-[#B29259] text-xs font-bold flex items-center gap-1 px-3 py-1.5"
+                disabled={isSubmitting}
+                className="text-gray-600 hover:text-[#B29259] text-xs font-bold flex items-center gap-1 px-3 py-1.5 disabled:opacity-50"
               >
                 <ArrowRight className="w-4 h-4" />
                 חזור לחבילות
               </button>
 
               <button
-                onClick={handlePrint}
-                className="bg-[#B29259] hover:bg-[#8C6D3F] text-white px-6 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shadow-sm transition-all"
+                onClick={handleConfirm}
+                disabled={isSubmitting}
+                className="bg-[#B29259] hover:bg-[#8C6D3F] text-white px-6 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shadow-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <Printer className="w-4 h-4" />
-                אישור והדפסת ההזמנה
+                {isSubmitting ? 'שומר ושולח...' : 'אישור והדפסת ההזמנה'}
               </button>
             </div>
 
