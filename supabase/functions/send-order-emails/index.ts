@@ -1,13 +1,14 @@
-// Supabase Edge Function — שולחת שני מיילים על כל הזמנה חדשה:
+// Supabase Edge Function — שולחת שני מיילים על כל הזמנה חדשה דרך Gmail SMTP:
 //   1) ללירון (בעלת האתר) — כל פרטי ההזמנה + קישורים לחתימות
 //   2) ללקוח — אישור הזמנה
 //
 // מופעלת ע"י Database Webhook על INSERT לטבלת public.orders.
 //
-// פריסה:  supabase functions deploy send-order-emails --no-verify-jwt
-// סודות:  supabase secrets set RESEND_API_KEY=... OWNER_EMAIL=... FROM_EMAIL=...
+// פריסה:  node scripts/deploy-function.cjs send-order-emails supabase/functions/send-order-emails/index.ts
+// סודות:  GMAIL_USER, GMAIL_APP_PASSWORD, OWNER_EMAIL
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import nodemailer from 'npm:nodemailer@6.9.16';
 
 interface OrderRecord {
   id: string;
@@ -35,14 +36,22 @@ interface OrderRecord {
   bride_signature_path: string | null;
 }
 
-const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!;
-const OWNER_EMAIL = Deno.env.get('OWNER_EMAIL')!;
-const FROM_EMAIL = Deno.env.get('FROM_EMAIL') ?? 'LD Event Design <onboarding@resend.dev>';
+const GMAIL_USER = Deno.env.get('GMAIL_USER')!;
+const GMAIL_APP_PASSWORD = Deno.env.get('GMAIL_APP_PASSWORD')!;
+const OWNER_EMAIL = Deno.env.get('OWNER_EMAIL') ?? GMAIL_USER;
+const FROM = `LD Event Design <${GMAIL_USER}>`;
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 );
+
+const transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
+  auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD }
+});
 
 const ils = (n: number) => `₪${Number(n || 0).toLocaleString('he-IL')}`;
 
@@ -55,17 +64,7 @@ async function signedUrl(path: string | null): Promise<string | null> {
 }
 
 async function sendEmail(to: string, subject: string, html: string) {
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${RESEND_API_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ from: FROM_EMAIL, to, subject, html })
-  });
-  if (!res.ok) {
-    throw new Error(`Resend error (${res.status}): ${await res.text()}`);
-  }
+  await transporter.sendMail({ from: FROM, to, subject, html });
 }
 
 function orderRows(o: OrderRecord): string {
