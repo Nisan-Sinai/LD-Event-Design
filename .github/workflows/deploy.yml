@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [dev]
+    branches: [main, dev]
   workflow_dispatch:
 
 permissions:
@@ -44,6 +44,9 @@ jobs:
 
   deploy:
     needs: build
+    # פריסה לאתר החי רק מ-main (אוטומטי) או בהפעלה ידנית (workflow_dispatch — לפרסום dev)
+    # push ל-dev מריץ רק את שלב ה-build (בדיקה) ולא מפרסם.
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
