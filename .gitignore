@@ -21,6 +21,9 @@ dist-ssr
 .env.*
 !.env.example
 
+# Vercel
+.vercel
+
 # Editor / OS
 .vscode/*
 !.vscode/extensions.json
@@ -32,3 +35,5 @@ dist-ssr
 *.sln
 *.sw?
 Thumbs.db
+
+.vercel
