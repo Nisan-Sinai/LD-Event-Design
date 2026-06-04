@@ -75,10 +75,11 @@ type Category = (typeof CATEGORIES)[keyof typeof CATEGORIES];
 
 interface PackageDetails {
   chuppah?: string[];
+  options?: string[];
   tables?: string[];
   bar?: string[];
-  options?: string[];
   entrance?: string[];
+  highlight?: string[];
   photoOp?: string[];
 }
 
@@ -118,6 +119,17 @@ type CanvasPointerEvent =
   | React.MouseEvent<HTMLCanvasElement>
   | React.TouchEvent<HTMLCanvasElement>;
 
+// --- סעיפי הפירוט המוצגים בכרטיס החבילה (סדר + תווית עברית) ---
+const DETAIL_SECTIONS: { key: keyof PackageDetails; label: string }[] = [
+  { key: 'chuppah', label: 'עיצוב חופה:' },
+  { key: 'options', label: 'אפשרות אחת לבחירה:' },
+  { key: 'tables', label: 'עיצוב שולחן אורחים:' },
+  { key: 'bar', label: 'עמדות אירוח ובר:' },
+  { key: 'entrance', label: 'חוויית כניסה:' },
+  { key: 'highlight', label: 'אלמנט מרכזי:' },
+  { key: 'photoOp', label: 'עמדת צילום VIP:' }
+];
+
 // --- מאגר החבילות המלא ---
 const PACKAGES: Package[] = [
   {
@@ -126,7 +138,7 @@ const PACKAGES: Package[] = [
     title: 'חבילת עיצוב חתונה - Classic S',
     subtitle: 'עיצוב חופה + 10 שולחנות מעוצבים',
     price: 2900,
-    description: 'עיצוב קלאסי, אלגנטי ועל-זמני שמדבר את שפת הלב. שילוב מושלם של פרחים עשירים, נרות רכים ובדים זורמים ליצירת אווירה רומנטית ויוקרתית.',
+    description: 'עיצוב קלאסי, אלגנטי ועל-זמני שמדבר את שפת הלב. שילוב מושלם של פרחים עשירים, נרות רכים ובדים זורמים, יוצרים אווירה רומנטית, יוקרתית וחגיגית שתשאיר אתכם ואת האורחים עם זיכרון בלתי נשכח.',
     benefits: 'הטבה בלעדית: ₪500 מתנה לשדרוג העיצוב!',
     details: {
       chuppah: [
@@ -145,7 +157,7 @@ const PACKAGES: Package[] = [
     title: 'חבילת עיצוב חתונה - Classic M',
     subtitle: 'עיצוב חופה + 20 שולחנות מעוצבים',
     price: 4600,
-    description: 'חבילה מושלמת לחתונה בגודל בינוני ומרשימה. עיצוב עשיר והרמוני שממלא את החלל באווירה חגיגית, טבעית ומרהיבה.',
+    description: 'חבילה מושלמת לחתונה גדולה ומרשימה. עיצוב עשיר והרמוני שממלא את החלל באווירה חגיגית, טבעית ומרהיבה. פרחים, אור ונרות משתלבים יחד ליצירת חוויה בלתי נשכחת שמשאירה חותם בלב של כל אורח.',
     benefits: 'הטבה בלעדית: ₪500 מתנה לשדרוג העיצוב!',
     details: {
       chuppah: [
@@ -164,7 +176,7 @@ const PACKAGES: Package[] = [
     title: 'חבילת עיצוב חתונה - Classic L',
     subtitle: 'עיצוב חופה + 30 שולחנות מעוצבים',
     price: 6300,
-    description: 'עיצוב בלתי נשכח, שיוצר רגעים של וואו מהכניסה ועד רחבת הריקודים. שפע של פרחים, תאורה רכה ונרות מהפנטים.',
+    description: 'עיצוב בלתי נשכח, שמייצר רגעים של וואו מהכניסה ועד רחבת הריקודים. שפע של פרחים, תאורה רכה ונרות מהפנטים משתלבים יחד ליצירת אירוע מרגש, יוקרתי ומלא בסטייל. כי מגיע לכם לחגוג בגדול – בדיוק כמו שחלמתם.',
     benefits: 'הטבה בלעדית: ₪500 מתנה לשדרוג העיצוב!',
     details: {
       chuppah: [
@@ -183,15 +195,15 @@ const PACKAGES: Package[] = [
     title: 'עיצוב חתונה בגיבסניות - חופה + 40 שולחנות',
     subtitle: 'עיצוב קסום ורומנטי של גיבסניות עשירות ומלאות',
     price: 2900,
-    description: 'עיצוב אלגנטי ועדין בגבסוניות רכות בגוונים שונים, בשילוב נרות רומנטיים ליצירת אווירה קסומה ומלאת רגש.',
+    description: 'עיצוב אלגנטי ועדין בגבסוניות רכות בגוונים שונים, בשילוב נרות רומנטיים ליצירת אווירה קסומה ומלאת רגש. כל פרט מעוצב בקפידה כדי להפוך את יום החתונה לחוויה בלתי נשכחת.',
     benefits: 'הטבה בלעדית: ₪500 מתנה לשדרוג העיצוב!',
     details: {
       chuppah: [
-        '2 חבקי פרחים צורת י׳ לעמודי החופה מגיבסניות',
-        'בעיצוב של פחות מ-40 שולחנות, את הפרחים הנותרים נעצב בזר קשירה לכסאות בשביל החופה'
+        '2 חבקי פרחים בצורת י׳ לעמודי החופה מגיבסניות',
+        'בעיצוב של פחות מ-40 שולחנות, את הפרחים הנותרים נעצב בזרי קשירה לכסאות בשביל החופה'
       ],
       tables: [
-        'קומפוזיציה שילוב עשיר של פרחי גיבסניות ונרות בכל שולחן / סידור פרחים בספוג עגול'
+        'קומפוזיציה שילוב עשיר של פרחי גיבסניות ונרות בכל שולחן / סידור פרחים עגול בספוג'
       ]
     },
     svgType: 'gypsophila'
@@ -202,14 +214,16 @@ const PACKAGES: Package[] = [
     title: 'חבילת עיצוב חופה - בדים נשפכים + שדרת חופה',
     subtitle: 'שדרה רומנטית מוארת וחופה מרהיבה',
     price: 2900,
-    description: 'חופה מרהיבה עם בדים נשפכים, שדרת חופה רומנטית ומוארת, לעיצוב שיגרום לכל רגע להרגיש כמו חלום שמתגשם.',
+    description: 'תנו לאהבה שלכם במה מושלמת. חופה מרהיבה עם בדים נשפכים, שדרת חופה רומנטית ומוארת, לעיצוב שיגרום לכל רגע להרגיש כמו חלום שמתגשם.',
     benefits: 'הטבה בלעדית: ₪500 מתנה לשדרוג העיצוב!',
     details: {
       chuppah: [
         '4 בדים קדמיים נשפכים ברמה גבוהה',
-        '2 חבקי פרחים עשירים (צורת י׳) לעמודי החופה',
-        'שטיח לשביל החופה באורך 10 מטר',
-        '6 חבקי פרחים בקשירה לכסאות'
+        '2 חבקי פרחים עשירים (צורת י׳) לעמודי החופה'
+      ],
+      options: [
+        '6 חבקי פרחים קשורים לכסאות',
+        'שטיח לשדרת החופה עם נרות בצילינדרים'
       ]
     },
     svgType: 'chuppah-drapes'
@@ -226,9 +240,10 @@ const PACKAGES: Package[] = [
     benefits: 'הטבה בלעדית: 2 זרי משי מרהיבים לעיצוב - מתנה ממני!',
     details: {
       bar: [
-        'מבחר עשיר ומפואר של עוגיות מרוקאיות בעבודת יד מחומרי גלם מובחרים ביותר',
-        'כלי הגשה ונחושת מלכותיים בעיצוב אותנטי ומפות מעוצבות בהתאמה אישית',
-        'נרות רומנטיים ליצירת אווירה קסומה'
+        'מכלול עשיר ומפואר של עוגיות מרוקאיות אותנטיות בעבודת יד — טריות, נימוחות וטעימות במיוחד',
+        'שילוב מנצח של עוגיות צבעוניות מסורתיות לצד מבחר עוגיות פרימיום קלאסיות ומעוצבות',
+        'עיצוב עשיר בכלי זהב ונחושת מלכותיים המתאימים בדיוק לאווירת החינה',
+        'מפות מעוצבות בהתאמה אישית ונרות רומנטיים ליצירת אווירה קסומה'
       ]
     },
     svgType: 'henna'
@@ -258,13 +273,14 @@ const PACKAGES: Package[] = [
     title: 'חבילת "קלאסיק" לאירועים',
     subtitle: 'המראה הנקי, הרומנטי והאלגנטי ביותר',
     price: 2900,
-    description: 'עיצוב אירוע נקי ויוקרתי שיביא לאולם אווירה קלאסית ומהממת. מתאים לבריתות, ימי הולדת ובר/בת מצווה.',
-    benefits: 'כולל שלט כניסה מעוצב ומותאם אישית בשילוב בלונים או פרחים!',
+    description: 'רוצים אירוע בעיצוב נקי, רומנטי ויוקרתי שיחמיא לאולם וייצור אווירה קלאסית ומזמינה? החבילה הזו מתמקדת בפרטים הקטנים שעושים את ההבדל הגדול, עם נגיעות של טבע ונרות אווירה.',
+    benefits: 'כולל שלט כניסה מעוצב ומותאם אישית בשילוב שובל בלונים עדין או פרחים חיים!',
     details: {
-      tables: ['עיצוב שולחנות אורחים: קומפוזיציות של בקבוקוני פרחים ונרות או סידורי ספוג נמוכים'],
-      entrance: ['שלט כניסה מעוצב ומותאם אישית עם שובל בלונים עדין או תוספת פרחים חיים']
+      tables: ['קומפוזיציות מעוצבות של בקבוקוני פרחים חיים ורעננים בשילוב נרות / סידורי ספוג נמוכים ורומנטיים, בהתאמה לאופי השולחן'],
+      entrance: ['שלט כניסה מעוצב ומותאם אישית שמקבל את פני האורחים בסטייל'],
+      highlight: ['נגיעת סטייל: שובל בלונים עדין או תוספת פרחים חיים לבחירה']
     },
-    svgType: 'event',
+    svgType: 'event-classic',
     pricingTiers: { 10: 2900, 20: 4600, 30: 6300 }
   },
   {
@@ -273,13 +289,14 @@ const PACKAGES: Package[] = [
     title: 'חבילת "בלון ארט" לאירועים',
     subtitle: 'המראה המודרני, החגיגי והצבעוני',
     price: 3200,
-    description: 'לחגוג בענק ובצבע! אם אתם מחפשים אירוע תוסס, שמח ומלא באנרגיה, חבילת הבלונים שלנו תרים את האולם לגובה עם עיצוב מודרני ויצירתי.',
-    benefits: 'כולל שער בלונים עשיר וחגיגי בכניסה לאולם!',
+    description: 'לחגוג בענק ובצבע! אם אתם מחפשים אירוע תוסס, שמח ומלא באנרגיה, חבילת הבלונים שלנו תרים את האולם לגובה. עיצוב מודרני, יצירתי ובעל נוכחות מטורפת שאי אפשר להתעלם ממנה.',
+    benefits: 'כולל שער בלונים חגיגי, עשיר ומעוצב בכניסה לאולם!',
     details: {
-      tables: ['עיצוב שולחנות אורחים: סידורי בלונים גבוהים ואמנותיים המעניקים אפקט וואו'],
-      entrance: ['שלט כניסה מעוצב ומותאם אישית לבעל השמחה', 'שער בלונים עשיר ומעוצב בכניסה המוביל את האורחים פנימה']
+      tables: ['סידורי בלונים גבוהים, מרשימים ואומנותיים שיוצרים אפקט "וואו" מכל פינה באולם'],
+      entrance: ['שלט כניסה מעוצב ומותאם אישית לבעלי השמחה'],
+      highlight: ['שער בלונים חגיגי, עשיר ומעוצב בכניסה המוביל את האורחים פנימה']
     },
-    svgType: 'event',
+    svgType: 'event-balloon',
     pricingTiers: { 10: 3200, 20: 5200, 30: 7200 }
   },
   {
@@ -288,14 +305,14 @@ const PACKAGES: Package[] = [
     title: 'חבילת "הצגה" (VIP) - עמדת צילום יוקרה',
     subtitle: 'עיצוב שולחנות עשיר ועמדת צילום מטורפת',
     price: 4000,
-    description: 'החבילה המושלמת למי שלא מתפשר על פחות ממושלם. משלבת שולחנות מעוצבים ועמדת צילום ענקית שתשאיר את האורחים עם מזכרת בלתי נשכחת.',
+    description: 'החבילה מיועדת למי שלא מוכן להתפשר על פחות ממושלם. אנחנו מייצרים עבורכם אירוע מהסרטים עם שואו עיצובי חסר תקדים, חומרי גלם עשירים, והדובדבן שבקצפת – עמדת צילום יוקרתית שתהפוך למרכז העניינים ותשאיר לאורחים שלכם מזכרת מטורפת.',
     benefits: 'עמדת צילום VIP מלאה עם קשת בלונים אמנותית, קיר רקע ואקססוריז!',
     details: {
-      tables: ['עיצוב שולחנות אורחים: קומפוזיציות פרחים חיים או סידורי בלונים גבוהים ומעוצבים'],
-      entrance: ['שלט כניסה מעוצב, נקי ואלגנטי בקבלה'],
-      photoOp: ['עמדת צילום VIP מטורפת: קשת בלונים ענקית, קיר רקע מותאם, אקססוריז ונגיעות פרחים']
+      tables: ['לבחירתכם: קומפוזיציות עם פרחים חיים ונרות / סידורי בלונים גבוהים ומעוצבים'],
+      entrance: ['שלט כניסה מותאם אישית בקו נקי, אלגנטי ויוקרתי'],
+      photoOp: ['קשת בלונים אמנותית וענקית באולם, הכוללת קיר רקע, אקססוריז מעוצבים ונגיעות פרחים מעודנות — המקום שבו כולם יעמדו כדי להצטלם!']
     },
-    svgType: 'event',
+    svgType: 'event-vip',
     pricingTiers: { 10: 4000, 20: 6000, 30: 8000 }
   }
 ];
@@ -370,16 +387,61 @@ function renderPackageSVG(type: string) {
     </svg>
   );
 
-  // איור אירוע / בלונים
-  const event = () => (
-    <svg width="100%" height="92" viewBox="0 0 200 92" role="img" aria-label="עיצוב אירוע">
-      <circle cx="70" cy="28" r="14" fill={gold} opacity="0.85" />
-      <circle cx="96" cy="20" r="11" fill={soft} />
-      <circle cx="120" cy="30" r="13" fill={gold} opacity="0.7" />
-      <path d="M70 42 L96 31 M96 31 L120 43" stroke={gold} strokeWidth="1.5" opacity="0.6" />
-      <rect x="60" y="60" width="80" height="10" rx="4" fill={gold} />
-      <line x1="78" y1="50" x2="78" y2="60" stroke={soft} strokeWidth="2" />
-      <line x1="118" y1="50" x2="118" y2="60" stroke={soft} strokeWidth="2" />
+  // איור חצי-קשת בלונים (שימוש חוזר לבלון ארט ול-VIP)
+  const balloonArch = (cxBase: number, yBase: number, radiusX: number, radiusY: number, count: number, prefix: string) =>
+    Array.from({ length: count }).map((_, i) => {
+      const angle = Math.PI * (i / (count - 1)); // 0..PI => קשת מלאה
+      return (
+        <circle
+          key={`${prefix}-${i}`}
+          cx={cxBase - Math.cos(angle) * radiusX}
+          cy={yBase - Math.sin(angle) * radiusY}
+          r={5 + (i % 3)}
+          fill={i % 2 ? gold : soft}
+          opacity="0.9"
+        />
+      );
+    });
+
+  // איור "קלאסיק" לאירועים: בקבוקוני פרחים ונרות אווירה
+  const eventClassic = () => (
+    <svg width="100%" height="92" viewBox="0 0 200 92" role="img" aria-label="עיצוב קלאסי לאירוע">
+      {[70, 130].map((x, i) => (
+        <g key={`v${i}`}>
+          <line x1={x} y1={28} x2={x} y2={58} stroke={soft} strokeWidth="1.5" />
+          <circle cx={x} cy={25} r="5" fill={gold} opacity="0.9" />
+          <circle cx={x - 5} cy={30} r="3" fill={soft} />
+          <circle cx={x + 5} cy={30} r="3" fill={soft} />
+          <circle cx={x} cy={33} r="3" fill={gold} opacity="0.8" />
+          <rect x={x - 3.5} y={58} width="7" height="18" rx="2" fill={cream} stroke={soft} />
+        </g>
+      ))}
+      {[40, 160].map((x, i) => (
+        <g key={`fc${i}`}>
+          <rect x={x - 4} y={62} width="8" height="14" rx="2" fill="none" stroke={gold} opacity="0.6" />
+          <rect x={x - 2.5} y={66} width="5" height="8" rx="1.5" fill={soft} />
+          <path d={`M${x} 60 q2.5 3 0 5 q-2.5 -2 0 -5`} fill={gold} />
+        </g>
+      ))}
+      <line x1="24" y1="78" x2="176" y2="78" stroke={gold} strokeWidth="2" opacity="0.4" />
+    </svg>
+  );
+
+  // איור "בלון ארט": שער בלונים חגיגי
+  const eventBalloon = () => (
+    <svg width="100%" height="92" viewBox="0 0 200 92" role="img" aria-label="שער בלונים">
+      {balloonArch(100, 78, 64, 56, 13, 'arch')}
+      <line x1="36" y1="78" x2="164" y2="78" stroke={gold} strokeWidth="2" opacity="0.4" />
+    </svg>
+  );
+
+  // איור "הצגה" (VIP): עמדת צילום — קיר רקע מוקף בקשת בלונים
+  const eventVip = () => (
+    <svg width="100%" height="92" viewBox="0 0 200 92" role="img" aria-label="עמדת צילום VIP">
+      <rect x="74" y="28" width="52" height="46" rx="6" fill={cream} stroke={gold} strokeWidth="1.5" />
+      <circle cx="100" cy="46" r="9" fill="none" stroke={soft} strokeWidth="1.5" />
+      {balloonArch(100, 74, 70, 58, 11, 'vip')}
+      <line x1="30" y1="74" x2="170" y2="74" stroke={gold} strokeWidth="2" opacity="0.4" />
     </svg>
   );
 
@@ -420,8 +482,14 @@ function renderPackageSVG(type: string) {
       return gypsophila();
     case 'henna':
       return henna();
+    case 'event-classic':
+      return eventClassic();
+    case 'event-balloon':
+      return eventBalloon();
+    case 'event-vip':
+      return eventVip();
     case 'event':
-      return event();
+      return eventClassic();
     default:
       return (
         <div className="flex items-center justify-center h-[92px]">
@@ -1134,32 +1202,18 @@ export default function App() {
                       <div className="bg-[#FAF7F2] rounded-xl p-3 space-y-2 border border-[#EAE3D2] text-[11px]">
                         <p className="font-bold text-gray-700 border-b border-gray-200 pb-1">מה כלול בחבילה?</p>
 
-                        {pkg.details.chuppah && (
-                          <div>
-                            <span className="font-bold text-[#8C6D3F]">עיצוב חופה:</span>
-                            <ul className="list-disc list-inside text-gray-600 mr-1.5 space-y-0.5">
-                              {pkg.details.chuppah.map((item, i) => <li key={i}>{item}</li>)}
-                            </ul>
-                          </div>
-                        )}
-
-                        {pkg.details.tables && (
-                          <div>
-                            <span className="font-bold text-[#8C6D3F]">עיצוב שולחן אורחים:</span>
-                            <ul className="list-disc list-inside text-gray-600 mr-1.5 space-y-0.5">
-                              {pkg.details.tables.map((item, i) => <li key={i}>{item}</li>)}
-                            </ul>
-                          </div>
-                        )}
-
-                        {pkg.details.bar && (
-                          <div>
-                            <span className="font-bold text-[#8C6D3F]">עמדות אירוח ובר:</span>
-                            <ul className="list-disc list-inside text-gray-600 mr-1.5 space-y-0.5">
-                              {pkg.details.bar.map((item, i) => <li key={i}>{item}</li>)}
-                            </ul>
-                          </div>
-                        )}
+                        {DETAIL_SECTIONS.map(({ key, label }) => {
+                          const items = pkg.details[key];
+                          if (!items || items.length === 0) return null;
+                          return (
+                            <div key={key}>
+                              <span className="font-bold text-[#8C6D3F]">{label}</span>
+                              <ul className="list-disc list-inside text-gray-600 mr-1.5 space-y-0.5">
+                                {items.map((item, i) => <li key={i}>{item}</li>)}
+                              </ul>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
 
