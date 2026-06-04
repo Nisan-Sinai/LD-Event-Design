@@ -317,73 +317,149 @@ const PACKAGES: Package[] = [
   }
 ];
 
-// --- איורים וקטוריים לכל סוג חבילה ---
-// (שוחזר עקב קטיעת הקוד שהודבק — ניתן להחליף באיורים המקוריים)
-function renderPackageSVG(type: string) {
-  const gold = '#B29259';
-  const soft = '#D8C29A';
-  const cream = '#FAF7F2';
+// --- פלטת צבעים ואלמנטים משותפים לאיורים (קו-ארט בסגנון הפלאיירים) ---
+const ART = { gold: '#B29259', deep: '#8C6D3F', soft: '#D8C29A', cream: '#FAF7F2', sage: '#A7B58C' };
 
-  // חבק פרחים (אשכול עיגולים) במיקום נתון
-  const clasp = (cx: number, cy: number, prefix: string) => (
-    <g key={prefix}>
-      {[[0, 0], [-6, -2], [6, -2], [-4, 5], [4, 5], [0, -7], [0, 7]].map(([dx, dy], i) => (
-        <circle key={`${prefix}-${i}`} cx={cx + dx} cy={cy + dy} r="3.1" fill={i % 2 ? gold : soft} opacity="0.92" />
-      ))}
+// ורד יחיד — עיגול עם סלסול ספירלה פנימי
+function Rose({ cx, cy, r, fill }: { cx: number; cy: number; r: number; fill: string }) {
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r={r} fill={fill} />
+      <path d={`M${cx} ${cy} m ${-r * 0.45} 0 a ${r * 0.45} ${r * 0.45} 0 1 1 ${r * 0.9} 0`} fill="none" stroke={ART.deep} strokeWidth={Math.max(0.5, r * 0.18)} opacity="0.45" strokeLinecap="round" />
+      <path d={`M${cx} ${cy} q ${r * 0.4} ${-r * 0.3} 0 ${-r * 0.6}`} fill="none" stroke={ART.deep} strokeWidth={Math.max(0.5, r * 0.16)} opacity="0.4" strokeLinecap="round" />
     </g>
   );
+}
 
-  // איור חופה: 2 וילונות קדמיים (אופציונלי) + 2 חבקי פרחים בינוניים בצדדים
-  const chuppahCurtains = (withDrapes: boolean) => (
-    <svg width="100%" height="92" viewBox="0 0 200 92" role="img" aria-label="עיצוב חופה">
-      {/* עמודי החופה */}
-      <rect x="42" y="20" width="6" height="60" rx="3" fill={gold} />
-      <rect x="152" y="20" width="6" height="60" rx="3" fill={gold} />
-      {/* קורה עליונה */}
-      <path d="M45 22 Q100 7 155 22" stroke={gold} strokeWidth="5" fill="none" strokeLinecap="round" />
-      {/* 2 וילונות קדמיים */}
-      {withDrapes && (
-        <g opacity="0.5">
-          <path d="M74 24 Q70 50 76 78 L90 78 Q86 50 88 24 Z" fill={soft} />
-          <path d="M112 24 Q114 50 110 78 L124 78 Q130 50 126 24 Z" fill={soft} />
+// עלה ירוק עדין
+function Leaf({ cx, cy, rot, len = 9 }: { cx: number; cy: number; rot: number; len?: number }) {
+  return (
+    <path d={`M${cx} ${cy} q ${len * 0.5} ${-len * 0.45} ${len} 0 q ${-len * 0.5} ${len * 0.45} ${-len} 0 Z`} fill={ART.sage} opacity="0.7" transform={`rotate(${rot} ${cx} ${cy})`} />
+  );
+}
+
+// זר / חבק פרחים עשיר: ורדים + עלים + עלווה נשפכת מטה
+function Bouquet({ cx, cy, s = 1, accent = ART.gold }: { cx: number; cy: number; s?: number; accent?: string }) {
+  const leaves: [number, number, number][] = [[-9, -3, -35], [9, -4, 35], [-8, 7, -70], [8, 8, 70], [0, -10, 0], [-3, 9, -115], [4, 9, 115]];
+  const roses: [number, number, number, string][] = [[0, 0, 5, accent], [-6, -1, 3.6, ART.soft], [6, -2, 4, ART.soft], [-3, 5, 3.4, accent], [4, 5, 3.2, ART.soft], [0, -6, 3.4, accent], [-7, 4, 2.6, ART.soft], [7, 3, 2.8, accent]];
+  return (
+    <g transform={`translate(${cx} ${cy}) scale(${s})`}>
+      <path d="M-2 6 q-4 12 -7 22" fill="none" stroke={ART.sage} strokeWidth="1" opacity="0.6" />
+      <path d="M3 6 q3 13 6 24" fill="none" stroke={ART.sage} strokeWidth="1" opacity="0.6" />
+      <path d="M0 7 q0 14 0 26" fill="none" stroke={ART.sage} strokeWidth="0.9" opacity="0.5" />
+      {leaves.map(([lx, ly, r], i) => <Leaf key={`l${i}`} cx={lx} cy={ly} rot={r} />)}
+      {roses.map(([rx, ry, rr, f], i) => <Rose key={`r${i}`} cx={rx} cy={ry} r={rr} fill={f} />)}
+    </g>
+  );
+}
+
+// אשכול גיבסניות — נקודות עדינות
+function Gyps({ cx, cy, s = 1 }: { cx: number; cy: number; s?: number }) {
+  const dots = Array.from({ length: 24 }).map((_, i) => {
+    const a = (i / 24) * Math.PI * 2;
+    const rad = 3.5 + (i % 4) * 2.6;
+    return [Math.cos(a) * rad, Math.sin(a) * rad * 0.92, i % 3 === 0 ? 1.9 : 1.2] as const;
+  });
+  return (
+    <g transform={`translate(${cx} ${cy}) scale(${s})`}>
+      <path d="M-2 4 q-3 12 -5 22" fill="none" stroke={ART.sage} strokeWidth="0.9" opacity="0.5" />
+      <path d="M3 4 q2 12 4 22" fill="none" stroke={ART.sage} strokeWidth="0.9" opacity="0.5" />
+      {dots.map(([dx, dy, r], i) => <circle key={i} cx={dx} cy={dy} r={r} fill={i % 2 ? ART.gold : ART.soft} opacity="0.9" />)}
+    </g>
+  );
+}
+
+// נר עמוד עם להבה
+function PillarCandle({ x, base, h, w = 7 }: { x: number; base: number; h: number; w?: number }) {
+  return (
+    <g>
+      <rect x={x - w / 2} y={base - h} width={w} height={h} rx="2" fill={ART.cream} stroke={ART.soft} />
+      <ellipse cx={x} cy={base - h} rx={w / 2} ry="1.6" fill={ART.soft} opacity="0.6" />
+      <line x1={x} y1={base - h} x2={x} y2={base - h - 3} stroke={ART.deep} strokeWidth="0.8" />
+      <path d={`M${x} ${base - h - 3} q 3 -3 0 -7 q -3 4 0 7`} fill={ART.gold} />
+    </g>
+  );
+}
+
+// --- איורים וקטוריים לכל סוג חבילה (קו-ארט נאמן לפלאיירים) ---
+function renderPackageSVG(type: string) {
+  const { gold, soft, cream } = ART;
+
+  // מסגרת חופה משותפת: עמודים, קורה עליונה ורצפה
+  const chuppahFrame = (children: React.ReactNode) => (
+    <svg width="100%" height="104" viewBox="0 0 200 108" role="img" aria-label="עיצוב חופה">
+      <path d="M40 26 Q100 18 160 26" stroke={gold} strokeWidth="3.4" fill="none" strokeLinecap="round" />
+      <rect x="44" y="25" width="4.5" height="72" rx="2" fill={gold} />
+      <rect x="151.5" y="25" width="4.5" height="72" rx="2" fill={gold} />
+      {children}
+      <line x1="22" y1="98" x2="178" y2="98" stroke={gold} strokeWidth="1.6" opacity="0.4" />
+    </svg>
+  );
+
+  // איור חופה קלאסית: 2 בדים נשפכים בצדדים + תליית בד עליונה + 2 זרי ורדים
+  const chuppahCurtains = (withDrapes: boolean) =>
+    chuppahFrame(
+      <>
+        {withDrapes && (
+          <g opacity="0.6" fill={soft} stroke={gold} strokeOpacity="0.35" strokeWidth="0.6">
+            {/* תליית בד מרכזית (swag) */}
+            <path d="M50 28 Q100 60 150 28 Q138 44 100 50 Q62 44 50 28 Z" />
+            {/* פאנל בד שמאל */}
+            <path d="M52 28 Q44 64 54 95 Q60 70 60 30 Z" />
+            {/* פאנל בד ימין */}
+            <path d="M148 28 Q156 64 146 95 Q140 70 140 30 Z" />
+          </g>
+        )}
+        <Bouquet cx={52} cy={34} s={1.15} />
+        <Bouquet cx={148} cy={34} s={1.15} />
+      </>
+    );
+
+  // איור חופת בדים נשפכים: תליית בד רחבה + 4 בדים זורמים + 2 זרים גדולים
+  const chuppahDrapes = () =>
+    chuppahFrame(
+      <>
+        <g opacity="0.6" fill={soft} stroke={gold} strokeOpacity="0.35" strokeWidth="0.6">
+          {/* תליית בד רחבה */}
+          <path d="M48 28 Q100 66 152 28 Q138 48 100 56 Q62 48 48 28 Z" />
+          {/* 4 בדים נשפכים */}
+          <path d="M52 28 Q44 66 54 95 Q60 72 60 30 Z" />
+          <path d="M74 30 Q70 64 78 95 Q84 70 82 32 Z" />
+          <path d="M126 30 Q130 64 122 95 Q116 70 118 32 Z" />
+          <path d="M148 28 Q156 66 146 95 Q140 72 140 30 Z" />
         </g>
-      )}
-      {/* 2 חבקי פרחים בינוניים בצדדים */}
-      {clasp(45, 31, 'clasp-r')}
-      {clasp(155, 31, 'clasp-l')}
-      {/* רצפה */}
-      <line x1="22" y1="80" x2="178" y2="80" stroke={gold} strokeWidth="2" opacity="0.4" />
-    </svg>
-  );
+        <Bouquet cx={52} cy={34} s={1.3} />
+        <Bouquet cx={148} cy={34} s={1.3} />
+      </>
+    );
 
-  // איור חופה בבדים נשפכים (לחבילת הבדים)
-  const chuppahDrapes = () => (
-    <svg width="100%" height="92" viewBox="0 0 200 92" role="img" aria-label="עיצוב חופה בדים נשפכים">
-      <rect x="42" y="20" width="6" height="60" rx="3" fill={gold} />
-      <rect x="152" y="20" width="6" height="60" rx="3" fill={gold} />
-      <path d="M45 22 Q100 7 155 22" stroke={gold} strokeWidth="5" fill="none" strokeLinecap="round" />
-      {/* 4 בדים נשפכים */}
-      <g opacity="0.55">
-        <path d="M66 23 Q62 52 70 80 L82 80 Q76 50 80 23 Z" fill={soft} />
-        <path d="M86 23 Q84 54 90 80 L100 80 Q96 52 98 23 Z" fill={soft} />
-        <path d="M102 23 Q104 54 110 80 L120 80 Q116 52 114 23 Z" fill={soft} />
-        <path d="M120 23 Q118 52 130 80 L138 80 Q134 50 134 23 Z" fill={soft} />
-      </g>
-      {clasp(45, 31, 'd-clasp-r')}
-      {clasp(155, 31, 'd-clasp-l')}
-      <line x1="22" y1="80" x2="178" y2="80" stroke={gold} strokeWidth="2" opacity="0.4" />
-    </svg>
-  );
-
-  // איור בר חינה / שוק
+  // איור בר חינה מרוקאי: מגדל עוגיות תלת-קומתי + קומקום נחושת + כוסות + נרות
   const henna = () => (
-    <svg width="100%" height="92" viewBox="0 0 200 92" role="img" aria-label="בר חינה">
-      <rect x="30" y="55" width="140" height="14" rx="4" fill={gold} />
-      <rect x="40" y="40" width="22" height="16" rx="3" fill={soft} />
-      <rect x="72" y="34" width="22" height="22" rx="3" fill={gold} opacity="0.85" />
-      <rect x="104" y="40" width="22" height="16" rx="3" fill={soft} />
-      <circle cx="150" cy="46" r="11" fill={gold} opacity="0.85" />
-      <rect x="36" y="69" width="128" height="8" rx="3" fill={cream} stroke={soft} />
+    <svg width="100%" height="104" viewBox="0 0 200 108" role="img" aria-label="בר חינה מרוקאי">
+      {/* מגדל עוגיות */}
+      <ellipse cx="66" cy="84" rx="34" ry="7" fill={soft} stroke={gold} />
+      {[44, 55, 66, 77, 88].map((cx, i) => <circle key={`c1${i}`} cx={cx} cy={81} r="3.4" fill={gold} opacity="0.85" />)}
+      <rect x="64" y="58" width="4" height="24" fill={gold} />
+      <ellipse cx="66" cy="58" rx="22" ry="5" fill={soft} stroke={gold} />
+      {[52, 60, 66, 72, 80].map((cx, i) => <circle key={`c2${i}`} cx={cx} cy={55} r="3" fill={gold} opacity="0.85" />)}
+      <rect x="64.5" y="42" width="3" height="16" fill={gold} />
+      <ellipse cx="66" cy="42" rx="11" ry="3.4" fill={soft} stroke={gold} />
+      {[60, 66, 72].map((cx, i) => <circle key={`c3${i}`} cx={cx} cy={39.5} r="2.6" fill={gold} opacity="0.85" />)}
+      <circle cx="66" cy="34" r="2.2" fill={gold} />
+      {/* קומקום מרוקאי */}
+      <ellipse cx="142" cy="86" rx="20" ry="3.6" fill={cream} stroke={soft} />
+      <path d="M130 80 Q127 60 142 58 Q157 60 154 80 Z" fill={gold} opacity="0.9" />
+      <path d="M133 58 L151 58 L142 47 Z" fill={gold} />
+      <circle cx="142" cy="45" r="2.4" fill={ART.deep} />
+      <path d="M154 64 Q167 60 164 82" fill="none" stroke={gold} strokeWidth="2.4" strokeLinecap="round" />
+      <path d="M130 66 Q120 68 124 80" fill="none" stroke={gold} strokeWidth="2.4" strokeLinecap="round" />
+      {/* כוסות תה */}
+      {[120, 170].map((x, i) => (
+        <path key={`tg${i}`} d={`M${x - 4} 76 L${x - 3} 86 L${x + 3} 86 L${x + 4} 76 Z`} fill={soft} stroke={gold} strokeWidth="0.6" />
+      ))}
+      {/* נרות אווירה */}
+      <PillarCandle x={107} base={86} h={18} w={6} />
+      <PillarCandle x={24} base={86} h={12} w={6} />
     </svg>
   );
 
@@ -403,73 +479,55 @@ function renderPackageSVG(type: string) {
       );
     });
 
-  // איור "קלאסיק" לאירועים: בקבוקוני פרחים ונרות אווירה
+  // איור "קלאסיק" לאירועים: 2 אגרטלים עם זרי ורדים + צילינדר נר צף במרכז
   const eventClassic = () => (
-    <svg width="100%" height="92" viewBox="0 0 200 92" role="img" aria-label="עיצוב קלאסי לאירוע">
-      {[70, 130].map((x, i) => (
-        <g key={`v${i}`}>
-          <line x1={x} y1={28} x2={x} y2={58} stroke={soft} strokeWidth="1.5" />
-          <circle cx={x} cy={25} r="5" fill={gold} opacity="0.9" />
-          <circle cx={x - 5} cy={30} r="3" fill={soft} />
-          <circle cx={x + 5} cy={30} r="3" fill={soft} />
-          <circle cx={x} cy={33} r="3" fill={gold} opacity="0.8" />
-          <rect x={x - 3.5} y={58} width="7" height="18" rx="2" fill={cream} stroke={soft} />
+    <svg width="100%" height="104" viewBox="0 0 200 108" role="img" aria-label="עיצוב קלאסי לאירוע">
+      {/* צילינדר נר צף מרכזי */}
+      <rect x="93" y="52" width="15" height="38" rx="2" fill={cream} stroke={soft} />
+      <ellipse cx="100.5" cy="52" rx="7.5" ry="2.4" fill="none" stroke={soft} />
+      <rect x="97.5" y="66" width="6" height="10" rx="1.5" fill={soft} />
+      <path d="M100.5 62 q3 3 0 7 q-3 -3 0 -7" fill={gold} />
+      {/* 2 אגרטלים עם זרי ורדים */}
+      {[58, 143].map((x, i) => (
+        <g key={`vz${i}`}>
+          <Bouquet cx={x} cy={46} s={0.9} />
+          <path d={`M${x - 6} 62 Q${x - 7} 82 ${x - 3} 88 L${x + 3} 88 Q${x + 7} 82 ${x + 6} 62 Z`} fill={cream} stroke={soft} />
         </g>
       ))}
-      {[40, 160].map((x, i) => (
-        <g key={`fc${i}`}>
-          <rect x={x - 4} y={62} width="8" height="14" rx="2" fill="none" stroke={gold} opacity="0.6" />
-          <rect x={x - 2.5} y={66} width="5" height="8" rx="1.5" fill={soft} />
-          <path d={`M${x} 60 q2.5 3 0 5 q-2.5 -2 0 -5`} fill={gold} />
-        </g>
-      ))}
-      <line x1="24" y1="78" x2="176" y2="78" stroke={gold} strokeWidth="2" opacity="0.4" />
+      <line x1="24" y1="92" x2="176" y2="92" stroke={gold} strokeWidth="1.6" opacity="0.4" />
     </svg>
   );
 
   // איור "בלון ארט": שער בלונים חגיגי
   const eventBalloon = () => (
-    <svg width="100%" height="92" viewBox="0 0 200 92" role="img" aria-label="שער בלונים">
-      {balloonArch(100, 78, 64, 56, 13, 'arch')}
-      <line x1="36" y1="78" x2="164" y2="78" stroke={gold} strokeWidth="2" opacity="0.4" />
+    <svg width="100%" height="104" viewBox="0 0 200 108" role="img" aria-label="שער בלונים">
+      {balloonArch(100, 92, 66, 64, 13, 'arch')}
+      <line x1="34" y1="92" x2="166" y2="92" stroke={gold} strokeWidth="1.6" opacity="0.4" />
     </svg>
   );
 
   // איור "הצגה" (VIP): עמדת צילום — קיר רקע מוקף בקשת בלונים
   const eventVip = () => (
-    <svg width="100%" height="92" viewBox="0 0 200 92" role="img" aria-label="עמדת צילום VIP">
-      <rect x="74" y="28" width="52" height="46" rx="6" fill={cream} stroke={gold} strokeWidth="1.5" />
-      <circle cx="100" cy="46" r="9" fill="none" stroke={soft} strokeWidth="1.5" />
-      {balloonArch(100, 74, 70, 58, 11, 'vip')}
-      <line x1="30" y1="74" x2="170" y2="74" stroke={gold} strokeWidth="2" opacity="0.4" />
+    <svg width="100%" height="104" viewBox="0 0 200 108" role="img" aria-label="עמדת צילום VIP">
+      <rect x="72" y="34" width="56" height="50" rx="6" fill={cream} stroke={gold} strokeWidth="1.5" />
+      <circle cx="100" cy="56" r="10" fill="none" stroke={soft} strokeWidth="1.5" />
+      {balloonArch(100, 88, 72, 66, 11, 'vip')}
+      <line x1="28" y1="88" x2="172" y2="88" stroke={gold} strokeWidth="1.6" opacity="0.4" />
     </svg>
   );
 
-  // איור חופת גיבסניות: ללא בדים לחופה, עם 2 חבקי פרחים בצדדים
-  const gypsophila = () => (
-    <svg width="100%" height="92" viewBox="0 0 200 92" role="img" aria-label="עיצוב חופת גיבסניות">
-      <rect x="42" y="20" width="6" height="60" rx="3" fill={gold} />
-      <rect x="152" y="20" width="6" height="60" rx="3" fill={gold} />
-      <path d="M45 22 Q100 7 155 22" stroke={gold} strokeWidth="5" fill="none" strokeLinecap="round" />
-      {/* 2 חבקי גיבסניות בצדדים (אשכול נקודות עדין) */}
-      {[45, 155].map((cx, g) =>
-        Array.from({ length: 11 }).map((_, i) => {
-          const angle = (i / 11) * Math.PI * 2;
-          return (
-            <circle
-              key={`g${g}-${i}`}
-              cx={cx + Math.cos(angle) * 8}
-              cy={32 + Math.sin(angle) * 8}
-              r="2.2"
-              fill={i % 3 === 0 ? gold : soft}
-              opacity="0.9"
-            />
-          );
-        })
-      )}
-      <line x1="22" y1="80" x2="178" y2="80" stroke={gold} strokeWidth="2" opacity="0.4" />
-    </svg>
-  );
+  // איור חופת גיבסניות: בד עדין בצדדים + 2 אשכולות גיבסניות
+  const gypsophila = () =>
+    chuppahFrame(
+      <>
+        <g opacity="0.5" fill={soft} stroke={gold} strokeOpacity="0.3" strokeWidth="0.5">
+          <path d="M52 28 Q46 64 56 95 Q60 70 60 30 Z" />
+          <path d="M148 28 Q154 64 144 95 Q140 70 140 30 Z" />
+        </g>
+        <Gyps cx={52} cy={36} s={1.15} />
+        <Gyps cx={148} cy={36} s={1.15} />
+      </>
+    );
 
   switch (type) {
     case 'chuppah-s':
