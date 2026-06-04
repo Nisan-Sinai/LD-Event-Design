@@ -34,6 +34,8 @@ create table if not exists public.orders (
   base_price            numeric not null default 0,
   upgrades_total        numeric not null default 0,
   delivery_price        numeric not null default 0,
+  coupon_code           text,
+  coupon_discount       numeric not null default 0,
   total_price           numeric not null default 0,
 
   -- חתימות
@@ -71,3 +73,8 @@ create policy "allow anon upload signatures"
   for insert
   to anon
   with check (bucket_id = 'signatures');
+
+-- 4) מיגרציות לטבלאות קיימות (בטוח להריץ שוב ושוב) -----------------
+-- קוד קופון והנחת ₪500 לשדרוג העיצוב
+alter table public.orders add column if not exists coupon_code     text;
+alter table public.orders add column if not exists coupon_discount numeric not null default 0;

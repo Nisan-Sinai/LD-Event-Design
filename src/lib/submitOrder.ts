@@ -23,6 +23,8 @@ export interface OrderPayload {
   basePrice: number;
   upgradesTotal: number;
   deliveryPrice: number;
+  couponCode: string;
+  couponDiscount: number;
   totalPrice: number;
   groomSignDate: string;
   brideSignDate: string;
@@ -83,6 +85,8 @@ export async function submitOrder(
     base_price: payload.basePrice,
     upgrades_total: payload.upgradesTotal,
     delivery_price: payload.deliveryPrice,
+    coupon_code: payload.couponCode || null,
+    coupon_discount: payload.couponDiscount,
     total_price: payload.totalPrice,
     groom_sign_date: payload.groomSignDate || null,
     bride_sign_date: payload.brideSignDate || null,

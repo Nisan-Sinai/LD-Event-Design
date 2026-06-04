@@ -28,6 +28,48 @@ const CATEGORIES = {
   EVENTS: 'אירועים (בר/בת מצווה, ברית/ה, יומולדת)'
 } as const;
 
+// --- קוד קופון להטבת ₪500 לשדרוג העיצוב ---
+const COUPON_CODE = 'מתנה';
+const COUPON_VALUE = 500;
+
+// --- פריטי תוספת לחבילת עיצוב חתונה ---
+// hasFlowers=true => פריט הכולל פרחים, ולכן לא ניתן לממש עליו את הטבת ה-₪500
+interface Addon {
+  id: string;
+  name: string;
+  price: number;
+  hasFlowers: boolean;
+  unit?: string; // לדוגמה: "למטר"
+}
+
+const WEDDING_ADDONS: Addon[] = [
+  { id: 'entrance-sign', name: 'שלט כניסה קאפה על מעמד', price: 500, hasFlowers: false },
+  { id: 'sign-flowers', name: 'תוספת פרחים לשלט', price: 300, hasFlowers: true },
+  { id: 'carpet-5', name: 'שטיח לשביל חופה 5 מטר', price: 250, hasFlowers: false },
+  { id: 'carpet-10', name: 'שטיח לשביל חופה 10 מטר', price: 500, hasFlowers: false },
+  { id: 'cylinder-candles-10', name: '10 נרות בצילינדר לשביל חופה', price: 400, hasFlowers: false },
+  { id: 'candles-flower-vessel-6', name: '6 נרות בכלי מעוצב פרחים', price: 900, hasFlowers: true },
+  { id: 'chair-clasps-6', name: '6 חבקי פרחים לכסאות', price: 600, hasFlowers: true },
+  { id: 'side-clasp-yod', name: 'חבק פרחים צדדי לחופה בצורת י׳', price: 300, hasFlowers: true },
+  { id: 'top-clasp', name: 'חבק פרחים עליון לחופה', price: 400, hasFlowers: true },
+  { id: 'clasp-resh-upgrade', name: 'שדרוג לחבק פרחים בצורת ר׳ לחופה', price: 900, hasFlowers: true },
+  { id: 'top-crown-full', name: 'פס עליון כתר פרחים מלא ויוקרתי', price: 3000, hasFlowers: true },
+  { id: 'chet-shape', name: 'צורת ח׳ פרחים לחופה', price: 12000, hasFlowers: true },
+  { id: 'back-fabrics-2', name: 'תוספת 2 בדים אחוריים לחופה', price: 300, hasFlowers: false },
+  { id: 'top-parochet', name: 'פרוכת עליונה לחופה', price: 500, hasFlowers: false },
+  { id: 'composite-10-12', name: 'קומפוזיציה 10/12 בקבוקוני פרחים ונרות לשולחן אבירים', price: 300, hasFlowers: true },
+  { id: 'composite-5-6', name: 'קומפוזיציה 5/6 בקבוקוני פרחים ונרות לשולחן רגיל', price: 180, hasFlowers: true },
+  { id: 'sponge-round', name: 'סידור פרחים עגול בספוג', price: 180, hasFlowers: true },
+  { id: 'sponge-medium', name: 'סידור פרחים בינוני בספוג', price: 300, hasFlowers: true },
+  { id: 'deco-small', name: 'סידור פרחים קטן בכלי דקורטיבי', price: 280, hasFlowers: true },
+  { id: 'deco-medium', name: 'סידור פרחים בינוני בכלי דקורטיבי', price: 400, hasFlowers: true },
+  { id: 'deco-large', name: 'סידור פרחים גדול בכלי דקורטיבי', price: 600, hasFlowers: true },
+  { id: 'deco-xl', name: 'סידור פרחים ענק בכלי דקורטיבי', price: 900, hasFlowers: true },
+  { id: 'bamboo-chuppah', name: 'חופת במבוק בנויה', price: 1800, hasFlowers: false },
+  { id: 'chuppah-stage', name: 'במה לחופה', price: 4500, hasFlowers: false },
+  { id: 'knights-gyps-line', name: 'שולחן אבירים קו אמצע גיבסניות ונרות', price: 500, hasFlowers: true, unit: 'למטר' }
+];
+
 // --- טיפוסים ---
 type Category = (typeof CATEGORIES)[keyof typeof CATEGORIES];
 
@@ -165,10 +207,9 @@ const PACKAGES: Package[] = [
     details: {
       chuppah: [
         '4 בדים קדמיים נשפכים ברמה גבוהה',
-        '2 חבקי פרחים עשירים (צורת י׳) לעמודי החופה'
-      ],
-      options: [
-        'בחירה בין: 6 חבקי פרחים קשורים לכסאות או שטיח לשידרת החופה עם נרות בצילינדרים'
+        '2 חבקי פרחים עשירים (צורת י׳) לעמודי החופה',
+        'שטיח לשביל החופה באורך 10 מטר',
+        '6 חבקי פרחים בקשירה לכסאות'
       ]
     },
     svgType: 'chuppah-drapes'
@@ -182,7 +223,7 @@ const PACKAGES: Package[] = [
     subtitle: 'בר עוגיות עבודת יד בעיצוב מלכותי אותנטי (ל-150-200 מוזמנים)',
     price: 2900,
     description: 'חגיגה אותנטית של טעמים, ריחות וצבעים! כולל בר עשיר ומפואר של עוגיות מרוקאיות מובחרות ביותר בעבודת יד, כלי נחושת מלכותיים, מפות מעוצבות בהתאמה ונרות אווירה.',
-    benefits: 'הטבה בלעדית: 2 דלי משי מרהיבים לעיצוב - מתנה ממני!',
+    benefits: 'הטבה בלעדית: 2 זרי משי מרהיבים לעיצוב - מתנה ממני!',
     details: {
       bar: [
         'מבחר עשיר ומפואר של עוגיות מרוקאיות בעבודת יד מחומרי גלם מובחרים ביותר',
@@ -199,7 +240,7 @@ const PACKAGES: Package[] = [
     subtitle: 'בר עוגיות מסורתיות + שוק פיצוחים יוקרתי (ל-150-200 מוזמנים)',
     price: 4900,
     description: 'השדרוג המושלם שיהפוך למרכז האירוע! משלב את מגוון העוגיות המרוקאיות המשובחות לצד שוק פיצוחים מעוצב בשקי יוטה אותנטיים עם מגוון עשיר של פיצוחים איכותיים ופירות יבשים.',
-    benefits: 'הטבה בלעדית: 2 דלי משי מרהיבים לעיצוב - מתנה ממני!',
+    benefits: 'הטבה בלעדית: 2 זרי משי מרהיבים לעיצוב - מתנה ממני!',
     details: {
       bar: [
         'בר עוגיות מרוקאיות פרימיום בעבודת יד',
@@ -266,18 +307,54 @@ function renderPackageSVG(type: string) {
   const soft = '#D8C29A';
   const cream = '#FAF7F2';
 
-  // איור חופה בגדלים משתנים (S / M / L / בדים נשפכים)
-  const chuppah = (flowers: number) => (
+  // חבק פרחים (אשכול עיגולים) במיקום נתון
+  const clasp = (cx: number, cy: number, prefix: string) => (
+    <g key={prefix}>
+      {[[0, 0], [-6, -2], [6, -2], [-4, 5], [4, 5], [0, -7], [0, 7]].map(([dx, dy], i) => (
+        <circle key={`${prefix}-${i}`} cx={cx + dx} cy={cy + dy} r="3.1" fill={i % 2 ? gold : soft} opacity="0.92" />
+      ))}
+    </g>
+  );
+
+  // איור חופה: 2 וילונות קדמיים (אופציונלי) + 2 חבקי פרחים בינוניים בצדדים
+  const chuppahCurtains = (withDrapes: boolean) => (
     <svg width="100%" height="92" viewBox="0 0 200 92" role="img" aria-label="עיצוב חופה">
-      <rect x="38" y="20" width="7" height="62" rx="3" fill={gold} />
-      <rect x="155" y="20" width="7" height="62" rx="3" fill={gold} />
-      <path d="M41 22 Q100 4 158 22" stroke={gold} strokeWidth="6" fill="none" strokeLinecap="round" />
-      <path d="M55 22 Q100 36 145 22 L145 30 Q100 46 55 30 Z" fill={soft} opacity="0.7" />
-      {Array.from({ length: flowers }).map((_, i) => {
-        const x = 50 + (i * (100 / Math.max(flowers - 1, 1)));
-        return <circle key={i} cx={x} cy={24} r="5" fill={gold} opacity="0.9" />;
-      })}
-      <line x1="20" y1="82" x2="180" y2="82" stroke={gold} strokeWidth="2" opacity="0.4" />
+      {/* עמודי החופה */}
+      <rect x="42" y="20" width="6" height="60" rx="3" fill={gold} />
+      <rect x="152" y="20" width="6" height="60" rx="3" fill={gold} />
+      {/* קורה עליונה */}
+      <path d="M45 22 Q100 7 155 22" stroke={gold} strokeWidth="5" fill="none" strokeLinecap="round" />
+      {/* 2 וילונות קדמיים */}
+      {withDrapes && (
+        <g opacity="0.5">
+          <path d="M74 24 Q70 50 76 78 L90 78 Q86 50 88 24 Z" fill={soft} />
+          <path d="M112 24 Q114 50 110 78 L124 78 Q130 50 126 24 Z" fill={soft} />
+        </g>
+      )}
+      {/* 2 חבקי פרחים בינוניים בצדדים */}
+      {clasp(45, 31, 'clasp-r')}
+      {clasp(155, 31, 'clasp-l')}
+      {/* רצפה */}
+      <line x1="22" y1="80" x2="178" y2="80" stroke={gold} strokeWidth="2" opacity="0.4" />
+    </svg>
+  );
+
+  // איור חופה בבדים נשפכים (לחבילת הבדים)
+  const chuppahDrapes = () => (
+    <svg width="100%" height="92" viewBox="0 0 200 92" role="img" aria-label="עיצוב חופה בדים נשפכים">
+      <rect x="42" y="20" width="6" height="60" rx="3" fill={gold} />
+      <rect x="152" y="20" width="6" height="60" rx="3" fill={gold} />
+      <path d="M45 22 Q100 7 155 22" stroke={gold} strokeWidth="5" fill="none" strokeLinecap="round" />
+      {/* 4 בדים נשפכים */}
+      <g opacity="0.55">
+        <path d="M66 23 Q62 52 70 80 L82 80 Q76 50 80 23 Z" fill={soft} />
+        <path d="M86 23 Q84 54 90 80 L100 80 Q96 52 98 23 Z" fill={soft} />
+        <path d="M102 23 Q104 54 110 80 L120 80 Q116 52 114 23 Z" fill={soft} />
+        <path d="M120 23 Q118 52 130 80 L138 80 Q134 50 134 23 Z" fill={soft} />
+      </g>
+      {clasp(45, 31, 'd-clasp-r')}
+      {clasp(155, 31, 'd-clasp-l')}
+      <line x1="22" y1="80" x2="178" y2="80" stroke={gold} strokeWidth="2" opacity="0.4" />
     </svg>
   );
 
@@ -306,34 +383,39 @@ function renderPackageSVG(type: string) {
     </svg>
   );
 
-  // איור גיבסניות (ענן פרחים רך)
+  // איור חופת גיבסניות: ללא בדים לחופה, עם 2 חבקי פרחים בצדדים
   const gypsophila = () => (
-    <svg width="100%" height="92" viewBox="0 0 200 92" role="img" aria-label="עיצוב גיבסניות">
-      <rect x="40" y="22" width="6" height="58" rx="3" fill={gold} />
-      <rect x="154" y="22" width="6" height="58" rx="3" fill={gold} />
-      <path d="M43 24 Q100 6 157 24" stroke={gold} strokeWidth="5" fill="none" strokeLinecap="round" />
-      {Array.from({ length: 26 }).map((_, i) => (
-        <circle
-          key={i}
-          cx={48 + (i % 13) * 8.5}
-          cy={i < 13 ? 22 : 30}
-          r="3"
-          fill={soft}
-          opacity="0.85"
-        />
-      ))}
+    <svg width="100%" height="92" viewBox="0 0 200 92" role="img" aria-label="עיצוב חופת גיבסניות">
+      <rect x="42" y="20" width="6" height="60" rx="3" fill={gold} />
+      <rect x="152" y="20" width="6" height="60" rx="3" fill={gold} />
+      <path d="M45 22 Q100 7 155 22" stroke={gold} strokeWidth="5" fill="none" strokeLinecap="round" />
+      {/* 2 חבקי גיבסניות בצדדים (אשכול נקודות עדין) */}
+      {[45, 155].map((cx, g) =>
+        Array.from({ length: 11 }).map((_, i) => {
+          const angle = (i / 11) * Math.PI * 2;
+          return (
+            <circle
+              key={`g${g}-${i}`}
+              cx={cx + Math.cos(angle) * 8}
+              cy={32 + Math.sin(angle) * 8}
+              r="2.2"
+              fill={i % 3 === 0 ? gold : soft}
+              opacity="0.9"
+            />
+          );
+        })
+      )}
+      <line x1="22" y1="80" x2="178" y2="80" stroke={gold} strokeWidth="2" opacity="0.4" />
     </svg>
   );
 
   switch (type) {
     case 'chuppah-s':
-      return chuppah(4);
     case 'chuppah-m':
-      return chuppah(6);
     case 'chuppah-l':
-      return chuppah(9);
+      return chuppahCurtains(true);
     case 'chuppah-drapes':
-      return chuppah(7);
+      return chuppahDrapes();
     case 'gypsophila':
       return gypsophila();
     case 'henna':
@@ -347,6 +429,48 @@ function renderPackageSVG(type: string) {
         </div>
       );
   }
+}
+
+// איור בחירת עיצוב שולחן: קומפוזיציה (3 בקבוקוני פרחים + 2 נרות צפים) / סידור עגול בספוג
+function renderTableChoiceSVG() {
+  const gold = '#B29259';
+  const soft = '#D8C29A';
+  const cream = '#FAF7F2';
+  return (
+    <svg width="100%" height="104" viewBox="0 0 240 104" role="img" aria-label="בחירת עיצוב שולחן">
+      {/* קומפוזיציה: 3 בקבוקוני פרחים */}
+      {[30, 48, 66].map((x, i) => {
+        const top = i === 1 ? 22 : 30;
+        return (
+          <g key={`b${i}`}>
+            <line x1={x} y1={top} x2={x} y2={62} stroke={soft} strokeWidth="1.5" />
+            <circle cx={x} cy={top} r="4.5" fill={gold} opacity="0.9" />
+            <circle cx={x - 4} cy={top + 4} r="2.6" fill={soft} />
+            <circle cx={x + 4} cy={top + 4} r="2.6" fill={soft} />
+            <rect x={x - 3} y={62} width="6" height="16" rx="2" fill={cream} stroke={soft} />
+          </g>
+        );
+      })}
+      {/* 2 נרות צפים */}
+      {[18, 80].map((x, i) => (
+        <g key={`c${i}`}>
+          <ellipse cx={x} cy={84} rx="9" ry="3.5" fill="none" stroke={gold} strokeWidth="1" opacity="0.5" />
+          <rect x={x - 3} y={76} width="6" height="8" rx="1.5" fill={soft} />
+          <path d={`M${x} 70 q3 3 0 6 q-3 -3 0 -6`} fill={gold} />
+        </g>
+      ))}
+      {/* קו סלש לבחירה (זה או זה) */}
+      <line x1="116" y1="20" x2="130" y2="86" stroke={gold} strokeWidth="3" strokeLinecap="round" />
+      {/* סידור עגול בספוג */}
+      <g>
+        <path d="M150 60 Q186 26 222 60 Z" fill={soft} opacity="0.55" />
+        {[[164, 50], [186, 42], [208, 50], [158, 56], [186, 50], [214, 56], [172, 46], [200, 46]].map(([x, y], i) => (
+          <circle key={`s${i}`} cx={x} cy={y} r="4.5" fill={gold} opacity="0.9" />
+        ))}
+        <ellipse cx="186" cy="62" rx="38" ry="8" fill={cream} stroke={soft} />
+      </g>
+    </svg>
+  );
 }
 
 export default function App() {
@@ -376,6 +500,13 @@ export default function App() {
   const [customUpgrades, setCustomUpgrades] = useState<Upgrade[]>([]); // [{ id, description, price }]
   const [newUpgradeDesc, setNewUpgradeDesc] = useState('');
   const [newUpgradePrice, setNewUpgradePrice] = useState('');
+
+  // קוד קופון להטבת ₪500 לשדרוג העיצוב
+  const [couponCode, setCouponCode] = useState('');
+
+  // פריטי תוספת שנבחרו (id → כמות) והפריט שעליו ממומשת הטבת ה-₪500
+  const [addonQty, setAddonQty] = useState<Record<string, number>>({});
+  const [giftAddonId, setGiftAddonId] = useState('');
 
   // שגיאות תקינות
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -408,6 +539,29 @@ export default function App() {
 
   const selectedPackage = PACKAGES.find(p => p.id === selectedPackageId) || PACKAGES[0];
 
+  const isWeddingPackage = selectedPackage.category === CATEGORIES.WEDDING;
+
+  // פריטי התוספת שנבחרו (כמות > 0) והסכום שלהם
+  const selectedAddons = isWeddingPackage
+    ? WEDDING_ADDONS
+        .map(a => ({ ...a, qty: addonQty[a.id] || 0 }))
+        .filter(a => a.qty > 0)
+    : [];
+  const addonsTotal = selectedAddons.reduce((sum, a) => sum + a.price * a.qty, 0);
+
+  // פריטים שזכאים להטבת ה-₪500: נבחרו ואינם כוללים פרחים
+  const giftEligibleAddons = selectedAddons.filter(a => !a.hasFlowers);
+
+  // האם החבילה זכאית להטבת ₪500 (חבילות עם ההטבה בלעדית) והאם הוזן קוד תקין
+  const isCouponEligible = selectedPackage.benefits.includes('₪500');
+  const isCouponValid = isCouponEligible && couponCode.trim() === COUPON_CODE;
+
+  // הפריט שעליו ממומשת ההטבה (חייב להיות זכאי) וההנחה בפועל (עד ₪500, לא יותר משווי הפריט)
+  const giftAddon = giftEligibleAddons.find(a => a.id === giftAddonId);
+  const couponDiscount = isCouponValid && giftAddon
+    ? Math.min(COUPON_VALUE, giftAddon.price * giftAddon.qty)
+    : 0;
+
   // חישוב מחירים
   const getPricing = () => {
     let basePrice = selectedPackage.price;
@@ -417,12 +571,14 @@ export default function App() {
 
     const upgradesTotal = customUpgrades.reduce((sum, item) => sum + (item.price || 0), 0);
     const deliveryPrice = includeDelivery ? 500 : 0;
-    const totalPrice = basePrice + upgradesTotal + deliveryPrice;
+    const totalPrice = basePrice + upgradesTotal + addonsTotal + deliveryPrice - couponDiscount;
 
     return {
       basePrice,
       upgradesTotal,
+      addonsTotal,
       deliveryPrice,
+      couponDiscount,
       totalPrice
     };
   };
@@ -449,14 +605,33 @@ export default function App() {
     setCustomUpgrades(customUpgrades.filter(item => item.id !== id));
   };
 
+  // עדכון כמות של פריט תוספת מהקטלוג
+  const updateAddonQty = (id: string, value: string) => {
+    const n = Math.max(0, Math.floor(Number(value) || 0));
+    setAddonQty(prev => ({ ...prev, [id]: n }));
+  };
+
+  // תיאור פריט תוספת לשורת הזמנה (כולל כמות/יחידה)
+  const addonLineDescription = (a: Addon & { qty: number }) =>
+    a.unit
+      ? `${a.name} — ${a.qty} ${a.unit}`
+      : a.qty > 1
+        ? `${a.name} × ${a.qty}`
+        : a.name;
+
   // בדיקת תקינות טופס שלב 1 (עם 2 מספרי טלפון חובה)
   const validateStep = (step: number) => {
     const tempErrors: Record<string, string> = {};
     if (step === 1) {
-      if (!clientInfo.groomName.trim()) tempErrors.groomName = 'חובה להזין שם חתן';
-      if (!clientInfo.brideName.trim()) tempErrors.brideName = 'חובה להזין שם כלה';
-      if (!clientInfo.groomPhone.trim()) tempErrors.groomPhone = 'חובה להזין מספר טלפון חתן';
-      if (!clientInfo.bridePhone.trim()) tempErrors.bridePhone = 'חובה להזין מספר טלפון כלה';
+      const groomNameTrimmed = clientInfo.groomName.trim();
+      if (!groomNameTrimmed) tempErrors.groomName = 'חובה להזין שם בעל האירוע';
+      else if (groomNameTrimmed.split(/\s+/).length < 2) tempErrors.groomName = 'חובה להזין שם פרטי ושם משפחה';
+
+      const brideNameTrimmed = clientInfo.brideName.trim();
+      if (!brideNameTrimmed) tempErrors.brideName = 'חובה להזין שם בעלת האירוע';
+      else if (brideNameTrimmed.split(/\s+/).length < 2) tempErrors.brideName = 'חובה להזין שם פרטי ושם משפחה';
+      if (!clientInfo.groomPhone.trim()) tempErrors.groomPhone = 'חובה להזין מספר טלפון בעל האירוע';
+      if (!clientInfo.bridePhone.trim()) tempErrors.bridePhone = 'חובה להזין מספר טלפון בעלת האירוע';
       if (!clientInfo.eventDate) tempErrors.eventDate = 'חובה להזין תאריך אירוע';
       if (!clientInfo.eventLocation.trim()) tempErrors.eventLocation = 'חובה להזין מיקום אולם/אירוע';
       if (!clientInfo.email.trim()) tempErrors.email = 'חובה להזין כתובת אימייל';
@@ -519,10 +694,15 @@ export default function App() {
           compositesCount: clientInfo.compositesCount,
           spongeCount: clientInfo.spongeCount,
           includeDelivery,
-          upgrades: customUpgrades.map(u => ({ description: u.description, price: u.price })),
+          upgrades: [
+            ...customUpgrades.map(u => ({ description: u.description, price: u.price })),
+            ...selectedAddons.map(a => ({ description: addonLineDescription(a), price: a.price * a.qty }))
+          ],
           basePrice: pricing.basePrice,
-          upgradesTotal: pricing.upgradesTotal,
+          upgradesTotal: pricing.upgradesTotal + pricing.addonsTotal,
           deliveryPrice: pricing.deliveryPrice,
+          couponCode: isCouponValid ? couponCode.trim() : '',
+          couponDiscount: pricing.couponDiscount,
           totalPrice: pricing.totalPrice,
           groomSignDate,
           brideSignDate
@@ -715,16 +895,16 @@ export default function App() {
             <div className="border-b border-gray-100 pb-4">
               <h2 className="text-xl font-bold text-[#8C6D3F] flex items-center gap-2">
                 <Users className="w-5.5 h-5.5 text-[#B29259]" />
-                הסכם והזמנה לחתונה - פרטי האירוע
+                הזמנת חבילת עיצוב לאירוע
               </h2>
-              <p className="text-xs text-gray-500 mt-1">מלאו את פרטי החתן והכלה (שני מספרי הטלפון הינם חובה להשלמת ההסכם)</p>
+              <p className="text-xs text-gray-500 mt-1">מלאו את פרטי בעל ובעלת האירוע (שני מספרי הטלפון הינם חובה להשלמת ההסכם)</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
 
-              {/* שם החתן */}
+              {/* שם בעל האירוע */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">שם החתן *</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">שם בעל האירוע *</label>
                 <div className="relative">
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                     <User className="w-4 h-4" />
@@ -733,16 +913,16 @@ export default function App() {
                     type="text"
                     value={clientInfo.groomName}
                     onChange={(e) => setClientInfo({ ...clientInfo, groomName: e.target.value })}
-                    placeholder="שם מלא של החתן"
+                    placeholder="שם פרטי ושם משפחה של בעל האירוע"
                     className={`w-full pr-9 pl-3 py-2.5 bg-[#FAF7F2] border ${errors.groomName ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all`}
                   />
                 </div>
                 {errors.groomName && <p className="text-[10px] text-red-500 mt-1">{errors.groomName}</p>}
               </div>
 
-              {/* שם הכלה */}
+              {/* שם בעלת האירוע */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">שם הכלה *</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">שם בעלת האירוע *</label>
                 <div className="relative">
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                     <User className="w-4 h-4" />
@@ -751,16 +931,16 @@ export default function App() {
                     type="text"
                     value={clientInfo.brideName}
                     onChange={(e) => setClientInfo({ ...clientInfo, brideName: e.target.value })}
-                    placeholder="שם מלא של הכלה"
+                    placeholder="שם פרטי ושם משפחה של בעלת האירוע"
                     className={`w-full pr-9 pl-3 py-2.5 bg-[#FAF7F2] border ${errors.brideName ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all`}
                   />
                 </div>
                 {errors.brideName && <p className="text-[10px] text-red-500 mt-1">{errors.brideName}</p>}
               </div>
 
-              {/* טלפון חתן - חובה */}
+              {/* טלפון בעל האירוע - חובה */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">טלפון החתן *</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">טלפון בעל האירוע *</label>
                 <div className="relative">
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                     <Phone className="w-4 h-4" />
@@ -769,16 +949,16 @@ export default function App() {
                     type="tel"
                     value={clientInfo.groomPhone}
                     onChange={(e) => setClientInfo({ ...clientInfo, groomPhone: e.target.value })}
-                    placeholder="טלפון נייד חתן"
+                    placeholder="טלפון נייד בעל האירוע"
                     className={`w-full pr-9 pl-3 py-2.5 bg-[#FAF7F2] border ${errors.groomPhone ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all`}
                   />
                 </div>
                 {errors.groomPhone && <p className="text-[10px] text-red-500 mt-1">{errors.groomPhone}</p>}
               </div>
 
-              {/* טלפון כלה - חובה */}
+              {/* טלפון בעלת האירוע - חובה */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">טלפון הכלה *</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">טלפון בעלת האירוע *</label>
                 <div className="relative">
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                     <Phone className="w-4 h-4" />
@@ -787,7 +967,7 @@ export default function App() {
                     type="tel"
                     value={clientInfo.bridePhone}
                     onChange={(e) => setClientInfo({ ...clientInfo, bridePhone: e.target.value })}
-                    placeholder="טלפון נייד כלה"
+                    placeholder="טלפון נייד בעלת האירוע"
                     className={`w-full pr-9 pl-3 py-2.5 bg-[#FAF7F2] border ${errors.bridePhone ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all`}
                   />
                 </div>
@@ -882,6 +1062,28 @@ export default function App() {
               ))}
             </div>
 
+            {/* בחירת כמות שולחנות לאירועים — לפני הצגת החבילות */}
+            {activeCategory === CATEGORIES.EVENTS && (
+              <div className="bg-white p-4 rounded-2xl border border-[#EAE3D2] shadow-sm">
+                <p className="text-xs font-bold text-[#8C6D3F] mb-2">כמה שולחנות יש באירוע שלכם? בחרו כדי לראות את מחירי החבילות המתאימים:</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[10, 20, 30].map((tier) => (
+                    <button
+                      key={tier}
+                      onClick={() => setSelectedTableTier(tier)}
+                      className={`py-2.5 px-2 rounded-xl text-xs font-bold transition-all ${
+                        selectedTableTier === tier
+                          ? 'bg-[#8C6D3F] text-white shadow-sm'
+                          : 'bg-[#FAF7F2] border border-gray-200 text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      {tier} שולחנות
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* גריד חבילות דינמי */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {PACKAGES.filter(p => p.category === activeCategory).map((pkg) => {
@@ -928,29 +1130,6 @@ export default function App() {
                       <p className="text-[11px] font-bold text-[#8C6D3F] mb-2">{pkg.subtitle}</p>
                       <p className="text-xs text-gray-500 leading-relaxed mb-4">{pkg.description}</p>
 
-                      {/* בורר שולחנות לחבילות אירועים */}
-                      {pkg.pricingTiers && isSelected && (
-                        <div className="mb-4 p-3 bg-stone-50 rounded-xl border border-[#EAE3D2]" onClick={(e) => e.stopPropagation()}>
-                          <p className="text-[10px] font-bold text-[#8C6D3F] mb-1.5">בחרו את היקף האירוע (כמות שולחנות):</p>
-                          <div className="grid grid-cols-3 gap-1.5">
-                            {[10, 20, 30].map((tier) => (
-                              <button
-                                key={tier}
-                                onClick={() => setSelectedTableTier(tier)}
-                                className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
-                                  selectedTableTier === tier
-                                    ? 'bg-[#8C6D3F] text-white shadow-sm'
-                                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'
-                                }`}
-                              >
-                                {tier} שולחנות
-                                <span className="block text-[9px] font-normal opacity-90">₪{pkg.pricingTiers?.[tier]?.toLocaleString()}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
                       {/* מפרט חבילה */}
                       <div className="bg-[#FAF7F2] rounded-xl p-3 space-y-2 border border-[#EAE3D2] text-[11px]">
                         <p className="font-bold text-gray-700 border-b border-gray-200 pb-1">מה כלול בחבילה?</p>
@@ -987,7 +1166,7 @@ export default function App() {
                     <div className="pt-3 border-t border-gray-100 mt-4 flex items-center justify-between">
                       <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
                         <Gift className="w-3 h-3" />
-                        {pkg.benefits}
+                        {pkg.benefits}{pkg.benefits.includes('₪500') ? ' (בהזנת קוד קופון)' : ''}
                       </span>
                       <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
                         isSelected ? 'border-[#B29259] bg-[#B29259]' : 'border-gray-300'
@@ -1004,29 +1183,40 @@ export default function App() {
             {activeCategory === CATEGORIES.WEDDING && (
               <div className="bg-white p-6 rounded-2xl border border-[#EAE3D2] shadow-sm space-y-4">
                 <div className="border-b pb-2">
-                  <h3 className="text-sm font-bold text-[#8C6D3F]">פרטים לבחירה אישית (מתוך החוזה)</h3>
-                  <p className="text-[10px] text-gray-400">הגדירו את חלוקת סגנון השולחנות המבוקשת באירוע שלכם</p>
+                  <h3 className="text-sm font-bold text-[#8C6D3F]">בחירת עיצוב השולחנות</h3>
+                  <p className="text-[10px] text-gray-400">לכל שולחן בוחרים סגנון אחד: קומפוזיציה <span className="font-bold">או</span> סידור עגול בספוג. סמנו כמה שולחנות מכל סוג.</p>
+                </div>
+
+                {/* איור הבחירה: קומפוזיציה / סידור עגול בספוג */}
+                <div className="bg-[#FAF7F2] rounded-xl p-3 border border-[#EAE3D2]">
+                  <div className="max-w-md mx-auto">{renderTableChoiceSVG()}</div>
+                  <div className="flex justify-between text-[10px] font-bold text-[#8C6D3F] mt-1 px-2">
+                    <span>קומפוזיציה — 3 בקבוקוני פרחים + 2 נרות צפים</span>
+                    <span>סידור עגול בספוג</span>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">קומפוזיציות פרחים ונרות</label>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">כמה שולחנות עם קומפוזיציה (3 בקבוקונים + 2 נרות צפים)</label>
                     <input
                       type="number"
+                      min="0"
                       value={clientInfo.compositesCount}
                       onChange={(e) => setClientInfo({ ...clientInfo, compositesCount: e.target.value })}
-                      placeholder="הזינו מספר שולחנות"
+                      placeholder="מספר שולחנות"
                       className="w-full px-3 py-2.5 bg-[#FAF7F2] border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#B29259]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">סידור ספוג לשולחן</label>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">כמה שולחנות עם סידור עגול בספוג</label>
                     <input
                       type="number"
+                      min="0"
                       value={clientInfo.spongeCount}
                       onChange={(e) => setClientInfo({ ...clientInfo, spongeCount: e.target.value })}
-                      placeholder="הזינו מספר שולחנות"
+                      placeholder="מספר שולחנות"
                       className="w-full px-3 py-2.5 bg-[#FAF7F2] border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#B29259]"
                     />
                   </div>
@@ -1179,30 +1369,145 @@ export default function App() {
               </div>
             </div>
 
+            {/* תוספות ושדרוגים לחבילת עיצוב חתונה (קטלוג עם כמויות) */}
+            {isWeddingPackage && (
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EAE3D2] space-y-4">
+                <div>
+                  <h3 className="text-base font-bold text-[#8C6D3F] flex items-center gap-1.5">
+                    <Plus className="w-4.5 h-4.5 text-[#B29259]" />
+                    תוספות ושדרוגים לחבילת העיצוב
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-1">סמנו כמות לכל פריט שתרצו להוסיף — המחיר יתווסף לחבילת העיצוב.</p>
+                </div>
+
+                <div className="border border-gray-100 rounded-xl divide-y divide-gray-100">
+                  {WEDDING_ADDONS.map((a) => {
+                    const qty = addonQty[a.id] || 0;
+                    return (
+                      <div key={a.id} className={`flex items-center justify-between gap-3 p-3 ${qty > 0 ? 'bg-[#FAF7F2]' : ''}`}>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold text-gray-800">{a.name}</p>
+                          <p className="text-[10px] text-gray-500">
+                            ₪{a.price.toLocaleString()}{a.unit ? ` ${a.unit}` : ''}
+                            {!a.hasFlowers && isCouponValid && <span className="text-emerald-600 font-bold"> · ניתן לממש בהטבת ₪500</span>}
+                          </p>
+                        </div>
+                        <input
+                          type="number"
+                          min="0"
+                          value={qty || ''}
+                          onChange={(e) => updateAddonQty(a.id, e.target.value)}
+                          placeholder={a.unit ? 'מטרים' : 'כמות'}
+                          className="w-20 px-2 py-2 bg-white border border-gray-200 rounded-lg text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#B29259]"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {addonsTotal > 0 && (
+                  <div className="flex justify-between items-center text-xs font-bold text-[#8C6D3F] pt-1">
+                    <span>סה"כ תוספות שנבחרו:</span>
+                    <span>₪{addonsTotal.toLocaleString()}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* קוד קופון — ₪500 מתנה לפריט תוספת אחד (ללא פרחים) */}
+            {isCouponEligible && (
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EAE3D2] space-y-4">
+                <div>
+                  <h3 className="text-base font-bold text-[#8C6D3F] flex items-center gap-1.5">
+                    <Gift className="w-4.5 h-4.5 text-[#B29259]" />
+                    קוד קופון — הטבת ₪500 לשדרוג העיצוב
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-1">
+                    הזינו את קוד הקופון שקיבלתם. ההטבה אינה הנחה על החבילה, אלא ₪500 מתנה למימוש על פריט תוספת אחד שאינו כולל פרחים (מתוך רשימת התוספות שמעל).
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-600 mb-1">קוד קופון</label>
+                  <input
+                    type="text"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
+                    placeholder="הזינו קוד קופון"
+                    className={`w-full px-3 py-2.5 bg-[#FAF7F2] border ${
+                      isCouponValid
+                        ? 'border-emerald-400'
+                        : couponCode.trim()
+                          ? 'border-red-400'
+                          : 'border-gray-200'
+                    } rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#B29259]`}
+                  />
+                </div>
+
+                {couponCode.trim() && !isCouponValid && (
+                  <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-3 rounded-xl">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    קוד הקופון שהוזן אינו תקין.
+                  </div>
+                )}
+
+                {isCouponValid && (
+                  giftEligibleAddons.length > 0 ? (
+                    <div className="space-y-2">
+                      <label className="block text-[10px] font-bold text-gray-600">בחרו פריט אחד למימוש הטבת ה-₪500 (ללא פרחים):</label>
+                      <select
+                        value={giftAddonId}
+                        onChange={(e) => setGiftAddonId(e.target.value)}
+                        className="w-full px-3 py-2.5 bg-[#FAF7F2] border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#B29259]"
+                      >
+                        <option value="">— בחרו פריט —</option>
+                        {giftEligibleAddons.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {addonLineDescription(a)} (₪{(a.price * a.qty).toLocaleString()})
+                          </option>
+                        ))}
+                      </select>
+                      {couponDiscount > 0 && giftAddon && (
+                        <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold p-3 rounded-xl">
+                          <Check className="w-4 h-4 shrink-0" />
+                          מומשה הטבה של ₪{couponDiscount.toLocaleString()} על "{giftAddon.name}".
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold p-3 rounded-xl">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      הקוד תקין! הוסיפו פריט תוספת שאינו כולל פרחים כדי לממש את הטבת ה-₪500.
+                    </div>
+                  )
+                )}
+              </div>
+            )}
+
             {/* סיכום חוזה רשמי והזמנה לחתונה */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EAE3D2] space-y-6">
               <div className="text-center pb-4 border-b border-gray-100">
                 <FileText className="w-6 h-6 text-[#B29259] mx-auto mb-1" />
-                <h3 className="text-lg font-bold text-gray-800">הסכם והזמנה לחתונה - תנאי התקשרות</h3>
+                <h3 className="text-lg font-bold text-gray-800">הסכם והזמנה לאירוע - תנאי התקשרות</h3>
                 <p className="text-xs text-gray-400">אנא ודאו את הפרטים וקראו את מדיניות הביטולים לפני החתימה</p>
               </div>
 
               {/* כרטיסיית פרטי אירוע (חתן כלה) */}
               <div className="grid grid-cols-2 gap-3 bg-[#FAF7F2] p-4 rounded-xl border border-[#EAE3D2] text-xs">
                 <div>
-                  <span className="text-gray-400 font-medium">שם החתן:</span>
+                  <span className="text-gray-400 font-medium">שם בעל האירוע:</span>
                   <p className="font-bold text-gray-700 mt-0.5">{clientInfo.groomName}</p>
                 </div>
                 <div>
-                  <span className="text-gray-400 font-medium">שם הכלה:</span>
+                  <span className="text-gray-400 font-medium">שם בעלת האירוע:</span>
                   <p className="font-bold text-gray-700 mt-0.5">{clientInfo.brideName}</p>
                 </div>
                 <div>
-                  <span className="text-gray-400 font-medium">טלפון חתן:</span>
+                  <span className="text-gray-400 font-medium">טלפון בעל האירוע:</span>
                   <p className="font-bold text-gray-700 mt-0.5">{clientInfo.groomPhone}</p>
                 </div>
                 <div>
-                  <span className="text-gray-400 font-medium">טלפון כלה:</span>
+                  <span className="text-gray-400 font-medium">טלפון בעלת האירוע:</span>
                   <p className="font-bold text-gray-700 mt-0.5">{clientInfo.bridePhone}</p>
                 </div>
                 <div>
@@ -1241,10 +1546,24 @@ export default function App() {
                   </div>
                 ))}
 
+                {selectedAddons.map((a) => (
+                  <div key={a.id} className="flex justify-between items-center text-gray-600">
+                    <span>{addonLineDescription(a)}</span>
+                    <span className="font-bold text-gray-800">₪{(a.price * a.qty).toLocaleString()}</span>
+                  </div>
+                ))}
+
                 {includeDelivery && (
                   <div className="flex justify-between items-center text-gray-600">
                     <span>הובלה, הרכבה ופירוק בסיום האירוע</span>
                     <span className="font-bold text-gray-800">₪500</span>
+                  </div>
+                )}
+
+                {pricing.couponDiscount > 0 && giftAddon && (
+                  <div className="flex justify-between items-center text-emerald-600">
+                    <span>הטבת קופון — ₪500 מתנה על "{giftAddon.name}"</span>
+                    <span className="font-bold">−₪{pricing.couponDiscount.toLocaleString()}</span>
                   </div>
                 )}
 
@@ -1285,10 +1604,10 @@ export default function App() {
               {/* לוחות חתימה דיגיטליים כפולים (חתן וכלה) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                {/* חתימת חתן */}
+                {/* חתימת בעל האירוע */}
                 <div className="border border-dashed border-[#B29259]/60 rounded-xl p-4 bg-stone-50">
                   <div className="flex justify-between items-center mb-2">
-                    <label className="text-xs font-bold text-gray-800">חתימת החתן:</label>
+                    <label className="text-xs font-bold text-gray-800">חתימת בעל האירוע:</label>
                     {isGroomSigned && (
                       <button type="button" onClick={clearGroomSignature} className="text-[10px] text-red-500 hover:text-red-700 font-bold">נקה</button>
                     )}
@@ -1309,7 +1628,7 @@ export default function App() {
                     />
                     {!isGroomSigned && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-gray-400 text-[10px]">
-                        חתן חתום כאן
+                        בעל האירוע חתום כאן
                       </div>
                     )}
                   </div>
@@ -1324,10 +1643,10 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* חתימת כלה */}
+                {/* חתימת בעלת האירוע */}
                 <div className="border border-dashed border-[#B29259]/60 rounded-xl p-4 bg-stone-50">
                   <div className="flex justify-between items-center mb-2">
-                    <label className="text-xs font-bold text-gray-800">חתימת הכלה:</label>
+                    <label className="text-xs font-bold text-gray-800">חתימת בעלת האירוע:</label>
                     {isBrideSigned && (
                       <button type="button" onClick={clearBrideSignature} className="text-[10px] text-red-500 hover:text-red-700 font-bold">נקה</button>
                     )}
@@ -1348,7 +1667,7 @@ export default function App() {
                     />
                     {!isBrideSigned && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-gray-400 text-[10px]">
-                        כלה חתום כאן
+                        בעלת האירוע חתומה כאן
                       </div>
                     )}
                   </div>
@@ -1368,7 +1687,7 @@ export default function App() {
               {showSignatureError && (
                 <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-3 rounded-xl">
                   <AlertCircle className="w-4 h-4 shrink-0" />
-                  נדרשת חתימה של החתן ושל הכלה לאישור ההזמנה.
+                  נדרשת חתימה של בעל האירוע ושל בעלת האירוע לאישור ההזמנה.
                 </div>
               )}
             </div>
