@@ -28,15 +28,58 @@ const CATEGORIES = {
   EVENTS: 'אירועים (בר/בת מצווה, ברית/ה, יומולדת)'
 } as const;
 
+// --- קוד קופון להטבת ₪500 לשדרוג העיצוב ---
+const COUPON_CODE = 'מתנה';
+const COUPON_VALUE = 500;
+
+// --- פריטי תוספת לחבילת עיצוב חתונה ---
+// hasFlowers=true => פריט הכולל פרחים, ולכן לא ניתן לממש עליו את הטבת ה-₪500
+interface Addon {
+  id: string;
+  name: string;
+  price: number;
+  hasFlowers: boolean;
+  unit?: string; // לדוגמה: "למטר"
+}
+
+const WEDDING_ADDONS: Addon[] = [
+  { id: 'entrance-sign', name: 'שלט כניסה קאפה על מעמד', price: 500, hasFlowers: false },
+  { id: 'sign-flowers', name: 'תוספת פרחים לשלט', price: 300, hasFlowers: true },
+  { id: 'carpet-5', name: 'שטיח לשביל חופה 5 מטר', price: 250, hasFlowers: false },
+  { id: 'carpet-10', name: 'שטיח לשביל חופה 10 מטר', price: 500, hasFlowers: false },
+  { id: 'cylinder-candles-10', name: '10 נרות בצילינדר לשביל חופה', price: 400, hasFlowers: false },
+  { id: 'candles-flower-vessel-6', name: '6 נרות בכלי מעוצב פרחים', price: 900, hasFlowers: true },
+  { id: 'chair-clasps-6', name: '6 חבקי פרחים לכסאות', price: 600, hasFlowers: true },
+  { id: 'side-clasp-yod', name: 'חבק פרחים צדדי לחופה בצורת י׳', price: 300, hasFlowers: true },
+  { id: 'top-clasp', name: 'חבק פרחים עליון לחופה', price: 400, hasFlowers: true },
+  { id: 'clasp-resh-upgrade', name: 'שדרוג לחבק פרחים בצורת ר׳ לחופה', price: 900, hasFlowers: true },
+  { id: 'top-crown-full', name: 'פס עליון כתר פרחים מלא ויוקרתי', price: 3000, hasFlowers: true },
+  { id: 'chet-shape', name: 'צורת ח׳ פרחים לחופה', price: 12000, hasFlowers: true },
+  { id: 'back-fabrics-2', name: 'תוספת 2 בדים אחוריים לחופה', price: 300, hasFlowers: false },
+  { id: 'top-parochet', name: 'פרוכת עליונה לחופה', price: 500, hasFlowers: false },
+  { id: 'composite-10-12', name: 'קומפוזיציה 10/12 בקבוקוני פרחים ונרות לשולחן אבירים', price: 300, hasFlowers: true },
+  { id: 'composite-5-6', name: 'קומפוזיציה 5/6 בקבוקוני פרחים ונרות לשולחן רגיל', price: 180, hasFlowers: true },
+  { id: 'sponge-round', name: 'סידור פרחים עגול בספוג', price: 180, hasFlowers: true },
+  { id: 'sponge-medium', name: 'סידור פרחים בינוני בספוג', price: 300, hasFlowers: true },
+  { id: 'deco-small', name: 'סידור פרחים קטן בכלי דקורטיבי', price: 280, hasFlowers: true },
+  { id: 'deco-medium', name: 'סידור פרחים בינוני בכלי דקורטיבי', price: 400, hasFlowers: true },
+  { id: 'deco-large', name: 'סידור פרחים גדול בכלי דקורטיבי', price: 600, hasFlowers: true },
+  { id: 'deco-xl', name: 'סידור פרחים ענק בכלי דקורטיבי', price: 900, hasFlowers: true },
+  { id: 'bamboo-chuppah', name: 'חופת במבוק בנויה', price: 1800, hasFlowers: false },
+  { id: 'chuppah-stage', name: 'במה לחופה', price: 4500, hasFlowers: false },
+  { id: 'knights-gyps-line', name: 'שולחן אבירים קו אמצע גיבסניות ונרות', price: 500, hasFlowers: true, unit: 'למטר' }
+];
+
 // --- טיפוסים ---
 type Category = (typeof CATEGORIES)[keyof typeof CATEGORIES];
 
 interface PackageDetails {
   chuppah?: string[];
+  options?: string[];
   tables?: string[];
   bar?: string[];
-  options?: string[];
   entrance?: string[];
+  highlight?: string[];
   photoOp?: string[];
 }
 
@@ -76,6 +119,17 @@ type CanvasPointerEvent =
   | React.MouseEvent<HTMLCanvasElement>
   | React.TouchEvent<HTMLCanvasElement>;
 
+// --- סעיפי הפירוט המוצגים בכרטיס החבילה (סדר + תווית עברית) ---
+const DETAIL_SECTIONS: { key: keyof PackageDetails; label: string }[] = [
+  { key: 'chuppah', label: 'עיצוב חופה:' },
+  { key: 'options', label: 'אפשרות אחת לבחירה:' },
+  { key: 'tables', label: 'עיצוב שולחן אורחים:' },
+  { key: 'bar', label: 'עמדות אירוח ובר:' },
+  { key: 'entrance', label: 'חוויית כניסה:' },
+  { key: 'highlight', label: 'אלמנט מרכזי:' },
+  { key: 'photoOp', label: 'עמדת צילום VIP:' }
+];
+
 // --- מאגר החבילות המלא ---
 const PACKAGES: Package[] = [
   {
@@ -84,7 +138,7 @@ const PACKAGES: Package[] = [
     title: 'חבילת עיצוב חתונה - Classic S',
     subtitle: 'עיצוב חופה + 10 שולחנות מעוצבים',
     price: 2900,
-    description: 'עיצוב קלאסי, אלגנטי ועל-זמני שמדבר את שפת הלב. שילוב מושלם של פרחים עשירים, נרות רכים ובדים זורמים ליצירת אווירה רומנטית ויוקרתית.',
+    description: 'עיצוב קלאסי, אלגנטי ועל-זמני שמדבר את שפת הלב. שילוב מושלם של פרחים עשירים, נרות רכים ובדים זורמים, יוצרים אווירה רומנטית, יוקרתית וחגיגית שתשאיר אתכם ואת האורחים עם זיכרון בלתי נשכח.',
     benefits: 'הטבה בלעדית: ₪500 מתנה לשדרוג העיצוב!',
     details: {
       chuppah: [
@@ -103,7 +157,7 @@ const PACKAGES: Package[] = [
     title: 'חבילת עיצוב חתונה - Classic M',
     subtitle: 'עיצוב חופה + 20 שולחנות מעוצבים',
     price: 4600,
-    description: 'חבילה מושלמת לחתונה בגודל בינוני ומרשימה. עיצוב עשיר והרמוני שממלא את החלל באווירה חגיגית, טבעית ומרהיבה.',
+    description: 'חבילה מושלמת לחתונה גדולה ומרשימה. עיצוב עשיר והרמוני שממלא את החלל באווירה חגיגית, טבעית ומרהיבה. פרחים, אור ונרות משתלבים יחד ליצירת חוויה בלתי נשכחת שמשאירה חותם בלב של כל אורח.',
     benefits: 'הטבה בלעדית: ₪500 מתנה לשדרוג העיצוב!',
     details: {
       chuppah: [
@@ -122,7 +176,7 @@ const PACKAGES: Package[] = [
     title: 'חבילת עיצוב חתונה - Classic L',
     subtitle: 'עיצוב חופה + 30 שולחנות מעוצבים',
     price: 6300,
-    description: 'עיצוב בלתי נשכח, שיוצר רגעים של וואו מהכניסה ועד רחבת הריקודים. שפע של פרחים, תאורה רכה ונרות מהפנטים.',
+    description: 'עיצוב בלתי נשכח, שמייצר רגעים של וואו מהכניסה ועד רחבת הריקודים. שפע של פרחים, תאורה רכה ונרות מהפנטים משתלבים יחד ליצירת אירוע מרגש, יוקרתי ומלא בסטייל. כי מגיע לכם לחגוג בגדול – בדיוק כמו שחלמתם.',
     benefits: 'הטבה בלעדית: ₪500 מתנה לשדרוג העיצוב!',
     details: {
       chuppah: [
@@ -141,15 +195,15 @@ const PACKAGES: Package[] = [
     title: 'עיצוב חתונה בגיבסניות - חופה + 40 שולחנות',
     subtitle: 'עיצוב קסום ורומנטי של גיבסניות עשירות ומלאות',
     price: 2900,
-    description: 'עיצוב אלגנטי ועדין בגבסוניות רכות בגוונים שונים, בשילוב נרות רומנטיים ליצירת אווירה קסומה ומלאת רגש.',
+    description: 'עיצוב אלגנטי ועדין בגבסוניות רכות בגוונים שונים, בשילוב נרות רומנטיים ליצירת אווירה קסומה ומלאת רגש. כל פרט מעוצב בקפידה כדי להפוך את יום החתונה לחוויה בלתי נשכחת.',
     benefits: 'הטבה בלעדית: ₪500 מתנה לשדרוג העיצוב!',
     details: {
       chuppah: [
-        '2 חבקי פרחים צורת י׳ לעמודי החופה מגיבסניות',
-        'בעיצוב של פחות מ-40 שולחנות, את הפרחים הנותרים נעצב בזר קשירה לכסאות בשביל החופה'
+        '2 חבקי פרחים בצורת י׳ לעמודי החופה מגיבסניות',
+        'בעיצוב של פחות מ-40 שולחנות, את הפרחים הנותרים נעצב בזרי קשירה לכסאות בשביל החופה'
       ],
       tables: [
-        'קומפוזיציה שילוב עשיר של פרחי גיבסניות ונרות בכל שולחן / סידור פרחים בספוג עגול'
+        'קומפוזיציה שילוב עשיר של פרחי גיבסניות ונרות בכל שולחן / סידור פרחים עגול בספוג'
       ]
     },
     svgType: 'gypsophila'
@@ -160,7 +214,7 @@ const PACKAGES: Package[] = [
     title: 'חבילת עיצוב חופה - בדים נשפכים + שדרת חופה',
     subtitle: 'שדרה רומנטית מוארת וחופה מרהיבה',
     price: 2900,
-    description: 'חופה מרהיבה עם בדים נשפכים, שדרת חופה רומנטית ומוארת, לעיצוב שיגרום לכל רגע להרגיש כמו חלום שמתגשם.',
+    description: 'תנו לאהבה שלכם במה מושלמת. חופה מרהיבה עם בדים נשפכים, שדרת חופה רומנטית ומוארת, לעיצוב שיגרום לכל רגע להרגיש כמו חלום שמתגשם.',
     benefits: 'הטבה בלעדית: ₪500 מתנה לשדרוג העיצוב!',
     details: {
       chuppah: [
@@ -168,7 +222,8 @@ const PACKAGES: Package[] = [
         '2 חבקי פרחים עשירים (צורת י׳) לעמודי החופה'
       ],
       options: [
-        'בחירה בין: 6 חבקי פרחים קשורים לכסאות או שטיח לשידרת החופה עם נרות בצילינדרים'
+        '6 חבקי פרחים קשורים לכסאות',
+        'שטיח לשדרת החופה עם נרות בצילינדרים'
       ]
     },
     svgType: 'chuppah-drapes'
@@ -182,12 +237,13 @@ const PACKAGES: Package[] = [
     subtitle: 'בר עוגיות עבודת יד בעיצוב מלכותי אותנטי (ל-150-200 מוזמנים)',
     price: 2900,
     description: 'חגיגה אותנטית של טעמים, ריחות וצבעים! כולל בר עשיר ומפואר של עוגיות מרוקאיות מובחרות ביותר בעבודת יד, כלי נחושת מלכותיים, מפות מעוצבות בהתאמה ונרות אווירה.',
-    benefits: 'הטבה בלעדית: 2 דלי משי מרהיבים לעיצוב - מתנה ממני!',
+    benefits: 'הטבה בלעדית: 2 זרי משי מרהיבים לעיצוב - מתנה ממני!',
     details: {
       bar: [
-        'מבחר עשיר ומפואר של עוגיות מרוקאיות בעבודת יד מחומרי גלם מובחרים ביותר',
-        'כלי הגשה ונחושת מלכותיים בעיצוב אותנטי ומפות מעוצבות בהתאמה אישית',
-        'נרות רומנטיים ליצירת אווירה קסומה'
+        'מכלול עשיר ומפואר של עוגיות מרוקאיות אותנטיות בעבודת יד — טריות, נימוחות וטעימות במיוחד',
+        'שילוב מנצח של עוגיות צבעוניות מסורתיות לצד מבחר עוגיות פרימיום קלאסיות ומעוצבות',
+        'עיצוב עשיר בכלי זהב ונחושת מלכותיים המתאימים בדיוק לאווירת החינה',
+        'מפות מעוצבות בהתאמה אישית ונרות רומנטיים ליצירת אווירה קסומה'
       ]
     },
     svgType: 'henna'
@@ -199,7 +255,7 @@ const PACKAGES: Package[] = [
     subtitle: 'בר עוגיות מסורתיות + שוק פיצוחים יוקרתי (ל-150-200 מוזמנים)',
     price: 4900,
     description: 'השדרוג המושלם שיהפוך למרכז האירוע! משלב את מגוון העוגיות המרוקאיות המשובחות לצד שוק פיצוחים מעוצב בשקי יוטה אותנטיים עם מגוון עשיר של פיצוחים איכותיים ופירות יבשים.',
-    benefits: 'הטבה בלעדית: 2 דלי משי מרהיבים לעיצוב - מתנה ממני!',
+    benefits: 'הטבה בלעדית: 2 זרי משי מרהיבים לעיצוב - מתנה ממני!',
     details: {
       bar: [
         'בר עוגיות מרוקאיות פרימיום בעבודת יד',
@@ -217,13 +273,14 @@ const PACKAGES: Package[] = [
     title: 'חבילת "קלאסיק" לאירועים',
     subtitle: 'המראה הנקי, הרומנטי והאלגנטי ביותר',
     price: 2900,
-    description: 'עיצוב אירוע נקי ויוקרתי שיביא לאולם אווירה קלאסית ומהממת. מתאים לבריתות, ימי הולדת ובר/בת מצווה.',
-    benefits: 'כולל שלט כניסה מעוצב ומותאם אישית בשילוב בלונים או פרחים!',
+    description: 'רוצים אירוע בעיצוב נקי, רומנטי ויוקרתי שיחמיא לאולם וייצור אווירה קלאסית ומזמינה? החבילה הזו מתמקדת בפרטים הקטנים שעושים את ההבדל הגדול, עם נגיעות של טבע ונרות אווירה.',
+    benefits: 'כולל שלט כניסה מעוצב ומותאם אישית בשילוב שובל בלונים עדין או פרחים חיים!',
     details: {
-      tables: ['עיצוב שולחנות אורחים: קומפוזיציות של בקבוקוני פרחים ונרות או סידורי ספוג נמוכים'],
-      entrance: ['שלט כניסה מעוצב ומותאם אישית עם שובל בלונים עדין או תוספת פרחים חיים']
+      tables: ['קומפוזיציות מעוצבות של בקבוקוני פרחים חיים ורעננים בשילוב נרות / סידורי ספוג נמוכים ורומנטיים, בהתאמה לאופי השולחן'],
+      entrance: ['שלט כניסה מעוצב ומותאם אישית שמקבל את פני האורחים בסטייל'],
+      highlight: ['נגיעת סטייל: שובל בלונים עדין או תוספת פרחים חיים לבחירה']
     },
-    svgType: 'event',
+    svgType: 'event-classic',
     pricingTiers: { 10: 2900, 20: 4600, 30: 6300 }
   },
   {
@@ -232,13 +289,14 @@ const PACKAGES: Package[] = [
     title: 'חבילת "בלון ארט" לאירועים',
     subtitle: 'המראה המודרני, החגיגי והצבעוני',
     price: 3200,
-    description: 'לחגוג בענק ובצבע! אם אתם מחפשים אירוע תוסס, שמח ומלא באנרגיה, חבילת הבלונים שלנו תרים את האולם לגובה עם עיצוב מודרני ויצירתי.',
-    benefits: 'כולל שער בלונים עשיר וחגיגי בכניסה לאולם!',
+    description: 'לחגוג בענק ובצבע! אם אתם מחפשים אירוע תוסס, שמח ומלא באנרגיה, חבילת הבלונים שלנו תרים את האולם לגובה. עיצוב מודרני, יצירתי ובעל נוכחות מטורפת שאי אפשר להתעלם ממנה.',
+    benefits: 'כולל שער בלונים חגיגי, עשיר ומעוצב בכניסה לאולם!',
     details: {
-      tables: ['עיצוב שולחנות אורחים: סידורי בלונים גבוהים ואמנותיים המעניקים אפקט וואו'],
-      entrance: ['שלט כניסה מעוצב ומותאם אישית לבעל השמחה', 'שער בלונים עשיר ומעוצב בכניסה המוביל את האורחים פנימה']
+      tables: ['סידורי בלונים גבוהים, מרשימים ואומנותיים שיוצרים אפקט "וואו" מכל פינה באולם'],
+      entrance: ['שלט כניסה מעוצב ומותאם אישית לבעלי השמחה'],
+      highlight: ['שער בלונים חגיגי, עשיר ומעוצב בכניסה המוביל את האורחים פנימה']
     },
-    svgType: 'event',
+    svgType: 'event-balloon',
     pricingTiers: { 10: 3200, 20: 5200, 30: 7200 }
   },
   {
@@ -247,99 +305,249 @@ const PACKAGES: Package[] = [
     title: 'חבילת "הצגה" (VIP) - עמדת צילום יוקרה',
     subtitle: 'עיצוב שולחנות עשיר ועמדת צילום מטורפת',
     price: 4000,
-    description: 'החבילה המושלמת למי שלא מתפשר על פחות ממושלם. משלבת שולחנות מעוצבים ועמדת צילום ענקית שתשאיר את האורחים עם מזכרת בלתי נשכחת.',
+    description: 'החבילה מיועדת למי שלא מוכן להתפשר על פחות ממושלם. אנחנו מייצרים עבורכם אירוע מהסרטים עם שואו עיצובי חסר תקדים, חומרי גלם עשירים, והדובדבן שבקצפת – עמדת צילום יוקרתית שתהפוך למרכז העניינים ותשאיר לאורחים שלכם מזכרת מטורפת.',
     benefits: 'עמדת צילום VIP מלאה עם קשת בלונים אמנותית, קיר רקע ואקססוריז!',
     details: {
-      tables: ['עיצוב שולחנות אורחים: קומפוזיציות פרחים חיים או סידורי בלונים גבוהים ומעוצבים'],
-      entrance: ['שלט כניסה מעוצב, נקי ואלגנטי בקבלה'],
-      photoOp: ['עמדת צילום VIP מטורפת: קשת בלונים ענקית, קיר רקע מותאם, אקססוריז ונגיעות פרחים']
+      tables: ['לבחירתכם: קומפוזיציות עם פרחים חיים ונרות / סידורי בלונים גבוהים ומעוצבים'],
+      entrance: ['שלט כניסה מותאם אישית בקו נקי, אלגנטי ויוקרתי'],
+      photoOp: ['קשת בלונים אמנותית וענקית באולם, הכוללת קיר רקע, אקססוריז מעוצבים ונגיעות פרחים מעודנות — המקום שבו כולם יעמדו כדי להצטלם!']
     },
-    svgType: 'event',
+    svgType: 'event-vip',
     pricingTiers: { 10: 4000, 20: 6000, 30: 8000 }
   }
 ];
 
-// --- איורים וקטוריים לכל סוג חבילה ---
-// (שוחזר עקב קטיעת הקוד שהודבק — ניתן להחליף באיורים המקוריים)
+// --- פלטת צבעים ואלמנטים משותפים לאיורים (קו-ארט בסגנון הפלאיירים) ---
+const ART = { gold: '#B29259', deep: '#8C6D3F', soft: '#D8C29A', cream: '#FAF7F2', sage: '#A7B58C' };
+
+// ורד יחיד — עיגול עם סלסול ספירלה פנימי
+function Rose({ cx, cy, r, fill }: { cx: number; cy: number; r: number; fill: string }) {
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r={r} fill={fill} />
+      <path d={`M${cx} ${cy} m ${-r * 0.45} 0 a ${r * 0.45} ${r * 0.45} 0 1 1 ${r * 0.9} 0`} fill="none" stroke={ART.deep} strokeWidth={Math.max(0.5, r * 0.18)} opacity="0.45" strokeLinecap="round" />
+      <path d={`M${cx} ${cy} q ${r * 0.4} ${-r * 0.3} 0 ${-r * 0.6}`} fill="none" stroke={ART.deep} strokeWidth={Math.max(0.5, r * 0.16)} opacity="0.4" strokeLinecap="round" />
+    </g>
+  );
+}
+
+// עלה ירוק עדין
+function Leaf({ cx, cy, rot, len = 9 }: { cx: number; cy: number; rot: number; len?: number }) {
+  return (
+    <path d={`M${cx} ${cy} q ${len * 0.5} ${-len * 0.45} ${len} 0 q ${-len * 0.5} ${len * 0.45} ${-len} 0 Z`} fill={ART.sage} opacity="0.7" transform={`rotate(${rot} ${cx} ${cy})`} />
+  );
+}
+
+// זר / חבק פרחים עשיר: ורדים + עלים + עלווה נשפכת מטה
+function Bouquet({ cx, cy, s = 1, accent = ART.gold }: { cx: number; cy: number; s?: number; accent?: string }) {
+  const leaves: [number, number, number][] = [[-9, -3, -35], [9, -4, 35], [-8, 7, -70], [8, 8, 70], [0, -10, 0], [-3, 9, -115], [4, 9, 115]];
+  const roses: [number, number, number, string][] = [[0, 0, 5, accent], [-6, -1, 3.6, ART.soft], [6, -2, 4, ART.soft], [-3, 5, 3.4, accent], [4, 5, 3.2, ART.soft], [0, -6, 3.4, accent], [-7, 4, 2.6, ART.soft], [7, 3, 2.8, accent]];
+  return (
+    <g transform={`translate(${cx} ${cy}) scale(${s})`}>
+      <path d="M-2 6 q-4 12 -7 22" fill="none" stroke={ART.sage} strokeWidth="1" opacity="0.6" />
+      <path d="M3 6 q3 13 6 24" fill="none" stroke={ART.sage} strokeWidth="1" opacity="0.6" />
+      <path d="M0 7 q0 14 0 26" fill="none" stroke={ART.sage} strokeWidth="0.9" opacity="0.5" />
+      {leaves.map(([lx, ly, r], i) => <Leaf key={`l${i}`} cx={lx} cy={ly} rot={r} />)}
+      {roses.map(([rx, ry, rr, f], i) => <Rose key={`r${i}`} cx={rx} cy={ry} r={rr} fill={f} />)}
+    </g>
+  );
+}
+
+// אשכול גיבסניות — נקודות עדינות
+function Gyps({ cx, cy, s = 1 }: { cx: number; cy: number; s?: number }) {
+  const dots = Array.from({ length: 24 }).map((_, i) => {
+    const a = (i / 24) * Math.PI * 2;
+    const rad = 3.5 + (i % 4) * 2.6;
+    return [Math.cos(a) * rad, Math.sin(a) * rad * 0.92, i % 3 === 0 ? 1.9 : 1.2] as const;
+  });
+  return (
+    <g transform={`translate(${cx} ${cy}) scale(${s})`}>
+      <path d="M-2 4 q-3 12 -5 22" fill="none" stroke={ART.sage} strokeWidth="0.9" opacity="0.5" />
+      <path d="M3 4 q2 12 4 22" fill="none" stroke={ART.sage} strokeWidth="0.9" opacity="0.5" />
+      {dots.map(([dx, dy, r], i) => <circle key={i} cx={dx} cy={dy} r={r} fill={i % 2 ? ART.gold : ART.soft} opacity="0.9" />)}
+    </g>
+  );
+}
+
+// נר עמוד עם להבה
+function PillarCandle({ x, base, h, w = 7 }: { x: number; base: number; h: number; w?: number }) {
+  return (
+    <g>
+      <rect x={x - w / 2} y={base - h} width={w} height={h} rx="2" fill={ART.cream} stroke={ART.soft} />
+      <ellipse cx={x} cy={base - h} rx={w / 2} ry="1.6" fill={ART.soft} opacity="0.6" />
+      <line x1={x} y1={base - h} x2={x} y2={base - h - 3} stroke={ART.deep} strokeWidth="0.8" />
+      <path d={`M${x} ${base - h - 3} q 3 -3 0 -7 q -3 4 0 7`} fill={ART.gold} />
+    </g>
+  );
+}
+
+// --- איורים וקטוריים לכל סוג חבילה (קו-ארט נאמן לפלאיירים) ---
 function renderPackageSVG(type: string) {
-  const gold = '#B29259';
-  const soft = '#D8C29A';
-  const cream = '#FAF7F2';
+  const { gold, soft, cream } = ART;
 
-  // איור חופה בגדלים משתנים (S / M / L / בדים נשפכים)
-  const chuppah = (flowers: number) => (
-    <svg width="100%" height="92" viewBox="0 0 200 92" role="img" aria-label="עיצוב חופה">
-      <rect x="38" y="20" width="7" height="62" rx="3" fill={gold} />
-      <rect x="155" y="20" width="7" height="62" rx="3" fill={gold} />
-      <path d="M41 22 Q100 4 158 22" stroke={gold} strokeWidth="6" fill="none" strokeLinecap="round" />
-      <path d="M55 22 Q100 36 145 22 L145 30 Q100 46 55 30 Z" fill={soft} opacity="0.7" />
-      {Array.from({ length: flowers }).map((_, i) => {
-        const x = 50 + (i * (100 / Math.max(flowers - 1, 1)));
-        return <circle key={i} cx={x} cy={24} r="5" fill={gold} opacity="0.9" />;
-      })}
-      <line x1="20" y1="82" x2="180" y2="82" stroke={gold} strokeWidth="2" opacity="0.4" />
+  // מסגרת חופה משותפת: עמודים, קורה עליונה ורצפה
+  const chuppahFrame = (children: React.ReactNode) => (
+    <svg width="100%" height="104" viewBox="0 0 200 108" role="img" aria-label="עיצוב חופה">
+      <path d="M40 26 Q100 18 160 26" stroke={gold} strokeWidth="3.4" fill="none" strokeLinecap="round" />
+      <rect x="44" y="25" width="4.5" height="72" rx="2" fill={gold} />
+      <rect x="151.5" y="25" width="4.5" height="72" rx="2" fill={gold} />
+      {children}
+      <line x1="22" y1="98" x2="178" y2="98" stroke={gold} strokeWidth="1.6" opacity="0.4" />
     </svg>
   );
 
-  // איור בר חינה / שוק
+  // איור חופה קלאסית: 2 בדים נשפכים בצדדים + תליית בד עליונה + 2 זרי ורדים
+  const chuppahCurtains = (withDrapes: boolean) =>
+    chuppahFrame(
+      <>
+        {withDrapes && (
+          <g opacity="0.6" fill={soft} stroke={gold} strokeOpacity="0.35" strokeWidth="0.6">
+            {/* תליית בד מרכזית (swag) */}
+            <path d="M50 28 Q100 60 150 28 Q138 44 100 50 Q62 44 50 28 Z" />
+            {/* פאנל בד שמאל */}
+            <path d="M52 28 Q44 64 54 95 Q60 70 60 30 Z" />
+            {/* פאנל בד ימין */}
+            <path d="M148 28 Q156 64 146 95 Q140 70 140 30 Z" />
+          </g>
+        )}
+        <Bouquet cx={52} cy={34} s={1.15} />
+        <Bouquet cx={148} cy={34} s={1.15} />
+      </>
+    );
+
+  // איור חופת בדים נשפכים: תליית בד רחבה + 4 בדים זורמים + 2 זרים גדולים
+  const chuppahDrapes = () =>
+    chuppahFrame(
+      <>
+        <g opacity="0.6" fill={soft} stroke={gold} strokeOpacity="0.35" strokeWidth="0.6">
+          {/* תליית בד רחבה */}
+          <path d="M48 28 Q100 66 152 28 Q138 48 100 56 Q62 48 48 28 Z" />
+          {/* 4 בדים נשפכים */}
+          <path d="M52 28 Q44 66 54 95 Q60 72 60 30 Z" />
+          <path d="M74 30 Q70 64 78 95 Q84 70 82 32 Z" />
+          <path d="M126 30 Q130 64 122 95 Q116 70 118 32 Z" />
+          <path d="M148 28 Q156 66 146 95 Q140 72 140 30 Z" />
+        </g>
+        <Bouquet cx={52} cy={34} s={1.3} />
+        <Bouquet cx={148} cy={34} s={1.3} />
+      </>
+    );
+
+  // איור בר חינה מרוקאי: מגדל עוגיות תלת-קומתי + קומקום נחושת + כוסות + נרות
   const henna = () => (
-    <svg width="100%" height="92" viewBox="0 0 200 92" role="img" aria-label="בר חינה">
-      <rect x="30" y="55" width="140" height="14" rx="4" fill={gold} />
-      <rect x="40" y="40" width="22" height="16" rx="3" fill={soft} />
-      <rect x="72" y="34" width="22" height="22" rx="3" fill={gold} opacity="0.85" />
-      <rect x="104" y="40" width="22" height="16" rx="3" fill={soft} />
-      <circle cx="150" cy="46" r="11" fill={gold} opacity="0.85" />
-      <rect x="36" y="69" width="128" height="8" rx="3" fill={cream} stroke={soft} />
-    </svg>
-  );
-
-  // איור אירוע / בלונים
-  const event = () => (
-    <svg width="100%" height="92" viewBox="0 0 200 92" role="img" aria-label="עיצוב אירוע">
-      <circle cx="70" cy="28" r="14" fill={gold} opacity="0.85" />
-      <circle cx="96" cy="20" r="11" fill={soft} />
-      <circle cx="120" cy="30" r="13" fill={gold} opacity="0.7" />
-      <path d="M70 42 L96 31 M96 31 L120 43" stroke={gold} strokeWidth="1.5" opacity="0.6" />
-      <rect x="60" y="60" width="80" height="10" rx="4" fill={gold} />
-      <line x1="78" y1="50" x2="78" y2="60" stroke={soft} strokeWidth="2" />
-      <line x1="118" y1="50" x2="118" y2="60" stroke={soft} strokeWidth="2" />
-    </svg>
-  );
-
-  // איור גיבסניות (ענן פרחים רך)
-  const gypsophila = () => (
-    <svg width="100%" height="92" viewBox="0 0 200 92" role="img" aria-label="עיצוב גיבסניות">
-      <rect x="40" y="22" width="6" height="58" rx="3" fill={gold} />
-      <rect x="154" y="22" width="6" height="58" rx="3" fill={gold} />
-      <path d="M43 24 Q100 6 157 24" stroke={gold} strokeWidth="5" fill="none" strokeLinecap="round" />
-      {Array.from({ length: 26 }).map((_, i) => (
-        <circle
-          key={i}
-          cx={48 + (i % 13) * 8.5}
-          cy={i < 13 ? 22 : 30}
-          r="3"
-          fill={soft}
-          opacity="0.85"
-        />
+    <svg width="100%" height="104" viewBox="0 0 200 108" role="img" aria-label="בר חינה מרוקאי">
+      {/* מגדל עוגיות */}
+      <ellipse cx="66" cy="84" rx="34" ry="7" fill={soft} stroke={gold} />
+      {[44, 55, 66, 77, 88].map((cx, i) => <circle key={`c1${i}`} cx={cx} cy={81} r="3.4" fill={gold} opacity="0.85" />)}
+      <rect x="64" y="58" width="4" height="24" fill={gold} />
+      <ellipse cx="66" cy="58" rx="22" ry="5" fill={soft} stroke={gold} />
+      {[52, 60, 66, 72, 80].map((cx, i) => <circle key={`c2${i}`} cx={cx} cy={55} r="3" fill={gold} opacity="0.85" />)}
+      <rect x="64.5" y="42" width="3" height="16" fill={gold} />
+      <ellipse cx="66" cy="42" rx="11" ry="3.4" fill={soft} stroke={gold} />
+      {[60, 66, 72].map((cx, i) => <circle key={`c3${i}`} cx={cx} cy={39.5} r="2.6" fill={gold} opacity="0.85" />)}
+      <circle cx="66" cy="34" r="2.2" fill={gold} />
+      {/* קומקום מרוקאי */}
+      <ellipse cx="142" cy="86" rx="20" ry="3.6" fill={cream} stroke={soft} />
+      <path d="M130 80 Q127 60 142 58 Q157 60 154 80 Z" fill={gold} opacity="0.9" />
+      <path d="M133 58 L151 58 L142 47 Z" fill={gold} />
+      <circle cx="142" cy="45" r="2.4" fill={ART.deep} />
+      <path d="M154 64 Q167 60 164 82" fill="none" stroke={gold} strokeWidth="2.4" strokeLinecap="round" />
+      <path d="M130 66 Q120 68 124 80" fill="none" stroke={gold} strokeWidth="2.4" strokeLinecap="round" />
+      {/* כוסות תה */}
+      {[120, 170].map((x, i) => (
+        <path key={`tg${i}`} d={`M${x - 4} 76 L${x - 3} 86 L${x + 3} 86 L${x + 4} 76 Z`} fill={soft} stroke={gold} strokeWidth="0.6" />
       ))}
+      {/* נרות אווירה */}
+      <PillarCandle x={107} base={86} h={18} w={6} />
+      <PillarCandle x={24} base={86} h={12} w={6} />
     </svg>
   );
+
+  // איור חצי-קשת בלונים (שימוש חוזר לבלון ארט ול-VIP)
+  const balloonArch = (cxBase: number, yBase: number, radiusX: number, radiusY: number, count: number, prefix: string) =>
+    Array.from({ length: count }).map((_, i) => {
+      const angle = Math.PI * (i / (count - 1)); // 0..PI => קשת מלאה
+      return (
+        <circle
+          key={`${prefix}-${i}`}
+          cx={cxBase - Math.cos(angle) * radiusX}
+          cy={yBase - Math.sin(angle) * radiusY}
+          r={5 + (i % 3)}
+          fill={i % 2 ? gold : soft}
+          opacity="0.9"
+        />
+      );
+    });
+
+  // איור "קלאסיק" לאירועים: 2 אגרטלים עם זרי ורדים + צילינדר נר צף במרכז
+  const eventClassic = () => (
+    <svg width="100%" height="104" viewBox="0 0 200 108" role="img" aria-label="עיצוב קלאסי לאירוע">
+      {/* צילינדר נר צף מרכזי */}
+      <rect x="93" y="52" width="15" height="38" rx="2" fill={cream} stroke={soft} />
+      <ellipse cx="100.5" cy="52" rx="7.5" ry="2.4" fill="none" stroke={soft} />
+      <rect x="97.5" y="66" width="6" height="10" rx="1.5" fill={soft} />
+      <path d="M100.5 62 q3 3 0 7 q-3 -3 0 -7" fill={gold} />
+      {/* 2 אגרטלים עם זרי ורדים */}
+      {[58, 143].map((x, i) => (
+        <g key={`vz${i}`}>
+          <Bouquet cx={x} cy={46} s={0.9} />
+          <path d={`M${x - 6} 62 Q${x - 7} 82 ${x - 3} 88 L${x + 3} 88 Q${x + 7} 82 ${x + 6} 62 Z`} fill={cream} stroke={soft} />
+        </g>
+      ))}
+      <line x1="24" y1="92" x2="176" y2="92" stroke={gold} strokeWidth="1.6" opacity="0.4" />
+    </svg>
+  );
+
+  // איור "בלון ארט": שער בלונים חגיגי
+  const eventBalloon = () => (
+    <svg width="100%" height="104" viewBox="0 0 200 108" role="img" aria-label="שער בלונים">
+      {balloonArch(100, 92, 66, 64, 13, 'arch')}
+      <line x1="34" y1="92" x2="166" y2="92" stroke={gold} strokeWidth="1.6" opacity="0.4" />
+    </svg>
+  );
+
+  // איור "הצגה" (VIP): עמדת צילום — קיר רקע מוקף בקשת בלונים
+  const eventVip = () => (
+    <svg width="100%" height="104" viewBox="0 0 200 108" role="img" aria-label="עמדת צילום VIP">
+      <rect x="72" y="34" width="56" height="50" rx="6" fill={cream} stroke={gold} strokeWidth="1.5" />
+      <circle cx="100" cy="56" r="10" fill="none" stroke={soft} strokeWidth="1.5" />
+      {balloonArch(100, 88, 72, 66, 11, 'vip')}
+      <line x1="28" y1="88" x2="172" y2="88" stroke={gold} strokeWidth="1.6" opacity="0.4" />
+    </svg>
+  );
+
+  // איור חופת גיבסניות: בד עדין בצדדים + 2 אשכולות גיבסניות
+  const gypsophila = () =>
+    chuppahFrame(
+      <>
+        <g opacity="0.5" fill={soft} stroke={gold} strokeOpacity="0.3" strokeWidth="0.5">
+          <path d="M52 28 Q46 64 56 95 Q60 70 60 30 Z" />
+          <path d="M148 28 Q154 64 144 95 Q140 70 140 30 Z" />
+        </g>
+        <Gyps cx={52} cy={36} s={1.15} />
+        <Gyps cx={148} cy={36} s={1.15} />
+      </>
+    );
 
   switch (type) {
     case 'chuppah-s':
-      return chuppah(4);
     case 'chuppah-m':
-      return chuppah(6);
     case 'chuppah-l':
-      return chuppah(9);
+      return chuppahCurtains(true);
     case 'chuppah-drapes':
-      return chuppah(7);
+      return chuppahDrapes();
     case 'gypsophila':
       return gypsophila();
     case 'henna':
       return henna();
+    case 'event-classic':
+      return eventClassic();
+    case 'event-balloon':
+      return eventBalloon();
+    case 'event-vip':
+      return eventVip();
     case 'event':
-      return event();
+      return eventClassic();
     default:
       return (
         <div className="flex items-center justify-center h-[92px]">
@@ -347,6 +555,48 @@ function renderPackageSVG(type: string) {
         </div>
       );
   }
+}
+
+// איור בחירת עיצוב שולחן: קומפוזיציה (3 בקבוקוני פרחים + 2 נרות צפים) / סידור עגול בספוג
+function renderTableChoiceSVG() {
+  const gold = '#B29259';
+  const soft = '#D8C29A';
+  const cream = '#FAF7F2';
+  return (
+    <svg width="100%" height="104" viewBox="0 0 240 104" role="img" aria-label="בחירת עיצוב שולחן">
+      {/* קומפוזיציה: 3 בקבוקוני פרחים */}
+      {[30, 48, 66].map((x, i) => {
+        const top = i === 1 ? 22 : 30;
+        return (
+          <g key={`b${i}`}>
+            <line x1={x} y1={top} x2={x} y2={62} stroke={soft} strokeWidth="1.5" />
+            <circle cx={x} cy={top} r="4.5" fill={gold} opacity="0.9" />
+            <circle cx={x - 4} cy={top + 4} r="2.6" fill={soft} />
+            <circle cx={x + 4} cy={top + 4} r="2.6" fill={soft} />
+            <rect x={x - 3} y={62} width="6" height="16" rx="2" fill={cream} stroke={soft} />
+          </g>
+        );
+      })}
+      {/* 2 נרות צפים */}
+      {[18, 80].map((x, i) => (
+        <g key={`c${i}`}>
+          <ellipse cx={x} cy={84} rx="9" ry="3.5" fill="none" stroke={gold} strokeWidth="1" opacity="0.5" />
+          <rect x={x - 3} y={76} width="6" height="8" rx="1.5" fill={soft} />
+          <path d={`M${x} 70 q3 3 0 6 q-3 -3 0 -6`} fill={gold} />
+        </g>
+      ))}
+      {/* קו סלש לבחירה (זה או זה) */}
+      <line x1="116" y1="20" x2="130" y2="86" stroke={gold} strokeWidth="3" strokeLinecap="round" />
+      {/* סידור עגול בספוג */}
+      <g>
+        <path d="M150 60 Q186 26 222 60 Z" fill={soft} opacity="0.55" />
+        {[[164, 50], [186, 42], [208, 50], [158, 56], [186, 50], [214, 56], [172, 46], [200, 46]].map(([x, y], i) => (
+          <circle key={`s${i}`} cx={x} cy={y} r="4.5" fill={gold} opacity="0.9" />
+        ))}
+        <ellipse cx="186" cy="62" rx="38" ry="8" fill={cream} stroke={soft} />
+      </g>
+    </svg>
+  );
 }
 
 export default function App() {
@@ -376,6 +626,13 @@ export default function App() {
   const [customUpgrades, setCustomUpgrades] = useState<Upgrade[]>([]); // [{ id, description, price }]
   const [newUpgradeDesc, setNewUpgradeDesc] = useState('');
   const [newUpgradePrice, setNewUpgradePrice] = useState('');
+
+  // קוד קופון להטבת ₪500 לשדרוג העיצוב
+  const [couponCode, setCouponCode] = useState('');
+
+  // פריטי תוספת שנבחרו (id → כמות) והפריט שעליו ממומשת הטבת ה-₪500
+  const [addonQty, setAddonQty] = useState<Record<string, number>>({});
+  const [giftAddonId, setGiftAddonId] = useState('');
 
   // שגיאות תקינות
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -408,6 +665,29 @@ export default function App() {
 
   const selectedPackage = PACKAGES.find(p => p.id === selectedPackageId) || PACKAGES[0];
 
+  const isWeddingPackage = selectedPackage.category === CATEGORIES.WEDDING;
+
+  // פריטי התוספת שנבחרו (כמות > 0) והסכום שלהם
+  const selectedAddons = isWeddingPackage
+    ? WEDDING_ADDONS
+        .map(a => ({ ...a, qty: addonQty[a.id] || 0 }))
+        .filter(a => a.qty > 0)
+    : [];
+  const addonsTotal = selectedAddons.reduce((sum, a) => sum + a.price * a.qty, 0);
+
+  // פריטים שזכאים להטבת ה-₪500: נבחרו ואינם כוללים פרחים
+  const giftEligibleAddons = selectedAddons.filter(a => !a.hasFlowers);
+
+  // האם החבילה זכאית להטבת ₪500 (חבילות עם ההטבה בלעדית) והאם הוזן קוד תקין
+  const isCouponEligible = selectedPackage.benefits.includes('₪500');
+  const isCouponValid = isCouponEligible && couponCode.trim() === COUPON_CODE;
+
+  // הפריט שעליו ממומשת ההטבה (חייב להיות זכאי) וההנחה בפועל (עד ₪500, לא יותר משווי הפריט)
+  const giftAddon = giftEligibleAddons.find(a => a.id === giftAddonId);
+  const couponDiscount = isCouponValid && giftAddon
+    ? Math.min(COUPON_VALUE, giftAddon.price * giftAddon.qty)
+    : 0;
+
   // חישוב מחירים
   const getPricing = () => {
     let basePrice = selectedPackage.price;
@@ -417,12 +697,14 @@ export default function App() {
 
     const upgradesTotal = customUpgrades.reduce((sum, item) => sum + (item.price || 0), 0);
     const deliveryPrice = includeDelivery ? 500 : 0;
-    const totalPrice = basePrice + upgradesTotal + deliveryPrice;
+    const totalPrice = basePrice + upgradesTotal + addonsTotal + deliveryPrice - couponDiscount;
 
     return {
       basePrice,
       upgradesTotal,
+      addonsTotal,
       deliveryPrice,
+      couponDiscount,
       totalPrice
     };
   };
@@ -449,14 +731,33 @@ export default function App() {
     setCustomUpgrades(customUpgrades.filter(item => item.id !== id));
   };
 
+  // עדכון כמות של פריט תוספת מהקטלוג
+  const updateAddonQty = (id: string, value: string) => {
+    const n = Math.max(0, Math.floor(Number(value) || 0));
+    setAddonQty(prev => ({ ...prev, [id]: n }));
+  };
+
+  // תיאור פריט תוספת לשורת הזמנה (כולל כמות/יחידה)
+  const addonLineDescription = (a: Addon & { qty: number }) =>
+    a.unit
+      ? `${a.name} — ${a.qty} ${a.unit}`
+      : a.qty > 1
+        ? `${a.name} × ${a.qty}`
+        : a.name;
+
   // בדיקת תקינות טופס שלב 1 (עם 2 מספרי טלפון חובה)
   const validateStep = (step: number) => {
     const tempErrors: Record<string, string> = {};
     if (step === 1) {
-      if (!clientInfo.groomName.trim()) tempErrors.groomName = 'חובה להזין שם חתן';
-      if (!clientInfo.brideName.trim()) tempErrors.brideName = 'חובה להזין שם כלה';
-      if (!clientInfo.groomPhone.trim()) tempErrors.groomPhone = 'חובה להזין מספר טלפון חתן';
-      if (!clientInfo.bridePhone.trim()) tempErrors.bridePhone = 'חובה להזין מספר טלפון כלה';
+      const groomNameTrimmed = clientInfo.groomName.trim();
+      if (!groomNameTrimmed) tempErrors.groomName = 'חובה להזין שם בעל האירוע';
+      else if (groomNameTrimmed.split(/\s+/).length < 2) tempErrors.groomName = 'חובה להזין שם פרטי ושם משפחה';
+
+      const brideNameTrimmed = clientInfo.brideName.trim();
+      if (!brideNameTrimmed) tempErrors.brideName = 'חובה להזין שם בעלת האירוע';
+      else if (brideNameTrimmed.split(/\s+/).length < 2) tempErrors.brideName = 'חובה להזין שם פרטי ושם משפחה';
+      if (!clientInfo.groomPhone.trim()) tempErrors.groomPhone = 'חובה להזין מספר טלפון בעל האירוע';
+      if (!clientInfo.bridePhone.trim()) tempErrors.bridePhone = 'חובה להזין מספר טלפון בעלת האירוע';
       if (!clientInfo.eventDate) tempErrors.eventDate = 'חובה להזין תאריך אירוע';
       if (!clientInfo.eventLocation.trim()) tempErrors.eventLocation = 'חובה להזין מיקום אולם/אירוע';
       if (!clientInfo.email.trim()) tempErrors.email = 'חובה להזין כתובת אימייל';
@@ -519,10 +820,15 @@ export default function App() {
           compositesCount: clientInfo.compositesCount,
           spongeCount: clientInfo.spongeCount,
           includeDelivery,
-          upgrades: customUpgrades.map(u => ({ description: u.description, price: u.price })),
+          upgrades: [
+            ...customUpgrades.map(u => ({ description: u.description, price: u.price })),
+            ...selectedAddons.map(a => ({ description: addonLineDescription(a), price: a.price * a.qty }))
+          ],
           basePrice: pricing.basePrice,
-          upgradesTotal: pricing.upgradesTotal,
+          upgradesTotal: pricing.upgradesTotal + pricing.addonsTotal,
           deliveryPrice: pricing.deliveryPrice,
+          couponCode: isCouponValid ? couponCode.trim() : '',
+          couponDiscount: pricing.couponDiscount,
           totalPrice: pricing.totalPrice,
           groomSignDate,
           brideSignDate
@@ -715,16 +1021,16 @@ export default function App() {
             <div className="border-b border-gray-100 pb-4">
               <h2 className="text-xl font-bold text-[#8C6D3F] flex items-center gap-2">
                 <Users className="w-5.5 h-5.5 text-[#B29259]" />
-                הסכם והזמנה לחתונה - פרטי האירוע
+                הזמנת חבילת עיצוב לאירוע
               </h2>
-              <p className="text-xs text-gray-500 mt-1">מלאו את פרטי החתן והכלה (שני מספרי הטלפון הינם חובה להשלמת ההסכם)</p>
+              <p className="text-xs text-gray-500 mt-1">מלאו את פרטי בעל ובעלת האירוע (שני מספרי הטלפון הינם חובה להשלמת ההסכם)</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
 
-              {/* שם החתן */}
+              {/* שם בעל האירוע */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">שם החתן *</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">שם בעל האירוע *</label>
                 <div className="relative">
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                     <User className="w-4 h-4" />
@@ -733,16 +1039,16 @@ export default function App() {
                     type="text"
                     value={clientInfo.groomName}
                     onChange={(e) => setClientInfo({ ...clientInfo, groomName: e.target.value })}
-                    placeholder="שם מלא של החתן"
+                    placeholder="שם פרטי ושם משפחה של בעל האירוע"
                     className={`w-full pr-9 pl-3 py-2.5 bg-[#FAF7F2] border ${errors.groomName ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all`}
                   />
                 </div>
                 {errors.groomName && <p className="text-[10px] text-red-500 mt-1">{errors.groomName}</p>}
               </div>
 
-              {/* שם הכלה */}
+              {/* שם בעלת האירוע */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">שם הכלה *</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">שם בעלת האירוע *</label>
                 <div className="relative">
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                     <User className="w-4 h-4" />
@@ -751,16 +1057,16 @@ export default function App() {
                     type="text"
                     value={clientInfo.brideName}
                     onChange={(e) => setClientInfo({ ...clientInfo, brideName: e.target.value })}
-                    placeholder="שם מלא של הכלה"
+                    placeholder="שם פרטי ושם משפחה של בעלת האירוע"
                     className={`w-full pr-9 pl-3 py-2.5 bg-[#FAF7F2] border ${errors.brideName ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all`}
                   />
                 </div>
                 {errors.brideName && <p className="text-[10px] text-red-500 mt-1">{errors.brideName}</p>}
               </div>
 
-              {/* טלפון חתן - חובה */}
+              {/* טלפון בעל האירוע - חובה */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">טלפון החתן *</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">טלפון בעל האירוע *</label>
                 <div className="relative">
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                     <Phone className="w-4 h-4" />
@@ -769,16 +1075,16 @@ export default function App() {
                     type="tel"
                     value={clientInfo.groomPhone}
                     onChange={(e) => setClientInfo({ ...clientInfo, groomPhone: e.target.value })}
-                    placeholder="טלפון נייד חתן"
+                    placeholder="טלפון נייד בעל האירוע"
                     className={`w-full pr-9 pl-3 py-2.5 bg-[#FAF7F2] border ${errors.groomPhone ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all`}
                   />
                 </div>
                 {errors.groomPhone && <p className="text-[10px] text-red-500 mt-1">{errors.groomPhone}</p>}
               </div>
 
-              {/* טלפון כלה - חובה */}
+              {/* טלפון בעלת האירוע - חובה */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">טלפון הכלה *</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">טלפון בעלת האירוע *</label>
                 <div className="relative">
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                     <Phone className="w-4 h-4" />
@@ -787,7 +1093,7 @@ export default function App() {
                     type="tel"
                     value={clientInfo.bridePhone}
                     onChange={(e) => setClientInfo({ ...clientInfo, bridePhone: e.target.value })}
-                    placeholder="טלפון נייד כלה"
+                    placeholder="טלפון נייד בעלת האירוע"
                     className={`w-full pr-9 pl-3 py-2.5 bg-[#FAF7F2] border ${errors.bridePhone ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all`}
                   />
                 </div>
@@ -882,6 +1188,28 @@ export default function App() {
               ))}
             </div>
 
+            {/* בחירת כמות שולחנות לאירועים — לפני הצגת החבילות */}
+            {activeCategory === CATEGORIES.EVENTS && (
+              <div className="bg-white p-4 rounded-2xl border border-[#EAE3D2] shadow-sm">
+                <p className="text-xs font-bold text-[#8C6D3F] mb-2">כמה שולחנות יש באירוע שלכם? בחרו כדי לראות את מחירי החבילות המתאימים:</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[10, 20, 30].map((tier) => (
+                    <button
+                      key={tier}
+                      onClick={() => setSelectedTableTier(tier)}
+                      className={`py-2.5 px-2 rounded-xl text-xs font-bold transition-all ${
+                        selectedTableTier === tier
+                          ? 'bg-[#8C6D3F] text-white shadow-sm'
+                          : 'bg-[#FAF7F2] border border-gray-200 text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      {tier} שולחנות
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* גריד חבילות דינמי */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {PACKAGES.filter(p => p.category === activeCategory).map((pkg) => {
@@ -928,66 +1256,29 @@ export default function App() {
                       <p className="text-[11px] font-bold text-[#8C6D3F] mb-2">{pkg.subtitle}</p>
                       <p className="text-xs text-gray-500 leading-relaxed mb-4">{pkg.description}</p>
 
-                      {/* בורר שולחנות לחבילות אירועים */}
-                      {pkg.pricingTiers && isSelected && (
-                        <div className="mb-4 p-3 bg-stone-50 rounded-xl border border-[#EAE3D2]" onClick={(e) => e.stopPropagation()}>
-                          <p className="text-[10px] font-bold text-[#8C6D3F] mb-1.5">בחרו את היקף האירוע (כמות שולחנות):</p>
-                          <div className="grid grid-cols-3 gap-1.5">
-                            {[10, 20, 30].map((tier) => (
-                              <button
-                                key={tier}
-                                onClick={() => setSelectedTableTier(tier)}
-                                className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
-                                  selectedTableTier === tier
-                                    ? 'bg-[#8C6D3F] text-white shadow-sm'
-                                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'
-                                }`}
-                              >
-                                {tier} שולחנות
-                                <span className="block text-[9px] font-normal opacity-90">₪{pkg.pricingTiers?.[tier]?.toLocaleString()}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
                       {/* מפרט חבילה */}
                       <div className="bg-[#FAF7F2] rounded-xl p-3 space-y-2 border border-[#EAE3D2] text-[11px]">
                         <p className="font-bold text-gray-700 border-b border-gray-200 pb-1">מה כלול בחבילה?</p>
 
-                        {pkg.details.chuppah && (
-                          <div>
-                            <span className="font-bold text-[#8C6D3F]">עיצוב חופה:</span>
-                            <ul className="list-disc list-inside text-gray-600 mr-1.5 space-y-0.5">
-                              {pkg.details.chuppah.map((item, i) => <li key={i}>{item}</li>)}
-                            </ul>
-                          </div>
-                        )}
-
-                        {pkg.details.tables && (
-                          <div>
-                            <span className="font-bold text-[#8C6D3F]">עיצוב שולחן אורחים:</span>
-                            <ul className="list-disc list-inside text-gray-600 mr-1.5 space-y-0.5">
-                              {pkg.details.tables.map((item, i) => <li key={i}>{item}</li>)}
-                            </ul>
-                          </div>
-                        )}
-
-                        {pkg.details.bar && (
-                          <div>
-                            <span className="font-bold text-[#8C6D3F]">עמדות אירוח ובר:</span>
-                            <ul className="list-disc list-inside text-gray-600 mr-1.5 space-y-0.5">
-                              {pkg.details.bar.map((item, i) => <li key={i}>{item}</li>)}
-                            </ul>
-                          </div>
-                        )}
+                        {DETAIL_SECTIONS.map(({ key, label }) => {
+                          const items = pkg.details[key];
+                          if (!items || items.length === 0) return null;
+                          return (
+                            <div key={key}>
+                              <span className="font-bold text-[#8C6D3F]">{label}</span>
+                              <ul className="list-disc list-inside text-gray-600 mr-1.5 space-y-0.5">
+                                {items.map((item, i) => <li key={i}>{item}</li>)}
+                              </ul>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
 
                     <div className="pt-3 border-t border-gray-100 mt-4 flex items-center justify-between">
                       <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
                         <Gift className="w-3 h-3" />
-                        {pkg.benefits}
+                        {pkg.benefits}{pkg.benefits.includes('₪500') ? ' (בהזנת קוד קופון)' : ''}
                       </span>
                       <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
                         isSelected ? 'border-[#B29259] bg-[#B29259]' : 'border-gray-300'
@@ -1004,29 +1295,40 @@ export default function App() {
             {activeCategory === CATEGORIES.WEDDING && (
               <div className="bg-white p-6 rounded-2xl border border-[#EAE3D2] shadow-sm space-y-4">
                 <div className="border-b pb-2">
-                  <h3 className="text-sm font-bold text-[#8C6D3F]">פרטים לבחירה אישית (מתוך החוזה)</h3>
-                  <p className="text-[10px] text-gray-400">הגדירו את חלוקת סגנון השולחנות המבוקשת באירוע שלכם</p>
+                  <h3 className="text-sm font-bold text-[#8C6D3F]">בחירת עיצוב השולחנות</h3>
+                  <p className="text-[10px] text-gray-400">לכל שולחן בוחרים סגנון אחד: קומפוזיציה <span className="font-bold">או</span> סידור עגול בספוג. סמנו כמה שולחנות מכל סוג.</p>
+                </div>
+
+                {/* איור הבחירה: קומפוזיציה / סידור עגול בספוג */}
+                <div className="bg-[#FAF7F2] rounded-xl p-3 border border-[#EAE3D2]">
+                  <div className="max-w-md mx-auto">{renderTableChoiceSVG()}</div>
+                  <div className="flex justify-between text-[10px] font-bold text-[#8C6D3F] mt-1 px-2">
+                    <span>קומפוזיציה — 3 בקבוקוני פרחים + 2 נרות צפים</span>
+                    <span>סידור עגול בספוג</span>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">קומפוזיציות פרחים ונרות</label>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">כמה שולחנות עם קומפוזיציה (3 בקבוקונים + 2 נרות צפים)</label>
                     <input
                       type="number"
+                      min="0"
                       value={clientInfo.compositesCount}
                       onChange={(e) => setClientInfo({ ...clientInfo, compositesCount: e.target.value })}
-                      placeholder="הזינו מספר שולחנות"
+                      placeholder="מספר שולחנות"
                       className="w-full px-3 py-2.5 bg-[#FAF7F2] border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#B29259]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">סידור ספוג לשולחן</label>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">כמה שולחנות עם סידור עגול בספוג</label>
                     <input
                       type="number"
+                      min="0"
                       value={clientInfo.spongeCount}
                       onChange={(e) => setClientInfo({ ...clientInfo, spongeCount: e.target.value })}
-                      placeholder="הזינו מספר שולחנות"
+                      placeholder="מספר שולחנות"
                       className="w-full px-3 py-2.5 bg-[#FAF7F2] border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#B29259]"
                     />
                   </div>
@@ -1179,30 +1481,145 @@ export default function App() {
               </div>
             </div>
 
+            {/* תוספות ושדרוגים לחבילת עיצוב חתונה (קטלוג עם כמויות) */}
+            {isWeddingPackage && (
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EAE3D2] space-y-4">
+                <div>
+                  <h3 className="text-base font-bold text-[#8C6D3F] flex items-center gap-1.5">
+                    <Plus className="w-4.5 h-4.5 text-[#B29259]" />
+                    תוספות ושדרוגים לחבילת העיצוב
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-1">סמנו כמות לכל פריט שתרצו להוסיף — המחיר יתווסף לחבילת העיצוב.</p>
+                </div>
+
+                <div className="border border-gray-100 rounded-xl divide-y divide-gray-100">
+                  {WEDDING_ADDONS.map((a) => {
+                    const qty = addonQty[a.id] || 0;
+                    return (
+                      <div key={a.id} className={`flex items-center justify-between gap-3 p-3 ${qty > 0 ? 'bg-[#FAF7F2]' : ''}`}>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold text-gray-800">{a.name}</p>
+                          <p className="text-[10px] text-gray-500">
+                            ₪{a.price.toLocaleString()}{a.unit ? ` ${a.unit}` : ''}
+                            {!a.hasFlowers && isCouponValid && <span className="text-emerald-600 font-bold"> · ניתן לממש בהטבת ₪500</span>}
+                          </p>
+                        </div>
+                        <input
+                          type="number"
+                          min="0"
+                          value={qty || ''}
+                          onChange={(e) => updateAddonQty(a.id, e.target.value)}
+                          placeholder={a.unit ? 'מטרים' : 'כמות'}
+                          className="w-20 px-2 py-2 bg-white border border-gray-200 rounded-lg text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#B29259]"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {addonsTotal > 0 && (
+                  <div className="flex justify-between items-center text-xs font-bold text-[#8C6D3F] pt-1">
+                    <span>סה"כ תוספות שנבחרו:</span>
+                    <span>₪{addonsTotal.toLocaleString()}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* קוד קופון — ₪500 מתנה לפריט תוספת אחד (ללא פרחים) */}
+            {isCouponEligible && (
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EAE3D2] space-y-4">
+                <div>
+                  <h3 className="text-base font-bold text-[#8C6D3F] flex items-center gap-1.5">
+                    <Gift className="w-4.5 h-4.5 text-[#B29259]" />
+                    קוד קופון — הטבת ₪500 לשדרוג העיצוב
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-1">
+                    הזינו את קוד הקופון שקיבלתם. ההטבה אינה הנחה על החבילה, אלא ₪500 מתנה למימוש על פריט תוספת אחד שאינו כולל פרחים (מתוך רשימת התוספות שמעל).
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-600 mb-1">קוד קופון</label>
+                  <input
+                    type="text"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
+                    placeholder="הזינו קוד קופון"
+                    className={`w-full px-3 py-2.5 bg-[#FAF7F2] border ${
+                      isCouponValid
+                        ? 'border-emerald-400'
+                        : couponCode.trim()
+                          ? 'border-red-400'
+                          : 'border-gray-200'
+                    } rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#B29259]`}
+                  />
+                </div>
+
+                {couponCode.trim() && !isCouponValid && (
+                  <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-3 rounded-xl">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    קוד הקופון שהוזן אינו תקין.
+                  </div>
+                )}
+
+                {isCouponValid && (
+                  giftEligibleAddons.length > 0 ? (
+                    <div className="space-y-2">
+                      <label className="block text-[10px] font-bold text-gray-600">בחרו פריט אחד למימוש הטבת ה-₪500 (ללא פרחים):</label>
+                      <select
+                        value={giftAddonId}
+                        onChange={(e) => setGiftAddonId(e.target.value)}
+                        className="w-full px-3 py-2.5 bg-[#FAF7F2] border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#B29259]"
+                      >
+                        <option value="">— בחרו פריט —</option>
+                        {giftEligibleAddons.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {addonLineDescription(a)} (₪{(a.price * a.qty).toLocaleString()})
+                          </option>
+                        ))}
+                      </select>
+                      {couponDiscount > 0 && giftAddon && (
+                        <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold p-3 rounded-xl">
+                          <Check className="w-4 h-4 shrink-0" />
+                          מומשה הטבה של ₪{couponDiscount.toLocaleString()} על "{giftAddon.name}".
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold p-3 rounded-xl">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      הקוד תקין! הוסיפו פריט תוספת שאינו כולל פרחים כדי לממש את הטבת ה-₪500.
+                    </div>
+                  )
+                )}
+              </div>
+            )}
+
             {/* סיכום חוזה רשמי והזמנה לחתונה */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EAE3D2] space-y-6">
               <div className="text-center pb-4 border-b border-gray-100">
                 <FileText className="w-6 h-6 text-[#B29259] mx-auto mb-1" />
-                <h3 className="text-lg font-bold text-gray-800">הסכם והזמנה לחתונה - תנאי התקשרות</h3>
+                <h3 className="text-lg font-bold text-gray-800">הסכם והזמנה לאירוע - תנאי התקשרות</h3>
                 <p className="text-xs text-gray-400">אנא ודאו את הפרטים וקראו את מדיניות הביטולים לפני החתימה</p>
               </div>
 
               {/* כרטיסיית פרטי אירוע (חתן כלה) */}
               <div className="grid grid-cols-2 gap-3 bg-[#FAF7F2] p-4 rounded-xl border border-[#EAE3D2] text-xs">
                 <div>
-                  <span className="text-gray-400 font-medium">שם החתן:</span>
+                  <span className="text-gray-400 font-medium">שם בעל האירוע:</span>
                   <p className="font-bold text-gray-700 mt-0.5">{clientInfo.groomName}</p>
                 </div>
                 <div>
-                  <span className="text-gray-400 font-medium">שם הכלה:</span>
+                  <span className="text-gray-400 font-medium">שם בעלת האירוע:</span>
                   <p className="font-bold text-gray-700 mt-0.5">{clientInfo.brideName}</p>
                 </div>
                 <div>
-                  <span className="text-gray-400 font-medium">טלפון חתן:</span>
+                  <span className="text-gray-400 font-medium">טלפון בעל האירוע:</span>
                   <p className="font-bold text-gray-700 mt-0.5">{clientInfo.groomPhone}</p>
                 </div>
                 <div>
-                  <span className="text-gray-400 font-medium">טלפון כלה:</span>
+                  <span className="text-gray-400 font-medium">טלפון בעלת האירוע:</span>
                   <p className="font-bold text-gray-700 mt-0.5">{clientInfo.bridePhone}</p>
                 </div>
                 <div>
@@ -1241,10 +1658,24 @@ export default function App() {
                   </div>
                 ))}
 
+                {selectedAddons.map((a) => (
+                  <div key={a.id} className="flex justify-between items-center text-gray-600">
+                    <span>{addonLineDescription(a)}</span>
+                    <span className="font-bold text-gray-800">₪{(a.price * a.qty).toLocaleString()}</span>
+                  </div>
+                ))}
+
                 {includeDelivery && (
                   <div className="flex justify-between items-center text-gray-600">
                     <span>הובלה, הרכבה ופירוק בסיום האירוע</span>
                     <span className="font-bold text-gray-800">₪500</span>
+                  </div>
+                )}
+
+                {pricing.couponDiscount > 0 && giftAddon && (
+                  <div className="flex justify-between items-center text-emerald-600">
+                    <span>הטבת קופון — ₪500 מתנה על "{giftAddon.name}"</span>
+                    <span className="font-bold">−₪{pricing.couponDiscount.toLocaleString()}</span>
                   </div>
                 )}
 
@@ -1285,10 +1716,10 @@ export default function App() {
               {/* לוחות חתימה דיגיטליים כפולים (חתן וכלה) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                {/* חתימת חתן */}
+                {/* חתימת בעל האירוע */}
                 <div className="border border-dashed border-[#B29259]/60 rounded-xl p-4 bg-stone-50">
                   <div className="flex justify-between items-center mb-2">
-                    <label className="text-xs font-bold text-gray-800">חתימת החתן:</label>
+                    <label className="text-xs font-bold text-gray-800">חתימת בעל האירוע:</label>
                     {isGroomSigned && (
                       <button type="button" onClick={clearGroomSignature} className="text-[10px] text-red-500 hover:text-red-700 font-bold">נקה</button>
                     )}
@@ -1309,7 +1740,7 @@ export default function App() {
                     />
                     {!isGroomSigned && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-gray-400 text-[10px]">
-                        חתן חתום כאן
+                        בעל האירוע חתום כאן
                       </div>
                     )}
                   </div>
@@ -1324,10 +1755,10 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* חתימת כלה */}
+                {/* חתימת בעלת האירוע */}
                 <div className="border border-dashed border-[#B29259]/60 rounded-xl p-4 bg-stone-50">
                   <div className="flex justify-between items-center mb-2">
-                    <label className="text-xs font-bold text-gray-800">חתימת הכלה:</label>
+                    <label className="text-xs font-bold text-gray-800">חתימת בעלת האירוע:</label>
                     {isBrideSigned && (
                       <button type="button" onClick={clearBrideSignature} className="text-[10px] text-red-500 hover:text-red-700 font-bold">נקה</button>
                     )}
@@ -1348,7 +1779,7 @@ export default function App() {
                     />
                     {!isBrideSigned && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-gray-400 text-[10px]">
-                        כלה חתום כאן
+                        בעלת האירוע חתומה כאן
                       </div>
                     )}
                   </div>
@@ -1368,7 +1799,7 @@ export default function App() {
               {showSignatureError && (
                 <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-3 rounded-xl">
                   <AlertCircle className="w-4 h-4 shrink-0" />
-                  נדרשת חתימה של החתן ושל הכלה לאישור ההזמנה.
+                  נדרשת חתימה של בעל האירוע ושל בעלת האירוע לאישור ההזמנה.
                 </div>
               )}
             </div>

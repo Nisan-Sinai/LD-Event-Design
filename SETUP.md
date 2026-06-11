@@ -52,9 +52,32 @@ supabase functions deploy send-order-emails --no-verify-jwt
 
 זהו. מעכשיו כל הזמנה: נשמרת ב-DB → לירון מקבלת מייל עם כל הפרטים → הלקוח מקבל מייל אישור.
 
+## חלק ה׳ — סנכרון ליומן Google של לירון (אופציונלי)
+
+כשמוגדר, כל הזמנה חדשה נוספת אוטומטית כאירוע "כל היום" ביומן Google של לירון
+(בתאריך האירוע, עם שם בעלי האירוע, טלפונים, החבילה והמיקום). אם הסודות לא הוגדרו —
+הפונקציה פשוט מדלגת על השלב הזה.
+
+1. **Google Cloud Console** (https://console.cloud.google.com) → צרו/בחרו פרויקט →
+   **APIs & Services → Library** → הפעילו את **Google Calendar API**.
+2. **APIs & Services → Credentials → Create credentials → Service account** → צרו חשבון שירות.
+   פתחו אותו → **Keys → Add key → Create new key → JSON** והורידו את הקובץ.
+   מתוך ה-JSON צריך: `client_email` ו-`private_key`.
+3. **שיתוף היומן:** ב-Google Calendar של לירון → הגדרות היומן → **Share with specific people**
+   → הוסיפו את ה-`client_email` של חשבון השירות עם הרשאת **"Make changes to events"**.
+   את **Calendar ID** מעתיקים מאותו מסך (לרוב כתובת המייל של לירון, או מזהה `...@group.calendar.google.com`).
+4. הגדירו את הסודות (ה-private key כולל שורות — שמרו את ה-`\n` כפי שהוא ב-JSON):
+   ```bash
+   supabase secrets set GOOGLE_SA_EMAIL="xxx@yyy.iam.gserviceaccount.com"
+   supabase secrets set GOOGLE_SA_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+   supabase secrets set GOOGLE_CALENDAR_ID="liron@example.com"
+   ```
+5. פרסו מחדש את הפונקציה: `supabase functions deploy send-order-emails --no-verify-jwt`.
+
 ## בדיקה מהירה
 מלאו טופס לדוגמה ולחצו "אישור והדפסת ההזמנה". בדקו:
 - שורה חדשה ב-`orders`,
 - מייל אצל לירון,
-- מייל אישור בכתובת שהוזנה בטופס.
+- מייל אישור בכתובת שהוזנה בטופס,
+- אירוע חדש ביומן Google של לירון (אם הוגדר חלק ה׳).
 אם משהו לא עובד — **Edge Functions → send-order-emails → Logs**.
