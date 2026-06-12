@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { isSupabaseConfigured } from './lib/supabase';
 import { submitOrder } from './lib/submitOrder';
+import { calcPricing } from './lib/pricing';
 import { useI18n } from './i18n/i18n';
 import { categoryLabel, PACKAGE_EN, localizedAddonName, localizedUnit } from './i18n/content';
 import {
@@ -831,28 +832,19 @@ export default function App() {
   // חישוב מחירים
   const getPricing = () => {
     const basePrice = selectedPackages.reduce((sum, p) => sum + packagePrice(p), 0);
-
     const upgradesTotal = customUpgrades.reduce((sum, item) => sum + (item.price || 0), 0);
-    const deliveryPrice = includeDelivery ? 500 : 0;
-    const adminDiscount = isAdmin ? Math.max(0, parseFloat(adminInfo.manualDiscount) || 0) : 0;
-    const computedTotal = Math.max(
-      0,
-      basePrice + upgradesTotal + addonsTotal + deliveryPrice - couponDiscount - adminDiscount
-    );
-    const manualOverride =
-      isAdmin && adminInfo.manualTotal.trim() !== '' ? Math.max(0, parseFloat(adminInfo.manualTotal) || 0) : null;
-    const totalPrice = manualOverride !== null ? manualOverride : computedTotal;
-
-    return {
+    const adminDiscount = isAdmin ? parseFloat(adminInfo.manualDiscount) || 0 : 0;
+    const manualTotal =
+      isAdmin && adminInfo.manualTotal.trim() !== '' ? parseFloat(adminInfo.manualTotal) || 0 : null;
+    return calcPricing({
       basePrice,
       upgradesTotal,
       addonsTotal,
-      deliveryPrice,
+      includeDelivery,
       couponDiscount,
       adminDiscount,
-      manualOverride,
-      totalPrice
-    };
+      manualTotal
+    });
   };
 
   const pricing = getPricing();
