@@ -42,24 +42,27 @@ $$;
 -- ➜ להפוך את לירון למנהל (להריץ אחרי שנרשמה):
 -- update public.profiles set is_admin = true where email = 'luroni704@gmail.com';
 
--- 2) קישור הזמנות למשתמש
-alter table public.orders add column if not exists user_id uuid references auth.users (id);
+-- 2) קישור הזמנות למשתמש.
+--    ברירת המחדל auth.uid() ממלאת אוטומטית את מזהה המשתמש המחובר —
+--    כך אין צורך לשנות את קוד שליחת ההזמנה, ושליחה של אורח (anon) תקבל null.
+alter table public.orders add column if not exists user_id uuid references auth.users (id) default auth.uid();
 
--- 3) RLS להזמנות: לקוח רואה/יוצר את שלו, מנהל רואה הכול
-drop policy if exists "orders insert anon"        on public.orders;
-drop policy if exists "orders insert own"         on public.orders;
-drop policy if exists "orders select own or admin" on public.orders;
+-- 3) RLS להזמנות: לקוח רואה/יוצר את שלו, מנהל רואה הכול.
+-- מחליפים את מדיניות האורח הקיימת ("allow anonymous insert" עם check true)
+-- בגרסה בטוחה שמונעת זיוף user_id.
+drop policy if exists "allow anonymous insert" on public.orders;
+create policy "allow anonymous insert" on public.orders
+  for insert to anon
+  with check (user_id is null);
 
--- הזמנה: מחובר משייך לעצמו; אורח (anon) עדיין יכול להזמין (user_id null)
+-- מחובר: משייך את ההזמנה לעצמו (user_id ממולא אוטומטית ב-default auth.uid())
+drop policy if exists "orders insert own" on public.orders;
 create policy "orders insert own" on public.orders
   for insert to authenticated
   with check (user_id = auth.uid());
 
-create policy "orders insert anon" on public.orders
-  for insert to anon
-  with check (user_id is null);
-
 -- צפייה: בעל ההזמנה או מנהל
+drop policy if exists "orders select own or admin" on public.orders;
 create policy "orders select own or admin" on public.orders
   for select to authenticated
   using (user_id = auth.uid() or public.is_admin());
