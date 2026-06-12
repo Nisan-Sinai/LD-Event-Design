@@ -2,6 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
+/* --- שיפוץ כללי: ליטוש בסיס (שלב 1) --- */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* פס גלילה ממותג בגווני הזהב של LD */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #C9B488 #F3ECDD;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: #F3ECDD;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: #C9B488;
+  border-radius: 9999px;
+  border: 2px solid #F3ECDD;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: #B29259;
+}
+
 @layer utilities {
   .animate-fadeIn {
     animation: fadeIn 0.4s ease-out both;
