@@ -3,7 +3,9 @@ import { isSupabaseConfigured } from './lib/supabase';
 import { submitOrder } from './lib/submitOrder';
 import { calcPricing } from './lib/pricing';
 import { AccessibilityWidget } from './components/AccessibilityWidget';
+import { Link } from 'react-router-dom';
 import { useI18n } from './i18n/i18n';
+import { useAuth } from './auth/AuthProvider';
 import { categoryLabel, PACKAGE_EN, localizedAddonName, localizedUnit } from './i18n/content';
 import {
   Sparkles,
@@ -23,11 +25,13 @@ import {
   FileText,
   AlertCircle,
   Users,
-  X
+  X,
+  Home,
+  LogOut
 } from 'lucide-react';
 
 // --- קטגוריות החבילות ---
-const CATEGORIES = {
+export const CATEGORIES = {
   WEDDING: 'חתונה',
   HENNA: 'חינה',
   EVENTS: 'אירועים (בר/בת מצווה, ברית/ה, יומולדת)',
@@ -96,7 +100,7 @@ interface PackageDetails {
   photoOp?: string[];
 }
 
-interface Package {
+export interface Package {
   id: string;
   category: Category;
   title: string;
@@ -144,7 +148,7 @@ const DETAIL_SECTIONS: { key: keyof PackageDetails; labelKey: string }[] = [
 ];
 
 // --- מאגר החבילות המלא ---
-const PACKAGES: Package[] = [
+export const PACKAGES: Package[] = [
   {
     id: 'classic-s',
     category: CATEGORIES.WEDDING,
@@ -448,7 +452,7 @@ function PillarCandle({ x, base, h, w = 7 }: { x: number; base: number; h: numbe
 }
 
 // --- איורים וקטוריים לכל סוג חבילה (קו-ארט נאמן לפלאיירים) ---
-function renderPackageSVG(type: string) {
+export function renderPackageSVG(type: string) {
   const { gold, soft, cream } = ART;
 
   // מסגרת חופה משותפת: עמודים, קורה עליונה ורצפה
@@ -697,6 +701,7 @@ function renderTableChoiceSVG() {
 
 export default function App() {
   const { t, tList, lang, dir, setLang } = useI18n();
+  const { user, signOut } = useAuth();
 
   // טקסט חבילה בשפה הנוכחית (עברית מהנתונים, אנגלית ממודול התוכן)
   const L = (pkg: Package) =>
@@ -1142,6 +1147,16 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2">
+            <Link to="/" className="flex items-center gap-1 text-[11px] font-bold text-gray-600 hover:text-[#B29259] px-2 py-1.5" title={t('nav.home')}>
+              <Home className="w-4 h-4" aria-hidden="true" />
+              <span className="hidden sm:inline">{t('nav.home')}</span>
+            </Link>
+            {user && (
+              <button type="button" onClick={() => signOut()} className="flex items-center gap-1 text-[11px] font-bold text-gray-600 hover:text-red-500 px-2 py-1.5" title={t('nav.logout')}>
+                <LogOut className="w-4 h-4" aria-hidden="true" />
+                <span className="hidden sm:inline">{t('nav.logout')}</span>
+              </button>
+            )}
             {/* מתג שפה */}
             <div className="flex items-center bg-[#FAF7F2] rounded-full border border-[#EAE3D2] p-0.5" role="group" aria-label={t('lang.switch')}>
               <button

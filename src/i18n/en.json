@@ -229,6 +229,68 @@
     "reset": "Reset settings",
     "statement": "Accessibility statement"
   },
+  "nav": {
+    "home": "Home",
+    "order": "Start order",
+    "account": "My area",
+    "admin": "Admin",
+    "login": "Log in",
+    "register": "Sign up",
+    "logout": "Log out",
+    "menu": "Menu"
+  },
+  "home": {
+    "heroTitle": "Event design that makes every moment feel like a dream",
+    "heroSub": "An event design studio — weddings, henna, bar/bat mitzvah, brit and sweet bars, custom and handcrafted.",
+    "ctaOrder": "Start order",
+    "ctaPackages": "View packages",
+    "ctaWhatsapp": "WhatsApp",
+    "packagesTitle": "Our packages",
+    "guestNote": "Browsing is open to everyone — to complete an order, please log in.",
+    "from": "From "
+  },
+  "auth": {
+    "loginTitle": "Log in",
+    "registerTitle": "Sign up",
+    "email": "Email",
+    "password": "Password",
+    "passwordHint": "At least 6 characters",
+    "loginBtn": "Log in",
+    "registerBtn": "Sign up",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?",
+    "toRegister": "Sign up",
+    "toLogin": "Log in",
+    "working": "Please wait…",
+    "notConfigured": "The login system isn't enabled yet (Supabase setup required). You can browse the site as a guest in the meantime.",
+    "registerSuccess": "Registration successful! You can now log in. If email verification is enabled — check your inbox.",
+    "invalidEmail": "Invalid email address",
+    "shortPassword": "Password must be at least 6 characters"
+  },
+  "account": {
+    "title": "My orders",
+    "empty": "You don't have any orders yet.",
+    "newOrder": "New order",
+    "loading": "Loading orders…",
+    "blocked": "Supabase setup is required to display saved orders."
+  },
+  "adminPage": {
+    "title": "Order management",
+    "subtitle": "All orders in the system",
+    "empty": "No orders yet.",
+    "loading": "Loading…",
+    "blocked": "Supabase setup is required to display orders.",
+    "colDate": "Date",
+    "colClient": "Client",
+    "colEvent": "Event",
+    "colPackage": "Package",
+    "colTotal": "Total",
+    "newForClient": "Order for a client"
+  },
+  "guard": {
+    "loginRequired": "To complete an order, please log in or sign up.",
+    "adminOnly": "This area is for admins only."
+  },
   "footer": {
     "line1": "Event design · 054-5740423",
     "rights": "© {year} All rights reserved"
