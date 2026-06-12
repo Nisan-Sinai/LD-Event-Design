@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { isSupabaseConfigured } from './lib/supabase';
 import { submitOrder } from './lib/submitOrder';
+import { useI18n } from './i18n/i18n';
+import { categoryLabel, PACKAGE_EN, localizedAddonName, localizedUnit } from './i18n/content';
 import {
   Sparkles,
   Calendar,
@@ -128,14 +130,14 @@ type CanvasPointerEvent =
   | React.TouchEvent<HTMLCanvasElement>;
 
 // --- סעיפי הפירוט המוצגים בכרטיס החבילה (סדר + תווית עברית) ---
-const DETAIL_SECTIONS: { key: keyof PackageDetails; label: string }[] = [
-  { key: 'chuppah', label: 'עיצוב חופה:' },
-  { key: 'options', label: 'אפשרות אחת לבחירה:' },
-  { key: 'tables', label: 'עיצוב שולחן אורחים:' },
-  { key: 'bar', label: 'עמדות אירוח ובר:' },
-  { key: 'entrance', label: 'חוויית כניסה:' },
-  { key: 'highlight', label: 'אלמנט מרכזי:' },
-  { key: 'photoOp', label: 'עמדת צילום VIP:' }
+const DETAIL_SECTIONS: { key: keyof PackageDetails; labelKey: string }[] = [
+  { key: 'chuppah', labelKey: 'step2.detail.chuppah' },
+  { key: 'options', labelKey: 'step2.detail.options' },
+  { key: 'tables', labelKey: 'step2.detail.tables' },
+  { key: 'bar', labelKey: 'step2.detail.bar' },
+  { key: 'entrance', labelKey: 'step2.detail.entrance' },
+  { key: 'highlight', labelKey: 'step2.detail.highlight' },
+  { key: 'photoOp', labelKey: 'step2.detail.photoOp' }
 ];
 
 // --- מאגר החבילות המלא ---
@@ -448,7 +450,7 @@ function renderPackageSVG(type: string) {
 
   // מסגרת חופה משותפת: עמודים, קורה עליונה ורצפה
   const chuppahFrame = (children: React.ReactNode) => (
-    <svg width="100%" height="104" viewBox="0 0 200 108" role="img" aria-label="עיצוב חופה">
+    <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
       <path d="M40 26 Q100 18 160 26" stroke={gold} strokeWidth="3.4" fill="none" strokeLinecap="round" />
       <rect x="44" y="25" width="4.5" height="72" rx="2" fill={gold} />
       <rect x="151.5" y="25" width="4.5" height="72" rx="2" fill={gold} />
@@ -496,7 +498,7 @@ function renderPackageSVG(type: string) {
 
   // איור בר חינה מרוקאי: מגדל עוגיות תלת-קומתי + קומקום נחושת + כוסות + נרות
   const henna = () => (
-    <svg width="100%" height="104" viewBox="0 0 200 108" role="img" aria-label="בר חינה מרוקאי">
+    <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
       {/* מגדל עוגיות */}
       <ellipse cx="66" cy="84" rx="34" ry="7" fill={soft} stroke={gold} />
       {[44, 55, 66, 77, 88].map((cx, i) => <circle key={`c1${i}`} cx={cx} cy={81} r="3.4" fill={gold} opacity="0.85" />)}
@@ -542,7 +544,7 @@ function renderPackageSVG(type: string) {
 
   // איור "קלאסיק" לאירועים: 2 אגרטלים עם זרי ורדים + צילינדר נר צף במרכז
   const eventClassic = () => (
-    <svg width="100%" height="104" viewBox="0 0 200 108" role="img" aria-label="עיצוב קלאסי לאירוע">
+    <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
       {/* צילינדר נר צף מרכזי */}
       <rect x="93" y="52" width="15" height="38" rx="2" fill={cream} stroke={soft} />
       <ellipse cx="100.5" cy="52" rx="7.5" ry="2.4" fill="none" stroke={soft} />
@@ -561,7 +563,7 @@ function renderPackageSVG(type: string) {
 
   // איור "בלון ארט": שער בלונים חגיגי
   const eventBalloon = () => (
-    <svg width="100%" height="104" viewBox="0 0 200 108" role="img" aria-label="שער בלונים">
+    <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
       {balloonArch(100, 92, 66, 64, 13, 'arch')}
       <line x1="34" y1="92" x2="166" y2="92" stroke={gold} strokeWidth="1.6" opacity="0.4" />
     </svg>
@@ -569,7 +571,7 @@ function renderPackageSVG(type: string) {
 
   // איור "הצגה" (VIP): עמדת צילום — קיר רקע מוקף בקשת בלונים
   const eventVip = () => (
-    <svg width="100%" height="104" viewBox="0 0 200 108" role="img" aria-label="עמדת צילום VIP">
+    <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
       <rect x="72" y="34" width="56" height="50" rx="6" fill={cream} stroke={gold} strokeWidth="1.5" />
       <circle cx="100" cy="56" r="10" fill="none" stroke={soft} strokeWidth="1.5" />
       {balloonArch(100, 88, 72, 66, 11, 'vip')}
@@ -592,7 +594,7 @@ function renderPackageSVG(type: string) {
 
   // איור עמדת בר מתוק: שולחן + 2 צנצנות ממתקים + מגדל קינוחים + זר משי
   const bar = () => (
-    <svg width="100%" height="104" viewBox="0 0 200 108" role="img" aria-label="עמדת בר מתוק">
+    <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
       {/* שולחן הבר */}
       <rect x="18" y="86" width="164" height="8" rx="2" fill={soft} stroke={gold} strokeWidth="0.6" />
       {/* 2 צנצנות ממתקים (אפותקרי) */}
@@ -654,7 +656,7 @@ function renderTableChoiceSVG() {
   const soft = '#D8C29A';
   const cream = '#FAF7F2';
   return (
-    <svg width="100%" height="104" viewBox="0 0 240 104" role="img" aria-label="בחירת עיצוב שולחן">
+    <svg width="100%" height="104" viewBox="0 0 240 104" aria-hidden="true" focusable="false">
       {/* קומפוזיציה: 3 בקבוקוני פרחים */}
       {[30, 48, 66].map((x, i) => {
         const top = i === 1 ? 22 : 30;
@@ -691,6 +693,20 @@ function renderTableChoiceSVG() {
 }
 
 export default function App() {
+  const { t, lang, dir, setLang } = useI18n();
+
+  // טקסט חבילה בשפה הנוכחית (עברית מהנתונים, אנגלית ממודול התוכן)
+  const L = (pkg: Package) =>
+    lang === 'en' && PACKAGE_EN[pkg.id]
+      ? PACKAGE_EN[pkg.id]
+      : {
+          title: pkg.title,
+          subtitle: pkg.subtitle,
+          description: pkg.description,
+          benefits: pkg.benefits,
+          details: pkg.details
+        };
+
   const [currentStep, setCurrentStep] = useState(1);
   const [activeCategory, setActiveCategory] = useState<Category>(CATEGORIES.WEDDING);
 
@@ -841,30 +857,33 @@ export default function App() {
   };
 
   // תיאור פריט תוספת לשורת הזמנה (כולל כמות/יחידה)
-  const addonLineDescription = (a: Addon & { qty: number }) =>
-    a.unit
-      ? `${a.name} — ${a.qty} ${a.unit}`
+  const addonLineDescription = (a: Addon & { qty: number }) => {
+    const name = localizedAddonName(a.id, a.name, lang);
+    const unit = localizedUnit(a.unit, lang);
+    return unit
+      ? `${name} — ${a.qty} ${unit}`
       : a.qty > 1
-        ? `${a.name} × ${a.qty}`
-        : a.name;
+        ? `${name} × ${a.qty}`
+        : name;
+  };
 
   // בדיקת תקינות טופס שלב 1 (עם 2 מספרי טלפון חובה)
   const validateStep = (step: number) => {
     const tempErrors: Record<string, string> = {};
     if (step === 1) {
       const groomNameTrimmed = clientInfo.groomName.trim();
-      if (!groomNameTrimmed) tempErrors.groomName = 'חובה להזין שם בעל האירוע';
-      else if (groomNameTrimmed.split(/\s+/).length < 2) tempErrors.groomName = 'חובה להזין שם פרטי ושם משפחה';
+      if (!groomNameTrimmed) tempErrors.groomName = t('errors.groomNameRequired');
+      else if (groomNameTrimmed.split(/\s+/).length < 2) tempErrors.groomName = t('errors.groomNameFull');
 
       const brideNameTrimmed = clientInfo.brideName.trim();
-      if (!brideNameTrimmed) tempErrors.brideName = 'חובה להזין שם בעלת האירוע';
-      else if (brideNameTrimmed.split(/\s+/).length < 2) tempErrors.brideName = 'חובה להזין שם פרטי ושם משפחה';
-      if (!clientInfo.groomPhone.trim()) tempErrors.groomPhone = 'חובה להזין מספר טלפון בעל האירוע';
-      if (!clientInfo.bridePhone.trim()) tempErrors.bridePhone = 'חובה להזין מספר טלפון בעלת האירוע';
-      if (!clientInfo.eventDate) tempErrors.eventDate = 'חובה להזין תאריך אירוע';
-      if (!clientInfo.eventLocation.trim()) tempErrors.eventLocation = 'חובה להזין מיקום אולם/אירוע';
-      if (!clientInfo.email.trim()) tempErrors.email = 'חובה להזין כתובת אימייל';
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientInfo.email)) tempErrors.email = 'כתובת אימייל אינה תקינה';
+      if (!brideNameTrimmed) tempErrors.brideName = t('errors.brideNameRequired');
+      else if (brideNameTrimmed.split(/\s+/).length < 2) tempErrors.brideName = t('errors.brideNameFull');
+      if (!clientInfo.groomPhone.trim()) tempErrors.groomPhone = t('errors.groomPhoneRequired');
+      if (!clientInfo.bridePhone.trim()) tempErrors.bridePhone = t('errors.bridePhoneRequired');
+      if (!clientInfo.eventDate) tempErrors.eventDate = t('errors.eventDateRequired');
+      if (!clientInfo.eventLocation.trim()) tempErrors.eventLocation = t('errors.eventLocationRequired');
+      if (!clientInfo.email.trim()) tempErrors.email = t('errors.emailRequired');
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientInfo.email)) tempErrors.email = t('errors.emailInvalid');
     }
     setErrors(tempErrors);
     return Object.keys(tempErrors).length === 0;
@@ -947,7 +966,7 @@ export default function App() {
       window.print();
     } catch (err) {
       console.error('שמירת ההזמנה נכשלה:', err);
-      setSubmitError('שמירת ההזמנה נכשלה. בדקו את החיבור לאינטרנט ונסו שוב.');
+      setSubmitError(t('errors.saveFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -1066,7 +1085,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] text-gray-800 font-sans antialiased pb-12 selection:bg-[#B29259] selection:text-white animate-fadeIn" dir="rtl">
+    <div className="min-h-screen bg-[#FAF7F2] text-gray-800 font-sans antialiased pb-12 selection:bg-[#B29259] selection:text-white animate-fadeIn" dir={dir}>
 
       {/* --- לוגו וכותרת ראשית --- */}
       <header className="bg-white border-b border-[#EAE3D2] shadow-sm sticky top-0 z-50">
@@ -1075,15 +1094,36 @@ export default function App() {
             <div className="bg-[#B29259] text-white p-2 rounded-full shadow-md">
               <Sparkles className="w-5.5 h-5.5 animate-pulse" />
             </div>
-            <div className="text-right">
+            <div className="text-start">
               <h1 className="text-xl sm:text-2xl font-bold text-[#8C6D3F] font-serif tracking-wide">LD Event Design</h1>
-              <p className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold">Making all dreams come true</p>
+              <p className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold">{t('brand.tagline')}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600 bg-[#FAF7F2] py-1.5 px-3 rounded-full border border-[#EAE3D2]">
-            <Phone className="w-4 h-4 text-[#B29259]" />
-            <span className="font-bold">054-5740423</span>
+          <div className="flex items-center gap-2">
+            {/* מתג שפה */}
+            <div className="flex items-center bg-[#FAF7F2] rounded-full border border-[#EAE3D2] p-0.5" role="group" aria-label={t('lang.switch')}>
+              <button
+                type="button"
+                onClick={() => setLang('he')}
+                aria-pressed={lang === 'he'}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-colors ${lang === 'he' ? 'bg-[#B29259] text-white' : 'text-gray-500 hover:text-[#B29259]'}`}
+              >
+                עברית
+              </button>
+              <button
+                type="button"
+                onClick={() => setLang('en')}
+                aria-pressed={lang === 'en'}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-colors ${lang === 'en' ? 'bg-[#B29259] text-white' : 'text-gray-500 hover:text-[#B29259]'}`}
+              >
+                EN
+              </button>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600 bg-[#FAF7F2] py-1.5 px-3 rounded-full border border-[#EAE3D2]">
+              <Phone className="w-4 h-4 text-[#B29259]" aria-hidden="true" />
+              <span className="font-bold" dir="ltr">{t('brand.phone')}</span>
+            </div>
           </div>
         </div>
       </header>
@@ -1094,14 +1134,14 @@ export default function App() {
           <div className="flex justify-between items-center relative">
             <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-0.5 bg-gray-100 z-0"></div>
             <div
-              className="absolute right-0 top-1/2 -translate-y-1/2 h-0.5 bg-[#B29259] transition-all duration-300 z-0"
+              className="absolute start-0 top-1/2 -translate-y-1/2 h-0.5 bg-[#B29259] transition-all duration-300 z-0"
               style={{ width: `${((currentStep - 1) / 3) * 100}%` }}
             ></div>
 
             {[
-              { step: 1, label: 'פרטי קשר ואירוע' },
-              { step: 2, label: 'בחירת חבילת עיצוב' },
-              { step: 3, label: 'חוזה, תוספות וחתימה' }
+              { step: 1, label: t('steps.s1') },
+              { step: 2, label: t('steps.s2') },
+              { step: 3, label: t('steps.s3') }
             ].map((item) => (
               <div key={item.step} className="flex flex-col items-center z-10 relative">
                 <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs transition-all duration-300 ${
@@ -1128,27 +1168,27 @@ export default function App() {
           <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-[#EAE3D2] space-y-6 animate-fadeIn">
             <div className="border-b border-gray-100 pb-4">
               <h2 className="text-xl font-bold text-[#8C6D3F] flex items-center gap-2">
-                <Users className="w-5.5 h-5.5 text-[#B29259]" />
-                הזמנת חבילת עיצוב לאירוע
+                <Users className="w-5.5 h-5.5 text-[#B29259]" aria-hidden="true" />
+                {t('step1.heading')}
               </h2>
-              <p className="text-xs text-gray-500 mt-1">מלאו את פרטי בעל ובעלת האירוע (שני מספרי הטלפון הינם חובה להשלמת ההסכם)</p>
+              <p className="text-xs text-gray-500 mt-1">{t('step1.sub')}</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
 
               {/* שם בעל האירוע */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">שם בעל האירוע *</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">{t('step1.groomName')}</label>
                 <div className="relative">
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                    <User className="w-4 h-4" />
+                  <span className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <User className="w-4 h-4" aria-hidden="true" />
                   </span>
                   <input
                     type="text"
                     value={clientInfo.groomName}
                     onChange={(e) => setClientInfo({ ...clientInfo, groomName: e.target.value })}
-                    placeholder="שם פרטי ושם משפחה של בעל האירוע"
-                    className={`w-full pr-9 pl-3 py-2.5 bg-[#FAF7F2] border ${errors.groomName ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all`}
+                    placeholder={t('step1.groomNamePh')}
+                    className={`w-full ps-9 pe-3 py-2.5 bg-[#FAF7F2] border ${errors.groomName ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all`}
                   />
                 </div>
                 {errors.groomName && <p className="text-[10px] text-red-500 mt-1">{errors.groomName}</p>}
@@ -1156,17 +1196,17 @@ export default function App() {
 
               {/* שם בעלת האירוע */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">שם בעלת האירוע *</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">{t('step1.brideName')}</label>
                 <div className="relative">
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                    <User className="w-4 h-4" />
+                  <span className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <User className="w-4 h-4" aria-hidden="true" />
                   </span>
                   <input
                     type="text"
                     value={clientInfo.brideName}
                     onChange={(e) => setClientInfo({ ...clientInfo, brideName: e.target.value })}
-                    placeholder="שם פרטי ושם משפחה של בעלת האירוע"
-                    className={`w-full pr-9 pl-3 py-2.5 bg-[#FAF7F2] border ${errors.brideName ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all`}
+                    placeholder={t('step1.brideNamePh')}
+                    className={`w-full ps-9 pe-3 py-2.5 bg-[#FAF7F2] border ${errors.brideName ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all`}
                   />
                 </div>
                 {errors.brideName && <p className="text-[10px] text-red-500 mt-1">{errors.brideName}</p>}
@@ -1174,17 +1214,17 @@ export default function App() {
 
               {/* טלפון בעל האירוע - חובה */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">טלפון בעל האירוע *</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">{t('step1.groomPhone')}</label>
                 <div className="relative">
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                    <Phone className="w-4 h-4" />
+                  <span className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <Phone className="w-4 h-4" aria-hidden="true" />
                   </span>
                   <input
                     type="tel"
                     value={clientInfo.groomPhone}
                     onChange={(e) => setClientInfo({ ...clientInfo, groomPhone: e.target.value })}
-                    placeholder="טלפון נייד בעל האירוע"
-                    className={`w-full pr-9 pl-3 py-2.5 bg-[#FAF7F2] border ${errors.groomPhone ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all`}
+                    placeholder={t('step1.groomPhonePh')}
+                    className={`w-full ps-9 pe-3 py-2.5 bg-[#FAF7F2] border ${errors.groomPhone ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all`}
                   />
                 </div>
                 {errors.groomPhone && <p className="text-[10px] text-red-500 mt-1">{errors.groomPhone}</p>}
@@ -1192,17 +1232,17 @@ export default function App() {
 
               {/* טלפון בעלת האירוע - חובה */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">טלפון בעלת האירוע *</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">{t('step1.bridePhone')}</label>
                 <div className="relative">
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                    <Phone className="w-4 h-4" />
+                  <span className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <Phone className="w-4 h-4" aria-hidden="true" />
                   </span>
                   <input
                     type="tel"
                     value={clientInfo.bridePhone}
                     onChange={(e) => setClientInfo({ ...clientInfo, bridePhone: e.target.value })}
-                    placeholder="טלפון נייד בעלת האירוע"
-                    className={`w-full pr-9 pl-3 py-2.5 bg-[#FAF7F2] border ${errors.bridePhone ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all`}
+                    placeholder={t('step1.bridePhonePh')}
+                    className={`w-full ps-9 pe-3 py-2.5 bg-[#FAF7F2] border ${errors.bridePhone ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all`}
                   />
                 </div>
                 {errors.bridePhone && <p className="text-[10px] text-red-500 mt-1">{errors.bridePhone}</p>}
@@ -1210,16 +1250,16 @@ export default function App() {
 
               {/* תאריך אירוע */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">תאריך האירוע *</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">{t('step1.eventDate')}</label>
                 <div className="relative">
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                    <Calendar className="w-4 h-4" />
+                  <span className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <Calendar className="w-4 h-4" aria-hidden="true" />
                   </span>
                   <input
                     type="date"
                     value={clientInfo.eventDate}
                     onChange={(e) => setClientInfo({ ...clientInfo, eventDate: e.target.value })}
-                    className={`w-full pr-9 pl-3 py-2.5 bg-[#FAF7F2] border ${errors.eventDate ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all`}
+                    className={`w-full ps-9 pe-3 py-2.5 bg-[#FAF7F2] border ${errors.eventDate ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all`}
                   />
                 </div>
                 {errors.eventDate && <p className="text-[10px] text-red-500 mt-1">{errors.eventDate}</p>}
@@ -1227,17 +1267,17 @@ export default function App() {
 
               {/* מיקום האירוע */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">מיקום האירוע (אולם ועיר) *</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">{t('step1.eventLocation')}</label>
                 <div className="relative">
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                    <MapPin className="w-4 h-4" />
+                  <span className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <MapPin className="w-4 h-4" aria-hidden="true" />
                   </span>
                   <input
                     type="text"
                     value={clientInfo.eventLocation}
                     onChange={(e) => setClientInfo({ ...clientInfo, eventLocation: e.target.value })}
-                    placeholder="לדוגמה: אולמי היער, חדרה"
-                    className={`w-full pr-9 pl-3 py-2.5 bg-[#FAF7F2] border ${errors.eventLocation ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all`}
+                    placeholder={t('step1.eventLocationPh')}
+                    className={`w-full ps-9 pe-3 py-2.5 bg-[#FAF7F2] border ${errors.eventLocation ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all`}
                   />
                 </div>
                 {errors.eventLocation && <p className="text-[10px] text-red-500 mt-1">{errors.eventLocation}</p>}
@@ -1245,17 +1285,17 @@ export default function App() {
 
               {/* אימייל */}
               <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">כתובת אימייל *</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">{t('step1.email')}</label>
                 <div className="relative">
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                    <Mail className="w-4 h-4" />
+                  <span className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <Mail className="w-4 h-4" aria-hidden="true" />
                   </span>
                   <input
                     type="email"
                     value={clientInfo.email}
                     onChange={(e) => setClientInfo({ ...clientInfo, email: e.target.value })}
-                    placeholder="name@example.com"
-                    className={`w-full pr-9 pl-3 py-2.5 bg-[#FAF7F2] border ${errors.email ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all`}
+                    placeholder={t('step1.emailPh')}
+                    className={`w-full ps-9 pe-3 py-2.5 bg-[#FAF7F2] border ${errors.email ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all`}
                   />
                 </div>
                 {errors.email && <p className="text-[10px] text-red-500 mt-1">{errors.email}</p>}
@@ -1268,8 +1308,8 @@ export default function App() {
                 onClick={handleNext}
                 className="bg-[#B29259] hover:bg-[#8C6D3F] text-white px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 shadow-sm transition-all"
               >
-                המשך לבחירת חבילת עיצוב
-                <ArrowLeft className="w-4 h-4" />
+                {t('step1.next')}
+                {lang === 'he' ? <ArrowLeft className="w-4 h-4" aria-hidden="true" /> : <ArrowRight className="w-4 h-4" aria-hidden="true" />}
               </button>
             </div>
           </div>
@@ -1291,7 +1331,7 @@ export default function App() {
                       : 'text-gray-600 hover:bg-[#FAF7F2] hover:text-[#B29259]'
                   }`}
                 >
-                  {cat}
+                  {categoryLabel(cat, lang)}
                 </button>
               ))}
             </div>
@@ -1299,7 +1339,7 @@ export default function App() {
             {/* בחירת כמות שולחנות לאירועים — לפני הצגת החבילות */}
             {activeCategory === CATEGORIES.EVENTS && (
               <div className="bg-white p-4 rounded-2xl border border-[#EAE3D2] shadow-sm">
-                <p className="text-xs font-bold text-[#8C6D3F] mb-2">כמה שולחנות יש באירוע שלכם? בחרו כדי לראות את מחירי החבילות המתאימים:</p>
+                <p className="text-xs font-bold text-[#8C6D3F] mb-2">{t('step2.eventTablesQuestion')}</p>
                 <div className="grid grid-cols-3 gap-2">
                   {[10, 20, 30].map((tier) => (
                     <button
@@ -1311,7 +1351,7 @@ export default function App() {
                           : 'bg-[#FAF7F2] border border-gray-200 text-gray-600 hover:bg-gray-100'
                       }`}
                     >
-                      {tier} שולחנות
+                      {t('step2.tablesLabel', { n: tier })}
                     </button>
                   ))}
                 </div>
@@ -1320,13 +1360,13 @@ export default function App() {
 
             {/* הנחיית בחירה מרובה + שגיאת ולידציה */}
             <div className="bg-[#FAF7F2] border border-[#EAE3D2] rounded-xl px-4 py-2.5 flex items-center gap-2 text-[11px] text-[#8C6D3F]">
-              <Check className="w-3.5 h-3.5 shrink-0" />
-              ניתן לבחור יותר מחבילה אחת — גם בין קטגוריות שונות (למשל חבילת חתונה + עמדת בר מתוק).
+              <Check className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+              {t('step2.multiHint')}
             </div>
             {packagesError && (
-              <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-3 rounded-xl">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                יש לבחור לפחות חבילה אחת כדי להמשיך.
+              <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-3 rounded-xl" role="alert">
+                <AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
+                {t('errors.packagesRequired')}
               </div>
             )}
 
@@ -1336,6 +1376,7 @@ export default function App() {
                 const isSelected = selectedPackageIds.includes(pkg.id);
 
                 const currentPrice = packagePrice(pkg);
+                const Lp = L(pkg);
 
                 return (
                   <div
@@ -1349,9 +1390,9 @@ export default function App() {
                   >
                     {/* תג חבילה נבחרת */}
                     {isSelected && (
-                      <span className="absolute -top-2.5 left-4 bg-[#B29259] text-white text-[10px] font-bold py-0.5 px-2.5 rounded-full flex items-center gap-1">
-                        <Check className="w-3 h-3" />
-                        נבחרה
+                      <span className="absolute -top-2.5 end-4 bg-[#B29259] text-white text-[10px] font-bold py-0.5 px-2.5 rounded-full flex items-center gap-1">
+                        <Check className="w-3 h-3" aria-hidden="true" />
+                        {t('step2.selectedBadge')}
                       </span>
                     )}
 
@@ -1362,24 +1403,24 @@ export default function App() {
                       </div>
 
                       <div className="flex justify-between items-start gap-2 mb-1">
-                        <h3 className="text-base font-bold text-gray-800 leading-tight">{pkg.title}</h3>
+                        <h3 className="text-base font-bold text-gray-800 leading-tight">{Lp.title}</h3>
                         <span className="text-[#B29259] font-black text-base whitespace-nowrap">₪{currentPrice.toLocaleString()}</span>
                       </div>
 
-                      <p className="text-[11px] font-bold text-[#8C6D3F] mb-2">{pkg.subtitle}</p>
-                      <p className="text-xs text-gray-500 leading-relaxed mb-4">{pkg.description}</p>
+                      <p className="text-[11px] font-bold text-[#8C6D3F] mb-2">{Lp.subtitle}</p>
+                      <p className="text-xs text-gray-500 leading-relaxed mb-4">{Lp.description}</p>
 
                       {/* מפרט חבילה */}
                       <div className="bg-[#FAF7F2] rounded-xl p-3 space-y-2 border border-[#EAE3D2] text-[11px]">
-                        <p className="font-bold text-gray-700 border-b border-gray-200 pb-1">מה כלול בחבילה?</p>
+                        <p className="font-bold text-gray-700 border-b border-gray-200 pb-1">{t('step2.whatIncluded')}</p>
 
-                        {DETAIL_SECTIONS.map(({ key, label }) => {
-                          const items = pkg.details[key];
+                        {DETAIL_SECTIONS.map(({ key, labelKey }) => {
+                          const items = Lp.details[key];
                           if (!items || items.length === 0) return null;
                           return (
                             <div key={key}>
-                              <span className="font-bold text-[#8C6D3F]">{label}</span>
-                              <ul className="list-disc list-inside text-gray-600 mr-1.5 space-y-0.5">
+                              <span className="font-bold text-[#8C6D3F]">{t(labelKey)}</span>
+                              <ul className="list-disc list-inside text-gray-600 ms-1.5 space-y-0.5">
                                 {items.map((item, i) => <li key={i}>{item}</li>)}
                               </ul>
                             </div>
@@ -1390,8 +1431,8 @@ export default function App() {
 
                     <div className="pt-3 border-t border-gray-100 mt-4 flex items-center justify-between">
                       <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
-                        <Gift className="w-3 h-3" />
-                        {pkg.benefits}{pkg.benefits.includes('₪500') ? ' (בהזנת קוד קופון)' : ''}
+                        <Gift className="w-3 h-3" aria-hidden="true" />
+                        {Lp.benefits}{pkg.benefits.includes('₪500') ? ` ${t('step2.couponHint')}` : ''}
                       </span>
                       <div className={`w-4 h-4 rounded border flex items-center justify-center ${
                         isSelected ? 'border-[#B29259] bg-[#B29259] text-white' : 'border-gray-300'
@@ -1408,14 +1449,14 @@ export default function App() {
             {selectedPackages.length > 0 && (
               <div className="bg-white border border-[#EAE3D2] rounded-2xl p-4 shadow-sm">
                 <div className="flex items-center justify-between mb-2.5">
-                  <p className="text-xs font-bold text-[#8C6D3F]">החבילות שבחרת ({selectedPackages.length})</p>
-                  <span className="text-xs font-black text-[#8C6D3F]">סה"כ חבילות: ₪{selectedPackages.reduce((s, p) => s + packagePrice(p), 0).toLocaleString()}</span>
+                  <p className="text-xs font-bold text-[#8C6D3F]">{t('step2.selectedTitle', { n: selectedPackages.length })}</p>
+                  <span className="text-xs font-black text-[#8C6D3F]">{t('step2.selectedTotal', { amount: selectedPackages.reduce((s, p) => s + packagePrice(p), 0).toLocaleString() })}</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {selectedPackages.map((p) => (
-                    <span key={p.id} className="inline-flex items-center gap-1.5 bg-[#FAF7F2] border border-[#EAE3D2] rounded-full pr-3 pl-2 py-1 text-[11px] text-gray-700">
-                      {p.title} · ₪{packagePrice(p).toLocaleString()}
-                      <button type="button" onClick={() => togglePackage(p)} className="text-gray-400 hover:text-red-500" title="הסר חבילה" aria-label={`הסר ${p.title}`}>
+                    <span key={p.id} className="inline-flex items-center gap-1.5 bg-[#FAF7F2] border border-[#EAE3D2] rounded-full pe-3 ps-2 py-1 text-[11px] text-gray-700">
+                      {L(p).title} · ₪{packagePrice(p).toLocaleString()}
+                      <button type="button" onClick={() => togglePackage(p)} className="text-gray-400 hover:text-red-500" title={t('step2.removePackage')} aria-label={`${t('step2.removePackage')}: ${L(p).title}`}>
                         <Trash2 className="w-3 h-3" />
                       </button>
                     </span>
@@ -1428,40 +1469,40 @@ export default function App() {
             {hasWeddingPackage && (
               <div className="bg-white p-6 rounded-2xl border border-[#EAE3D2] shadow-sm space-y-4">
                 <div className="border-b pb-2">
-                  <h3 className="text-sm font-bold text-[#8C6D3F]">בחירת עיצוב השולחנות</h3>
-                  <p className="text-[10px] text-gray-400">לכל שולחן בוחרים סגנון אחד: קומפוזיציה <span className="font-bold">או</span> סידור עגול בספוג. סמנו כמה שולחנות מכל סוג.</p>
+                  <h3 className="text-sm font-bold text-[#8C6D3F]">{t('step2.tableChoiceHeading')}</h3>
+                  <p className="text-[10px] text-gray-400">{t('step2.tableChoiceDesc')}</p>
                 </div>
 
                 {/* איור הבחירה: קומפוזיציה / סידור עגול בספוג */}
                 <div className="bg-[#FAF7F2] rounded-xl p-3 border border-[#EAE3D2]">
                   <div className="max-w-md mx-auto">{renderTableChoiceSVG()}</div>
                   <div className="flex justify-between text-[10px] font-bold text-[#8C6D3F] mt-1 px-2">
-                    <span>קומפוזיציה — 3 בקבוקוני פרחים + 2 נרות צפים</span>
-                    <span>סידור עגול בספוג</span>
+                    <span>{t('step2.compositionLabel')}</span>
+                    <span>{t('step2.spongeLabel')}</span>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">כמה שולחנות עם קומפוזיציה (3 בקבוקונים + 2 נרות צפים)</label>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">{t('step2.compositesCount')}</label>
                     <input
                       type="number"
                       min="0"
                       value={clientInfo.compositesCount}
                       onChange={(e) => setClientInfo({ ...clientInfo, compositesCount: e.target.value })}
-                      placeholder="מספר שולחנות"
+                      placeholder={t('step2.tablesCountPh')}
                       className="w-full px-3 py-2.5 bg-[#FAF7F2] border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#B29259]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">כמה שולחנות עם סידור עגול בספוג</label>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">{t('step2.spongeCount')}</label>
                     <input
                       type="number"
                       min="0"
                       value={clientInfo.spongeCount}
                       onChange={(e) => setClientInfo({ ...clientInfo, spongeCount: e.target.value })}
-                      placeholder="מספר שולחנות"
+                      placeholder={t('step2.tablesCountPh')}
                       className="w-full px-3 py-2.5 bg-[#FAF7F2] border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#B29259]"
                     />
                   </div>
@@ -1475,16 +1516,16 @@ export default function App() {
                 onClick={handleBack}
                 className="text-gray-600 hover:text-[#B29259] text-xs font-bold flex items-center gap-1 px-3 py-1.5"
               >
-                <ArrowRight className="w-4 h-4" />
-                חזור לפרטים
+                {lang === 'he' ? <ArrowRight className="w-4 h-4" aria-hidden="true" /> : <ArrowLeft className="w-4 h-4" aria-hidden="true" />}
+                {t('step2.back')}
               </button>
 
               <button
                 onClick={handleNext}
                 className="bg-[#B29259] hover:bg-[#8C6D3F] text-white px-6 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shadow-sm transition-all"
               >
-                המשך לתוספות וחתימה
-                <ArrowLeft className="w-4 h-4" />
+                {t('step2.next')}
+                {lang === 'he' ? <ArrowLeft className="w-4 h-4" aria-hidden="true" /> : <ArrowRight className="w-4 h-4" aria-hidden="true" />}
               </button>
             </div>
 
@@ -1499,10 +1540,10 @@ export default function App() {
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EAE3D2] space-y-5">
               <div>
                 <h3 className="text-lg font-bold text-[#8C6D3F] flex items-center gap-1.5">
-                  <Truck className="w-5 h-5 text-[#B29259]" />
-                  שירות הובלה, הקמה ופירוק
+                  <Truck className="w-5 h-5 text-[#B29259]" aria-hidden="true" />
+                  {t('step3.deliveryHeading')}
                 </h3>
-                <p className="text-xs text-gray-500 mt-1">אחריות על הובלה, העמדה מקצועית ופירוק בסיום הערב</p>
+                <p className="text-xs text-gray-500 mt-1">{t('step3.deliverySub')}</p>
               </div>
 
               <button
@@ -1524,8 +1565,8 @@ export default function App() {
                     <Truck className={`w-5 h-5 ${includeDelivery ? 'text-[#B29259]' : 'text-gray-400'}`} />
                   </div>
                   <div>
-                    <h4 className="font-bold text-gray-800 text-sm">הובלה, הרכבה ופירוק מלא בכל חלקי הארץ *</h4>
-                    <p className="text-[11px] text-gray-500">פירוק ופינוי מלא של כל פריטי העיצוב מהאולם בסיום האירוע</p>
+                    <h4 className="font-bold text-gray-800 text-sm">{t('step3.deliveryTitle')}</h4>
+                    <p className="text-[11px] text-gray-500">{t('step3.deliveryDesc')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1539,9 +1580,9 @@ export default function App() {
               </button>
 
               {showDeliveryError && !includeDelivery && (
-                <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-3 rounded-xl">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  חובה לאשר את שירות ההובלה, ההרכבה והפירוק כדי להמשיך.
+                <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-3 rounded-xl" role="alert">
+                  <AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
+                  {t('errors.deliveryRequired')}
                 </div>
               )}
 
@@ -1549,25 +1590,25 @@ export default function App() {
               <div className="border-t border-gray-100 pt-5 space-y-4">
                 <div>
                   <h3 className="text-base font-bold text-gray-800 flex items-center gap-1.5">
-                    <Plus className="w-4.5 h-4.5 text-[#B29259]" />
-                    הוספת תוספות ושדרוגים (תמחור ידני)
+                    <Plus className="w-4.5 h-4.5 text-[#B29259]" aria-hidden="true" />
+                    {t('step3.upgradesHeading')}
                   </h3>
-                  <p className="text-xs text-gray-500">הוסיפו כל תוספת שהיא, ורשמו באופן חופשי את המחיר שקבעתם מול הלקוח</p>
+                  <p className="text-xs text-gray-500">{t('step3.upgradesSub')}</p>
                 </div>
 
                 <form onSubmit={handleAddUpgrade} className="flex flex-col sm:flex-row gap-3 bg-[#FAF7F2] p-4 rounded-xl border border-[#EAE3D2]">
                   <div className="flex-1">
-                    <label className="block text-[10px] font-bold text-gray-600 mb-1">תיאור השדרוג / תוספת</label>
+                    <label className="block text-[10px] font-bold text-gray-600 mb-1">{t('step3.upgradeDesc')}</label>
                     <input
                       type="text"
                       value={newUpgradeDesc}
                       onChange={(e) => setNewUpgradeDesc(e.target.value)}
-                      placeholder="לדוגמה: תוספת 5 שולחנות / סידורי פרחים נוספים"
+                      placeholder={t('step3.upgradeDescPh')}
                       className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#B29259]"
                     />
                   </div>
                   <div className="sm:w-32">
-                    <label className="block text-[10px] font-bold text-gray-600 mb-1">מחיר שדרוג (₪)</label>
+                    <label className="block text-[10px] font-bold text-gray-600 mb-1">{t('step3.upgradePrice')}</label>
                     <input
                       type="number"
                       value={newUpgradePrice}
@@ -1580,13 +1621,13 @@ export default function App() {
                     type="submit"
                     className="bg-[#8C6D3F] hover:bg-[#705630] text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm self-end w-full sm:w-auto mt-2 sm:mt-0 transition-all"
                   >
-                    הוסף תוספת
+                    {t('step3.addUpgrade')}
                   </button>
                 </form>
 
                 {customUpgrades.length > 0 ? (
                   <div className="space-y-2">
-                    <p className="text-[11px] font-bold text-gray-700">שדרוגים ותוספות שנוספו להזמנה:</p>
+                    <p className="text-[11px] font-bold text-gray-700">{t('step3.upgradesAddedTitle')}</p>
                     <div className="border border-gray-150 rounded-xl divide-y divide-gray-100 bg-white">
                       {customUpgrades.map((item) => (
                         <div key={item.id} className="p-3 flex items-center justify-between text-xs">
@@ -1599,7 +1640,8 @@ export default function App() {
                               type="button"
                               onClick={() => handleRemoveUpgrade(item.id)}
                               className="text-red-500 hover:text-red-700 p-1 rounded-md transition-colors"
-                              title="מחק תוספת"
+                              title={t('step3.deleteUpgrade')}
+                              aria-label={t('step3.deleteUpgrade')}
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -1609,7 +1651,7 @@ export default function App() {
                     </div>
                   </div>
                 ) : (
-                  <p className="text-[11px] text-gray-400 italic">לא הוזנו תוספות מיוחדות למעט חבילת הבסיס.</p>
+                  <p className="text-[11px] text-gray-400 italic">{t('step3.noUpgrades')}</p>
                 )}
               </div>
             </div>
@@ -1619,10 +1661,10 @@ export default function App() {
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EAE3D2] space-y-4">
                 <div>
                   <h3 className="text-base font-bold text-[#8C6D3F] flex items-center gap-1.5">
-                    <Plus className="w-4.5 h-4.5 text-[#B29259]" />
-                    תוספות ושדרוגים לחבילות שבחרת
+                    <Plus className="w-4.5 h-4.5 text-[#B29259]" aria-hidden="true" />
+                    {t('step3.addonsHeading')}
                   </h3>
-                  <p className="text-xs text-gray-500 mt-1">סמנו כמות לכל פריט שתרצו להוסיף — המחיר יתווסף לסך ההזמנה.</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('step3.addonsSub')}</p>
                 </div>
 
                 <div className="border border-gray-100 rounded-xl divide-y divide-gray-100">
@@ -1631,10 +1673,10 @@ export default function App() {
                     return (
                       <div key={a.id} className={`flex items-center justify-between gap-3 p-3 ${qty > 0 ? 'bg-[#FAF7F2]' : ''}`}>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold text-gray-800">{a.name}</p>
+                          <p className="text-xs font-bold text-gray-800">{localizedAddonName(a.id, a.name, lang)}</p>
                           <p className="text-[10px] text-gray-500">
-                            ₪{a.price.toLocaleString()}{a.unit ? ` ${a.unit}` : ''}
-                            {!a.hasFlowers && isCouponValid && <span className="text-emerald-600 font-bold"> · ניתן לממש בהטבת ₪500</span>}
+                            ₪{a.price.toLocaleString()}{a.unit ? ` ${localizedUnit(a.unit, lang)}` : ''}
+                            {!a.hasFlowers && isCouponValid && <span className="text-emerald-600 font-bold"> · {t('step3.addonsCanCoupon')}</span>}
                           </p>
                         </div>
                         <input
@@ -1642,7 +1684,7 @@ export default function App() {
                           min="0"
                           value={qty || ''}
                           onChange={(e) => updateAddonQty(a.id, e.target.value)}
-                          placeholder={a.unit ? 'מטרים' : 'כמות'}
+                          placeholder={a.unit ? t('step3.metersPh') : t('step3.qtyPh')}
                           className="w-20 px-2 py-2 bg-white border border-gray-200 rounded-lg text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#B29259]"
                         />
                       </div>
@@ -1652,7 +1694,7 @@ export default function App() {
 
                 {addonsTotal > 0 && (
                   <div className="flex justify-between items-center text-xs font-bold text-[#8C6D3F] pt-1">
-                    <span>סה"כ תוספות שנבחרו:</span>
+                    <span>{t('step3.addonsTotal')}</span>
                     <span>₪{addonsTotal.toLocaleString()}</span>
                   </div>
                 )}
@@ -1664,21 +1706,21 @@ export default function App() {
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EAE3D2] space-y-4">
                 <div>
                   <h3 className="text-base font-bold text-[#8C6D3F] flex items-center gap-1.5">
-                    <Gift className="w-4.5 h-4.5 text-[#B29259]" />
-                    קוד קופון — הטבת ₪500 לשדרוג העיצוב
+                    <Gift className="w-4.5 h-4.5 text-[#B29259]" aria-hidden="true" />
+                    {t('step3.couponHeading')}
                   </h3>
                   <p className="text-xs text-gray-500 mt-1">
-                    הזינו את קוד הקופון שקיבלתם. ההטבה אינה הנחה על החבילה, אלא ₪500 מתנה למימוש על פריט תוספת אחד שאינו כולל פרחים (מתוך רשימת התוספות שמעל).
+                    {t('step3.couponDesc')}
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-600 mb-1">קוד קופון</label>
+                  <label className="block text-[10px] font-bold text-gray-600 mb-1">{t('step3.couponLabel')}</label>
                   <input
                     type="text"
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value)}
-                    placeholder="הזינו קוד קופון"
+                    placeholder={t('step3.couponPh')}
                     className={`w-full px-3 py-2.5 bg-[#FAF7F2] border ${
                       isCouponValid
                         ? 'border-emerald-400'
@@ -1690,22 +1732,22 @@ export default function App() {
                 </div>
 
                 {couponCode.trim() && !isCouponValid && (
-                  <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-3 rounded-xl">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    קוד הקופון שהוזן אינו תקין.
+                  <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-3 rounded-xl" role="alert">
+                    <AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
+                    {t('step3.couponInvalid')}
                   </div>
                 )}
 
                 {isCouponValid && (
                   giftEligibleAddons.length > 0 ? (
                     <div className="space-y-2">
-                      <label className="block text-[10px] font-bold text-gray-600">בחרו פריט אחד למימוש הטבת ה-₪500 (ללא פרחים):</label>
+                      <label className="block text-[10px] font-bold text-gray-600">{t('step3.couponSelect')}</label>
                       <select
                         value={giftAddonId}
                         onChange={(e) => setGiftAddonId(e.target.value)}
                         className="w-full px-3 py-2.5 bg-[#FAF7F2] border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#B29259]"
                       >
-                        <option value="">— בחרו פריט —</option>
+                        <option value="">{t('step3.couponChoose')}</option>
                         {giftEligibleAddons.map((a) => (
                           <option key={a.id} value={a.id}>
                             {addonLineDescription(a)} (₪{(a.price * a.qty).toLocaleString()})
@@ -1714,15 +1756,15 @@ export default function App() {
                       </select>
                       {couponDiscount > 0 && giftAddon && (
                         <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold p-3 rounded-xl">
-                          <Check className="w-4 h-4 shrink-0" />
-                          מומשה הטבה של ₪{couponDiscount.toLocaleString()} על "{giftAddon.name}".
+                          <Check className="w-4 h-4 shrink-0" aria-hidden="true" />
+                          {t('step3.couponRealized', { amount: couponDiscount.toLocaleString(), name: localizedAddonName(giftAddon.id, giftAddon.name, lang) })}
                         </div>
                       )}
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold p-3 rounded-xl">
-                      <AlertCircle className="w-4 h-4 shrink-0" />
-                      הקוד תקין! הוסיפו פריט תוספת שאינו כולל פרחים כדי לממש את הטבת ה-₪500.
+                      <AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
+                      {t('step3.couponNeedItem')}
                     </div>
                   )
                 )}
@@ -1732,47 +1774,47 @@ export default function App() {
             {/* סיכום חוזה רשמי והזמנה לחתונה */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EAE3D2] space-y-6">
               <div className="text-center pb-4 border-b border-gray-100">
-                <FileText className="w-6 h-6 text-[#B29259] mx-auto mb-1" />
-                <h3 className="text-lg font-bold text-gray-800">הסכם והזמנה לאירוע - תנאי התקשרות</h3>
-                <p className="text-xs text-gray-400">אנא ודאו את הפרטים וקראו את מדיניות הביטולים לפני החתימה</p>
+                <FileText className="w-6 h-6 text-[#B29259] mx-auto mb-1" aria-hidden="true" />
+                <h3 className="text-lg font-bold text-gray-800">{t('step3.contractHeading')}</h3>
+                <p className="text-xs text-gray-400">{t('step3.contractSub')}</p>
               </div>
 
               {/* כרטיסיית פרטי אירוע (חתן כלה) */}
               <div className="grid grid-cols-2 gap-3 bg-[#FAF7F2] p-4 rounded-xl border border-[#EAE3D2] text-xs">
                 <div>
-                  <span className="text-gray-400 font-medium">שם בעל האירוע:</span>
+                  <span className="text-gray-400 font-medium">{t('step3.infoGroomName')}</span>
                   <p className="font-bold text-gray-700 mt-0.5">{clientInfo.groomName}</p>
                 </div>
                 <div>
-                  <span className="text-gray-400 font-medium">שם בעלת האירוע:</span>
+                  <span className="text-gray-400 font-medium">{t('step3.infoBrideName')}</span>
                   <p className="font-bold text-gray-700 mt-0.5">{clientInfo.brideName}</p>
                 </div>
                 <div>
-                  <span className="text-gray-400 font-medium">טלפון בעל האירוע:</span>
-                  <p className="font-bold text-gray-700 mt-0.5">{clientInfo.groomPhone}</p>
+                  <span className="text-gray-400 font-medium">{t('step3.infoGroomPhone')}</span>
+                  <p className="font-bold text-gray-700 mt-0.5" dir="ltr">{clientInfo.groomPhone}</p>
                 </div>
                 <div>
-                  <span className="text-gray-400 font-medium">טלפון בעלת האירוע:</span>
-                  <p className="font-bold text-gray-700 mt-0.5">{clientInfo.bridePhone}</p>
+                  <span className="text-gray-400 font-medium">{t('step3.infoBridePhone')}</span>
+                  <p className="font-bold text-gray-700 mt-0.5" dir="ltr">{clientInfo.bridePhone}</p>
                 </div>
                 <div>
-                  <span className="text-gray-400 font-medium">תאריך אירוע:</span>
+                  <span className="text-gray-400 font-medium">{t('step3.infoDate')}</span>
                   <p className="font-bold text-gray-700 mt-0.5">{clientInfo.eventDate}</p>
                 </div>
                 <div>
-                  <span className="text-gray-400 font-medium">מיקום אולם:</span>
+                  <span className="text-gray-400 font-medium">{t('step3.infoLocation')}</span>
                   <p className="font-bold text-gray-700 mt-0.5">{clientInfo.eventLocation}</p>
                 </div>
                 {clientInfo.compositesCount && (
                   <div>
-                    <span className="text-gray-400 font-medium">קומפוזיציות פרחים ונרות:</span>
-                    <p className="font-bold text-gray-700 mt-0.5">{clientInfo.compositesCount} שולחנות</p>
+                    <span className="text-gray-400 font-medium">{t('step3.infoComposites')}</span>
+                    <p className="font-bold text-gray-700 mt-0.5">{t('step3.tablesUnit', { n: clientInfo.compositesCount })}</p>
                   </div>
                 )}
                 {clientInfo.spongeCount && (
                   <div>
-                    <span className="text-gray-400 font-medium">סידורי ספוג לשולחן:</span>
-                    <p className="font-bold text-gray-700 mt-0.5">{clientInfo.spongeCount} שולחנות</p>
+                    <span className="text-gray-400 font-medium">{t('step3.infoSponge')}</span>
+                    <p className="font-bold text-gray-700 mt-0.5">{t('step3.tablesUnit', { n: clientInfo.spongeCount })}</p>
                   </div>
                 )}
               </div>
@@ -1802,20 +1844,20 @@ export default function App() {
 
                 {includeDelivery && (
                   <div className="flex justify-between items-center text-gray-600">
-                    <span>הובלה, הרכבה ופירוק בסיום האירוע</span>
+                    <span>{t('step3.lineDelivery')}</span>
                     <span className="font-bold text-gray-800">₪500</span>
                   </div>
                 )}
 
                 {pricing.couponDiscount > 0 && giftAddon && (
                   <div className="flex justify-between items-center text-emerald-600">
-                    <span>הטבת קופון — ₪500 מתנה על "{giftAddon.name}"</span>
+                    <span>{t('step3.lineCoupon', { name: localizedAddonName(giftAddon.id, giftAddon.name, lang) })}</span>
                     <span className="font-bold">−₪{pricing.couponDiscount.toLocaleString()}</span>
                   </div>
                 )}
 
                 <div className="pt-4 border-t border-gray-200 flex justify-between items-center text-sm font-black text-gray-800">
-                  <span>סך הכל סופי לתשלום:</span>
+                  <span>{t('step3.totalLabel')}</span>
                   <span className="text-lg text-[#8C6D3F]">₪{pricing.totalPrice.toLocaleString()}</span>
                 </div>
               </div>
@@ -1824,27 +1866,27 @@ export default function App() {
               <div className="bg-stone-50 rounded-xl p-4 border border-gray-200 text-right space-y-3">
                 <div className="text-[11px] text-gray-600 space-y-2.5 leading-relaxed">
 
-                  <p className="font-bold text-[#8C6D3F] border-b border-gray-200 pb-1">מדיניות ביטולים ושינויים:</p>
-                  <ul className="list-disc list-inside space-y-2 pr-1 text-gray-600">
+                  <p className="font-bold text-[#8C6D3F] border-b border-gray-200 pb-1">{t('step3.policyTitle')}</p>
+                  <ul className="list-disc list-inside space-y-2 ps-1 text-gray-600">
                     <li>
-                      <strong>במקרה של ביטול מכוח עליון:</strong> מלחמה או מגפה, הסכום ששולם יועבר כזיכוי לתאריך חלופי על בסיס זמינות, במידה ולא ימצא תאריך מוסכם לא יוחזרו ללקוח/ה 50% מסכום העסקה הכולל.
+                      <strong>{t('step3.policyForceStrong')}</strong> {t('step3.policyForce')}
                     </li>
                     <li>
-                      במקרה של כל ביטול אחר לא יוחזר ללקוח כל תשלום והלקוח יחויב במלוא תשלום העסקה.
+                      {t('step3.policyOther')}
                     </li>
                     <li>
-                      במידה ולא ימצא תאריך חלופי הלקוח/ה יוכל להגיע לקחת את הציוד שהוזמן לאירוע בתשלום מלא העסקה ללא הובלה והרכבה ולהשאיר פיקדון להחזרה של הציוד.
+                      {t('step3.policyNoAlt')}
                     </li>
                   </ul>
 
-                  <p className="font-bold text-[#8C6D3F] border-b border-gray-200 pt-1 pb-1">שינויים ועדכונים בהזמנה:</p>
-                  <ul className="list-disc list-inside space-y-1 pr-1 text-gray-600">
-                    <li>ניתן לעדכן תוספות קלות בכמויות ההזמנה עד 30 ימי עסקים לפני מועד האירוע.</li>
-                    <li><strong>אחריות על הציוד:</strong> בזמן האירוע הינה על הלקוח/ה (למעט מקרים של בלאי טבעי).</li>
+                  <p className="font-bold text-[#8C6D3F] border-b border-gray-200 pt-1 pb-1">{t('step3.changesTitle')}</p>
+                  <ul className="list-disc list-inside space-y-1 ps-1 text-gray-600">
+                    <li>{t('step3.changes1')}</li>
+                    <li><strong>{t('step3.equipmentStrong')}</strong> {t('step3.equipment')}</li>
                   </ul>
 
-                  <p className="font-bold text-[#8C6D3F] border-b border-gray-200 pt-1 pb-1">יתרת התשלום:</p>
-                  <p className="pr-1 text-gray-600">בהעברה בנקאית כשבוע לפני מועד האירוע.</p>
+                  <p className="font-bold text-[#8C6D3F] border-b border-gray-200 pt-1 pb-1">{t('step3.balanceTitle')}</p>
+                  <p className="ps-1 text-gray-600">{t('step3.balance')}</p>
                 </div>
               </div>
 
@@ -1854,9 +1896,9 @@ export default function App() {
                 {/* חתימת בעל האירוע */}
                 <div className="border border-dashed border-[#B29259]/60 rounded-xl p-4 bg-stone-50">
                   <div className="flex justify-between items-center mb-2">
-                    <label className="text-xs font-bold text-gray-800">חתימת בעל האירוע:</label>
+                    <label className="text-xs font-bold text-gray-800">{t('step3.groomSign')}</label>
                     {isGroomSigned && (
-                      <button type="button" onClick={clearGroomSignature} className="text-[10px] text-red-500 hover:text-red-700 font-bold">נקה</button>
+                      <button type="button" onClick={clearGroomSignature} className="text-[10px] text-red-500 hover:text-red-700 font-bold">{t('step3.clear')}</button>
                     )}
                   </div>
                   <div className="relative bg-white rounded-lg border border-gray-200 overflow-hidden h-24">
@@ -1875,12 +1917,12 @@ export default function App() {
                     />
                     {!isGroomSigned && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-gray-400 text-[10px]">
-                        בעל האירוע חתום כאן
+                        {t('step3.groomSignHere')}
                       </div>
                     )}
                   </div>
                   <div className="mt-2 flex items-center justify-between text-[11px]">
-                    <span className="text-gray-400">תאריך חתימה:</span>
+                    <span className="text-gray-400">{t('step3.signDate')}</span>
                     <input
                       type="date"
                       value={groomSignDate}
@@ -1893,9 +1935,9 @@ export default function App() {
                 {/* חתימת בעלת האירוע */}
                 <div className="border border-dashed border-[#B29259]/60 rounded-xl p-4 bg-stone-50">
                   <div className="flex justify-between items-center mb-2">
-                    <label className="text-xs font-bold text-gray-800">חתימת בעלת האירוע:</label>
+                    <label className="text-xs font-bold text-gray-800">{t('step3.brideSign')}</label>
                     {isBrideSigned && (
-                      <button type="button" onClick={clearBrideSignature} className="text-[10px] text-red-500 hover:text-red-700 font-bold">נקה</button>
+                      <button type="button" onClick={clearBrideSignature} className="text-[10px] text-red-500 hover:text-red-700 font-bold">{t('step3.clear')}</button>
                     )}
                   </div>
                   <div className="relative bg-white rounded-lg border border-gray-200 overflow-hidden h-24">
@@ -1914,12 +1956,12 @@ export default function App() {
                     />
                     {!isBrideSigned && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-gray-400 text-[10px]">
-                        בעלת האירוע חתומה כאן
+                        {t('step3.brideSignHere')}
                       </div>
                     )}
                   </div>
                   <div className="mt-2 flex items-center justify-between text-[11px]">
-                    <span className="text-gray-400">תאריך חתימה:</span>
+                    <span className="text-gray-400">{t('step3.signDate')}</span>
                     <input
                       type="date"
                       value={brideSignDate}
@@ -1932,9 +1974,9 @@ export default function App() {
 
               {/* הודעת שגיאת חתימה */}
               {showSignatureError && (
-                <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-3 rounded-xl">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  נדרשת חתימה של בעל האירוע ושל בעלת האירוע לאישור ההזמנה.
+                <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-3 rounded-xl" role="alert">
+                  <AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
+                  {t('errors.signatureRequired')}
                 </div>
               )}
             </div>
@@ -1954,8 +1996,8 @@ export default function App() {
                 disabled={isSubmitting}
                 className="text-gray-600 hover:text-[#B29259] text-xs font-bold flex items-center gap-1 px-3 py-1.5 disabled:opacity-50"
               >
-                <ArrowRight className="w-4 h-4" />
-                חזור לחבילות
+                {lang === 'he' ? <ArrowRight className="w-4 h-4" aria-hidden="true" /> : <ArrowLeft className="w-4 h-4" aria-hidden="true" />}
+                {t('step3.back')}
               </button>
 
               <button
@@ -1963,8 +2005,8 @@ export default function App() {
                 disabled={isSubmitting}
                 className="bg-[#B29259] hover:bg-[#8C6D3F] text-white px-6 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shadow-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <Printer className="w-4 h-4" />
-                {isSubmitting ? 'שומר ושולח...' : 'אישור והדפסת ההזמנה'}
+                <Printer className="w-4 h-4" aria-hidden="true" />
+                {isSubmitting ? t('step3.submitting') : t('step3.submitIdle')}
               </button>
             </div>
 
@@ -1977,8 +2019,8 @@ export default function App() {
       <footer className="max-w-4xl mx-auto px-4 mt-10 text-center no-print">
         <div className="border-t border-[#EAE3D2] pt-6 text-xs text-gray-400 space-y-0.5">
           <p className="font-bold text-[#8C6D3F] font-serif text-sm">LD Event Design</p>
-          <p>עיצוב אירועים · 054-5740423</p>
-          <p className="mt-1">© {new Date().getFullYear()} כל הזכויות שמורות</p>
+          <p>{t('footer.line1')}</p>
+          <p className="mt-1">{t('footer.rights', { year: new Date().getFullYear() })}</p>
         </div>
       </footer>
     </div>
