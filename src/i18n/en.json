@@ -218,6 +218,17 @@
       "Encountered an accessibility issue? We'll be glad to help and fix it — call 054-5740423."
     ]
   },
+  "a11yWidget": {
+    "open": "Open accessibility menu",
+    "title": "Accessibility",
+    "increaseFont": "Increase text",
+    "decreaseFont": "Decrease text",
+    "contrast": "High contrast",
+    "links": "Highlight links",
+    "readable": "Readable font",
+    "reset": "Reset settings",
+    "statement": "Accessibility statement"
+  },
   "footer": {
     "line1": "Event design · 054-5740423",
     "rights": "© {year} All rights reserved"

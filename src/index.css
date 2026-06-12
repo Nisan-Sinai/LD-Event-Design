@@ -51,6 +51,50 @@ body {
   }
 }
 
+/* --- אפשרויות וידג'ט הנגישות --- */
+/* ניגודיות גבוהה */
+body.a11y-contrast {
+  background: #ffffff;
+}
+body.a11y-contrast,
+body.a11y-contrast .text-gray-400,
+body.a11y-contrast .text-gray-500,
+body.a11y-contrast .text-gray-600,
+body.a11y-contrast .text-gray-700,
+body.a11y-contrast .text-gray-800 {
+  color: #111111 !important;
+}
+body.a11y-contrast .text-\[\#8C6D3F\],
+body.a11y-contrast .text-\[\#B29259\] {
+  color: #6b4f1d !important;
+}
+
+/* הדגשת קישורים וכפתורים */
+body.a11y-links a,
+body.a11y-links button {
+  text-decoration: underline !important;
+  outline: 1px dashed currentColor;
+  outline-offset: 2px;
+}
+
+/* גופן קריא */
+body.a11y-readable,
+body.a11y-readable * {
+  font-family: Arial, "Segoe UI", sans-serif !important;
+  letter-spacing: 0.02em;
+}
+
+/* פוקוס נראה לבירור לאורך כל האתר (נגישות מקלדת) */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #8C6D3F;
+  outline-offset: 2px;
+}
+
 /* הסתרת בקרי ניווט בעת הדפסה */
 @media print {
   .no-print {

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { isSupabaseConfigured } from './lib/supabase';
 import { submitOrder } from './lib/submitOrder';
 import { calcPricing } from './lib/pricing';
+import { AccessibilityWidget } from './components/AccessibilityWidget';
 import { useI18n } from './i18n/i18n';
 import { categoryLabel, PACKAGE_EN, localizedAddonName, localizedUnit } from './i18n/content';
 import {
@@ -2316,6 +2317,9 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* כפתור/וידג'ט נגישות צף */}
+      <AccessibilityWidget onOpenStatement={() => setLegalModal('accessibility')} />
     </div>
   );
 }
