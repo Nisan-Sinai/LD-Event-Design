@@ -25,7 +25,8 @@ import {
 const CATEGORIES = {
   WEDDING: 'חתונה',
   HENNA: 'חינה',
-  EVENTS: 'אירועים (בר/בת מצווה, ברית/ה, יומולדת)'
+  EVENTS: 'אירועים (בר/בת מצווה, ברית/ה, יומולדת)',
+  BARS: 'עמדות בר מתוק'
 } as const;
 
 // --- קוד קופון להטבת ₪500 לשדרוג העיצוב ---
@@ -68,6 +69,13 @@ const WEDDING_ADDONS: Addon[] = [
   { id: 'bamboo-chuppah', name: 'חופת במבוק בנויה', price: 1800, hasFlowers: false },
   { id: 'chuppah-stage', name: 'במה לחופה', price: 4500, hasFlowers: false },
   { id: 'knights-gyps-line', name: 'שולחן אבירים קו אמצע גיבסניות ונרות', price: 500, hasFlowers: true, unit: 'למטר' }
+];
+
+// --- פריטי תוספת לעמדות בר מתוק ---
+const BAR_ADDONS: Addon[] = [
+  { id: 'bar-balloon-arch', name: 'שער בלונים מסביב לשולחן הבר', price: 700, hasFlowers: false },
+  { id: 'bar-balloon-columns', name: '2 עמודי בלונים בצידי הבר', price: 500, hasFlowers: false },
+  { id: 'bar-name-sign', name: 'שלט קפה עם שם הילד/ה', price: 600, hasFlowers: false }
 ];
 
 // --- טיפוסים ---
@@ -314,6 +322,59 @@ const PACKAGES: Package[] = [
     },
     svgType: 'event-vip',
     pricingTiers: { 10: 4000, 20: 6000, 30: 8000 }
+  },
+
+  // --- עמדות בר מתוק ---
+  {
+    id: 'bar-candy',
+    category: CATEGORIES.BARS,
+    title: 'בר חמצוצים וגומי צבעוני',
+    subtitle: 'בר תוסס, שמח ועשיר לכל הגילאים',
+    price: 2500,
+    description: 'בר תוסס, שמח ועשיר בטירוף שמלא בכל סוגי הגומי האיכותיים, החמצוצים והמרשמלו. מעוצב בכלים דקורטיביים ובגבהים שונים, ומושך אליו את האורחים (מכל הגילאים!) לאורך כל הערב.',
+    benefits: 'הטבה: למזמינים בר — 2 זרי משי יוקרתיים לעיצוב הבר במתנה!',
+    details: {
+      bar: [
+        'מבחר עשיר של גומי איכותי, חמצוצים ומרשמלו',
+        'הצגה בכלים דקורטיביים ובגבהים שונים',
+        'עיצוב צבעוני ותוסס שמושך אורחים מכל הגילאים לאורך כל הערב'
+      ]
+    },
+    svgType: 'bar'
+  },
+  {
+    id: 'bar-branded',
+    category: CATEGORIES.BARS,
+    title: 'בר קונספט ממותג באריזות אישיות',
+    subtitle: 'ה-טופ של הסטייל — בר שנתפר לקונספט שלכם',
+    price: 3500,
+    description: 'ה-טופ של הסטייל! בר שנתפר במיוחד לפי הקונספט והצבעים של האירוע שלכם. כל החטיפים, השוקולדים והממתקים מגיעים באריזות מעוצבות וממותגות עם השם שלכם או גרפיקה ייחודית. זה נראה מיליון דולר וכל אורח פשוט חייב לעצור ולצלם את זה.',
+    benefits: 'הטבה: למזמינים בר — 2 זרי משי יוקרתיים לעיצוב הבר במתנה!',
+    details: {
+      bar: [
+        'חטיפים, שוקולדים וממתקים באריזות מעוצבות וממותגות אישית',
+        'מיתוג עם השם שלכם או גרפיקה ייחודית לאירוע',
+        'כולל שלט קפה מעוצב עם שם החוגג/ת'
+      ]
+    },
+    svgType: 'bar'
+  },
+  {
+    id: 'bar-boutique',
+    category: CATEGORIES.BARS,
+    title: 'בר קינוחי בוטיק אקסקלוסיבי',
+    subtitle: 'חוויה קולינרית מושלמת לחובבי המתוקים',
+    price: 4500,
+    description: 'חוויה קולינרית מושלמת לחובבי המתוקים. הבר כולל מגוון קינוחים בעבודת יד, בטעמים עשירים ומרקמים מושלמים, מחומרי גלם איכותיים ביותר ובתצוגה סופר אלגנטית ומוקפדת.',
+    benefits: 'הטבה: למזמינים בר — 2 זרי משי יוקרתיים לעיצוב הבר במתנה!',
+    details: {
+      bar: [
+        'מגוון קינוחי בוטיק בעבודת יד',
+        'טעמים עשירים, מרקמים מושלמים וחומרי גלם איכותיים ביותר',
+        'תצוגה סופר אלגנטית ומוקפדת'
+      ]
+    },
+    svgType: 'bar'
   }
 ];
 
@@ -529,6 +590,34 @@ function renderPackageSVG(type: string) {
       </>
     );
 
+  // איור עמדת בר מתוק: שולחן + 2 צנצנות ממתקים + מגדל קינוחים + זר משי
+  const bar = () => (
+    <svg width="100%" height="104" viewBox="0 0 200 108" role="img" aria-label="עמדת בר מתוק">
+      {/* שולחן הבר */}
+      <rect x="18" y="86" width="164" height="8" rx="2" fill={soft} stroke={gold} strokeWidth="0.6" />
+      {/* 2 צנצנות ממתקים (אפותקרי) */}
+      {[40, 62].map((x, i) => (
+        <g key={`jar${i}`}>
+          <path d={`M${x - 9} 60 Q${x - 10} 85 ${x} 85 Q${x + 10} 85 ${x + 9} 60 Z`} fill={cream} stroke={gold} strokeWidth="0.8" />
+          <ellipse cx={x} cy={60} rx="9" ry="2.6" fill={soft} stroke={gold} strokeWidth="0.6" />
+          <circle cx={x} cy={55} r="2.4" fill={gold} />
+          {[[-4, 73], [3, 71], [-1, 78], [5, 78], [-5, 68], [2, 65]].map(([dx, dy], k) => (
+            <circle key={k} cx={x + dx} cy={dy} r="2.3" fill={k % 2 ? gold : soft} opacity="0.9" />
+          ))}
+        </g>
+      ))}
+      {/* מגדל קינוחים דו-קומתי */}
+      <ellipse cx="108" cy="85" rx="22" ry="4" fill={soft} stroke={gold} strokeWidth="0.6" />
+      {[97, 105, 113, 119].map((cx, k) => <circle key={`d1${k}`} cx={cx} cy={81} r="2.6" fill={k % 2 ? gold : soft} />)}
+      <rect x="106" y="64" width="4" height="19" fill={gold} />
+      <ellipse cx="108" cy="64" rx="14" ry="3.4" fill={soft} stroke={gold} strokeWidth="0.6" />
+      {[101, 108, 115].map((cx, k) => <circle key={`d2${k}`} cx={cx} cy={60.5} r="2.6" fill={k % 2 ? gold : soft} />)}
+      {/* זר משי לעיצוב הבר */}
+      <Bouquet cx={160} cy={64} s={0.8} />
+      <path d="M154 78 Q153 85 156 86 L164 86 Q167 85 166 78 Z" fill={cream} stroke={soft} />
+    </svg>
+  );
+
   switch (type) {
     case 'chuppah-s':
     case 'chuppah-m':
@@ -548,6 +637,8 @@ function renderPackageSVG(type: string) {
       return eventVip();
     case 'event':
       return eventClassic();
+    case 'bar':
+      return bar();
     default:
       return (
         <div className="flex items-center justify-center h-[92px]">
@@ -617,9 +708,10 @@ export default function App() {
     spongeCount: ''
   });
 
-  // חבילה נבחרת
-  const [selectedPackageId, setSelectedPackageId] = useState('classic-s');
+  // חבילות נבחרות (ניתן לבחור יותר מחבילה אחת, גם בין קטגוריות)
+  const [selectedPackageIds, setSelectedPackageIds] = useState<string[]>(['classic-s']);
   const [selectedTableTier, setSelectedTableTier] = useState(10);
+  const [packagesError, setPackagesError] = useState(false);
 
   // תוספות והובלה (הובלה כבויה כברירת מחדל — חובה לאשר ידנית)
   const [includeDelivery, setIncludeDelivery] = useState(false);
@@ -655,31 +747,45 @@ export default function App() {
   const [isGroomDrawing, setIsGroomDrawing] = useState(false);
   const [isBrideDrawing, setIsBrideDrawing] = useState(false);
 
-  // שינוי חבילה אוטומטי בעת מעבר קטגוריה
-  useEffect(() => {
-    const available = PACKAGES.filter(p => p.category === activeCategory);
-    if (available.length > 0) {
-      setSelectedPackageId(available[0].id);
+  const selectedPackages = PACKAGES.filter(p => selectedPackageIds.includes(p.id));
+
+  const hasWeddingPackage = selectedPackages.some(p => p.category === CATEGORIES.WEDDING);
+  const hasBarPackage = selectedPackages.some(p => p.category === CATEGORIES.BARS);
+
+  // מחיר חבילה בודדת (כולל מדרגת שולחנות אם קיימת לחבילה)
+  const packagePrice = (pkg: Package) =>
+    pkg.pricingTiers && pkg.pricingTiers[selectedTableTier]
+      ? pkg.pricingTiers[selectedTableTier]
+      : pkg.price;
+
+  // החלפת בחירת חבילה (הוספה/הסרה) — מאפשר ריבוי חבילות
+  const togglePackage = (pkg: Package) => {
+    setPackagesError(false);
+    setSelectedPackageIds(prev =>
+      prev.includes(pkg.id) ? prev.filter(id => id !== pkg.id) : [...prev, pkg.id]
+    );
+    if (pkg.pricingTiers && !pkg.pricingTiers[selectedTableTier]) {
+      setSelectedTableTier(10);
     }
-  }, [activeCategory]);
+  };
 
-  const selectedPackage = PACKAGES.find(p => p.id === selectedPackageId) || PACKAGES[0];
-
-  const isWeddingPackage = selectedPackage.category === CATEGORIES.WEDDING;
+  // קטלוג התוספות הרלוונטי לפי החבילות שנבחרו
+  const activeAddons: Addon[] = [
+    ...(hasWeddingPackage ? WEDDING_ADDONS : []),
+    ...(hasBarPackage ? BAR_ADDONS : [])
+  ];
 
   // פריטי התוספת שנבחרו (כמות > 0) והסכום שלהם
-  const selectedAddons = isWeddingPackage
-    ? WEDDING_ADDONS
-        .map(a => ({ ...a, qty: addonQty[a.id] || 0 }))
-        .filter(a => a.qty > 0)
-    : [];
+  const selectedAddons = activeAddons
+    .map(a => ({ ...a, qty: addonQty[a.id] || 0 }))
+    .filter(a => a.qty > 0);
   const addonsTotal = selectedAddons.reduce((sum, a) => sum + a.price * a.qty, 0);
 
   // פריטים שזכאים להטבת ה-₪500: נבחרו ואינם כוללים פרחים
   const giftEligibleAddons = selectedAddons.filter(a => !a.hasFlowers);
 
-  // האם החבילה זכאית להטבת ₪500 (חבילות עם ההטבה בלעדית) והאם הוזן קוד תקין
-  const isCouponEligible = selectedPackage.benefits.includes('₪500');
+  // האם אחת מהחבילות שנבחרו זכאית להטבת ₪500, והאם הוזן קוד תקין
+  const isCouponEligible = selectedPackages.some(p => p.benefits.includes('₪500'));
   const isCouponValid = isCouponEligible && couponCode.trim() === COUPON_CODE;
 
   // הפריט שעליו ממומשת ההטבה (חייב להיות זכאי) וההנחה בפועל (עד ₪500, לא יותר משווי הפריט)
@@ -690,10 +796,7 @@ export default function App() {
 
   // חישוב מחירים
   const getPricing = () => {
-    let basePrice = selectedPackage.price;
-    if (selectedPackage.pricingTiers && selectedPackage.pricingTiers[selectedTableTier]) {
-      basePrice = selectedPackage.pricingTiers[selectedTableTier];
-    }
+    const basePrice = selectedPackages.reduce((sum, p) => sum + packagePrice(p), 0);
 
     const upgradesTotal = customUpgrades.reduce((sum, item) => sum + (item.price || 0), 0);
     const deliveryPrice = includeDelivery ? 500 : 0;
@@ -768,6 +871,11 @@ export default function App() {
   };
 
   const handleNext = () => {
+    if (currentStep === 2 && selectedPackageIds.length === 0) {
+      setPackagesError(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     if (validateStep(currentStep)) {
       setCurrentStep(prev => prev + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -814,9 +922,9 @@ export default function App() {
           email: clientInfo.email,
           eventDate: clientInfo.eventDate,
           eventLocation: clientInfo.eventLocation,
-          packageId: selectedPackage.id,
-          packageTitle: selectedPackage.title,
-          tableTier: selectedPackage.pricingTiers ? selectedTableTier : null,
+          packageId: selectedPackageIds.join(','),
+          packageTitle: selectedPackages.map(p => p.title).join(' + '),
+          tableTier: selectedPackages.some(p => p.pricingTiers) ? selectedTableTier : null,
           compositesCount: clientInfo.compositesCount,
           spongeCount: clientInfo.spongeCount,
           includeDelivery,
@@ -1210,24 +1318,29 @@ export default function App() {
               </div>
             )}
 
+            {/* הנחיית בחירה מרובה + שגיאת ולידציה */}
+            <div className="bg-[#FAF7F2] border border-[#EAE3D2] rounded-xl px-4 py-2.5 flex items-center gap-2 text-[11px] text-[#8C6D3F]">
+              <Check className="w-3.5 h-3.5 shrink-0" />
+              ניתן לבחור יותר מחבילה אחת — גם בין קטגוריות שונות (למשל חבילת חתונה + עמדת בר מתוק).
+            </div>
+            {packagesError && (
+              <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-3 rounded-xl">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                יש לבחור לפחות חבילה אחת כדי להמשיך.
+              </div>
+            )}
+
             {/* גריד חבילות דינמי */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {PACKAGES.filter(p => p.category === activeCategory).map((pkg) => {
-                const isSelected = selectedPackageId === pkg.id;
+                const isSelected = selectedPackageIds.includes(pkg.id);
 
-                const currentPrice = (pkg.pricingTiers && pkg.pricingTiers[selectedTableTier])
-                  ? pkg.pricingTiers[selectedTableTier]
-                  : pkg.price;
+                const currentPrice = packagePrice(pkg);
 
                 return (
                   <div
                     key={pkg.id}
-                    onClick={() => {
-                      setSelectedPackageId(pkg.id);
-                      if (pkg.pricingTiers && !pkg.pricingTiers[selectedTableTier]) {
-                        setSelectedTableTier(10);
-                      }
-                    }}
+                    onClick={() => togglePackage(pkg)}
                     className={`bg-white rounded-2xl border-2 p-5 flex flex-col justify-between cursor-pointer transition-all relative ${
                       isSelected
                         ? 'border-[#B29259] shadow-md ring-1 ring-[#B29259]/20'
@@ -1280,10 +1393,10 @@ export default function App() {
                         <Gift className="w-3 h-3" />
                         {pkg.benefits}{pkg.benefits.includes('₪500') ? ' (בהזנת קוד קופון)' : ''}
                       </span>
-                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                        isSelected ? 'border-[#B29259] bg-[#B29259]' : 'border-gray-300'
+                      <div className={`w-4 h-4 rounded border flex items-center justify-center ${
+                        isSelected ? 'border-[#B29259] bg-[#B29259] text-white' : 'border-gray-300'
                       }`}>
-                        {isSelected && <div className="w-2 h-2 bg-white rounded-full" />}
+                        {isSelected && <Check className="w-3 h-3" />}
                       </div>
                     </div>
                   </div>
@@ -1291,8 +1404,28 @@ export default function App() {
               })}
             </div>
 
-            {/* פרטים לבחירה אישית מתוך החוזה */}
-            {activeCategory === CATEGORIES.WEDDING && (
+            {/* סיכום החבילות שנבחרו (ריבוי חבילות) */}
+            {selectedPackages.length > 0 && (
+              <div className="bg-white border border-[#EAE3D2] rounded-2xl p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-2.5">
+                  <p className="text-xs font-bold text-[#8C6D3F]">החבילות שבחרת ({selectedPackages.length})</p>
+                  <span className="text-xs font-black text-[#8C6D3F]">סה"כ חבילות: ₪{selectedPackages.reduce((s, p) => s + packagePrice(p), 0).toLocaleString()}</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {selectedPackages.map((p) => (
+                    <span key={p.id} className="inline-flex items-center gap-1.5 bg-[#FAF7F2] border border-[#EAE3D2] rounded-full pr-3 pl-2 py-1 text-[11px] text-gray-700">
+                      {p.title} · ₪{packagePrice(p).toLocaleString()}
+                      <button type="button" onClick={() => togglePackage(p)} className="text-gray-400 hover:text-red-500" title="הסר חבילה" aria-label={`הסר ${p.title}`}>
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* פרטים לבחירה אישית מתוך החוזה — מוצג אם נבחרה חבילת חתונה */}
+            {hasWeddingPackage && (
               <div className="bg-white p-6 rounded-2xl border border-[#EAE3D2] shadow-sm space-y-4">
                 <div className="border-b pb-2">
                   <h3 className="text-sm font-bold text-[#8C6D3F]">בחירת עיצוב השולחנות</h3>
@@ -1481,19 +1614,19 @@ export default function App() {
               </div>
             </div>
 
-            {/* תוספות ושדרוגים לחבילת עיצוב חתונה (קטלוג עם כמויות) */}
-            {isWeddingPackage && (
+            {/* תוספות ושדרוגים לחבילות שנבחרו (קטלוג עם כמויות) */}
+            {activeAddons.length > 0 && (
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EAE3D2] space-y-4">
                 <div>
                   <h3 className="text-base font-bold text-[#8C6D3F] flex items-center gap-1.5">
                     <Plus className="w-4.5 h-4.5 text-[#B29259]" />
-                    תוספות ושדרוגים לחבילת העיצוב
+                    תוספות ושדרוגים לחבילות שבחרת
                   </h3>
-                  <p className="text-xs text-gray-500 mt-1">סמנו כמות לכל פריט שתרצו להוסיף — המחיר יתווסף לחבילת העיצוב.</p>
+                  <p className="text-xs text-gray-500 mt-1">סמנו כמות לכל פריט שתרצו להוסיף — המחיר יתווסף לסך ההזמנה.</p>
                 </div>
 
                 <div className="border border-gray-100 rounded-xl divide-y divide-gray-100">
-                  {WEDDING_ADDONS.map((a) => {
+                  {activeAddons.map((a) => {
                     const qty = addonQty[a.id] || 0;
                     return (
                       <div key={a.id} className={`flex items-center justify-between gap-3 p-3 ${qty > 0 ? 'bg-[#FAF7F2]' : ''}`}>
@@ -1646,10 +1779,12 @@ export default function App() {
 
               {/* פירוט כספי */}
               <div className="space-y-3 text-xs">
-                <div className="flex justify-between items-center text-gray-600">
-                  <span>{selectedPackage.title} {selectedPackage.pricingTiers ? `(${selectedTableTier} שולחנות)` : ''}</span>
-                  <span className="font-bold text-gray-800">₪{pricing.basePrice.toLocaleString()}</span>
-                </div>
+                {selectedPackages.map((p) => (
+                  <div key={p.id} className="flex justify-between items-center text-gray-600">
+                    <span>{p.title}{p.pricingTiers ? ` (${selectedTableTier} שולחנות)` : ''}</span>
+                    <span className="font-bold text-gray-800">₪{packagePrice(p).toLocaleString()}</span>
+                  </div>
+                ))}
 
                 {customUpgrades.map((item) => (
                   <div key={item.id} className="flex justify-between items-center text-gray-600">
