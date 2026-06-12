@@ -20,7 +20,8 @@ import {
   Check,
   FileText,
   AlertCircle,
-  Users
+  Users,
+  X
 } from 'lucide-react';
 
 // --- קטגוריות החבילות ---
@@ -693,7 +694,7 @@ function renderTableChoiceSVG() {
 }
 
 export default function App() {
-  const { t, lang, dir, setLang } = useI18n();
+  const { t, tList, lang, dir, setLang } = useI18n();
 
   // טקסט חבילה בשפה הנוכחית (עברית מהנתונים, אנגלית ממודול התוכן)
   const L = (pkg: Package) =>
@@ -758,6 +759,11 @@ export default function App() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showSignatureError, setShowSignatureError] = useState(false);
   const [showDeliveryError, setShowDeliveryError] = useState(false);
+
+  // אישור תקנון/פרטיות + מודאל מסמכים משפטיים
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showTermsError, setShowTermsError] = useState(false);
+  const [legalModal, setLegalModal] = useState<null | 'privacy' | 'terms' | 'accessibility'>(null);
 
   // מצב שליחה/שמירה
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -851,6 +857,16 @@ export default function App() {
 
   const pricing = getPricing();
 
+  // סגירת המודאל המשפטי במקש Esc (נגישות)
+  useEffect(() => {
+    if (!legalModal) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLegalModal(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [legalModal]);
+
   // הוספת שדרוג חופשי ידני
   const handleAddUpgrade = (e: React.FormEvent) => {
     e.preventDefault();
@@ -932,6 +948,11 @@ export default function App() {
     if (!includeDelivery) {
       setShowDeliveryError(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (!termsAccepted) {
+      setShowTermsError(true);
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
       return;
     }
     if (!isGroomSigned || !isBrideSigned) {
@@ -1107,6 +1128,12 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] text-gray-800 font-sans antialiased pb-12 selection:bg-[#B29259] selection:text-white animate-fadeIn" dir={dir}>
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:top-2 focus:start-2 focus:bg-[#B29259] focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg focus:text-sm focus:font-bold"
+      >
+        {t('a11y.skip')}
+      </a>
 
       {/* --- לוגו וכותרת ראשית --- */}
       <header className="bg-white border-b border-[#EAE3D2] shadow-sm sticky top-0 z-50">
@@ -1164,13 +1191,13 @@ export default function App() {
               { step: 2, label: t('steps.s2') },
               { step: 3, label: t('steps.s3') }
             ].map((item) => (
-              <div key={item.step} className="flex flex-col items-center z-10 relative">
+              <div key={item.step} className="flex flex-col items-center z-10 relative" aria-current={currentStep === item.step ? 'step' : undefined}>
                 <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs transition-all duration-300 ${
                   currentStep >= item.step
                     ? 'bg-[#B29259] text-white ring-4 ring-[#FAF7F2] shadow-sm'
                     : 'bg-white border border-gray-200 text-gray-400'
                 }`}>
-                  {currentStep > item.step ? <Check className="w-4 h-4" /> : item.step}
+                  {currentStep > item.step ? <Check className="w-4 h-4" aria-hidden="true" /> : item.step}
                 </div>
                 <span className={`text-[10px] sm:text-xs mt-1.5 font-bold ${
                   currentStep >= item.step ? 'text-gray-800' : 'text-gray-400'
@@ -1182,7 +1209,7 @@ export default function App() {
       </div>
 
       {/* --- תוכן האפליקציה לפי שלבים --- */}
-      <main className="max-w-4xl mx-auto px-4">
+      <main id="main" tabIndex={-1} className="max-w-4xl mx-auto px-4 outline-none">
 
         {/* ================= שלב 1: פרטי החתן, הכלה והאירוע (עם 2 טלפונים חובה) ================= */}
         {currentStep === 1 && (
@@ -1226,13 +1253,17 @@ export default function App() {
 
               {/* שם בעל האירוע */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">{t('step1.groomName')}</label>
+                <label htmlFor="f-groomName" className="block text-xs font-bold text-gray-700 mb-1.5">{t('step1.groomName')}</label>
                 <div className="relative">
                   <span className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400">
                     <User className="w-4 h-4" aria-hidden="true" />
                   </span>
                   <input
+                    id="f-groomName"
                     type="text"
+                    required
+                    aria-required="true"
+                    aria-invalid={!!errors.groomName}
                     value={clientInfo.groomName}
                     onChange={(e) => setClientInfo({ ...clientInfo, groomName: e.target.value })}
                     placeholder={t('step1.groomNamePh')}
@@ -1244,13 +1275,17 @@ export default function App() {
 
               {/* שם בעלת האירוע */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">{t('step1.brideName')}</label>
+                <label htmlFor="f-brideName" className="block text-xs font-bold text-gray-700 mb-1.5">{t('step1.brideName')}</label>
                 <div className="relative">
                   <span className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400">
                     <User className="w-4 h-4" aria-hidden="true" />
                   </span>
                   <input
+                    id="f-brideName"
                     type="text"
+                    required
+                    aria-required="true"
+                    aria-invalid={!!errors.brideName}
                     value={clientInfo.brideName}
                     onChange={(e) => setClientInfo({ ...clientInfo, brideName: e.target.value })}
                     placeholder={t('step1.brideNamePh')}
@@ -1262,13 +1297,17 @@ export default function App() {
 
               {/* טלפון בעל האירוע - חובה */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">{t('step1.groomPhone')}</label>
+                <label htmlFor="f-groomPhone" className="block text-xs font-bold text-gray-700 mb-1.5">{t('step1.groomPhone')}</label>
                 <div className="relative">
                   <span className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400">
                     <Phone className="w-4 h-4" aria-hidden="true" />
                   </span>
                   <input
+                    id="f-groomPhone"
                     type="tel"
+                    required
+                    aria-required="true"
+                    aria-invalid={!!errors.groomPhone}
                     value={clientInfo.groomPhone}
                     onChange={(e) => setClientInfo({ ...clientInfo, groomPhone: e.target.value })}
                     placeholder={t('step1.groomPhonePh')}
@@ -1280,13 +1319,17 @@ export default function App() {
 
               {/* טלפון בעלת האירוע - חובה */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">{t('step1.bridePhone')}</label>
+                <label htmlFor="f-bridePhone" className="block text-xs font-bold text-gray-700 mb-1.5">{t('step1.bridePhone')}</label>
                 <div className="relative">
                   <span className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400">
                     <Phone className="w-4 h-4" aria-hidden="true" />
                   </span>
                   <input
+                    id="f-bridePhone"
                     type="tel"
+                    required
+                    aria-required="true"
+                    aria-invalid={!!errors.bridePhone}
                     value={clientInfo.bridePhone}
                     onChange={(e) => setClientInfo({ ...clientInfo, bridePhone: e.target.value })}
                     placeholder={t('step1.bridePhonePh')}
@@ -1298,13 +1341,17 @@ export default function App() {
 
               {/* תאריך אירוע */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">{t('step1.eventDate')}</label>
+                <label htmlFor="f-eventDate" className="block text-xs font-bold text-gray-700 mb-1.5">{t('step1.eventDate')}</label>
                 <div className="relative">
                   <span className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400">
                     <Calendar className="w-4 h-4" aria-hidden="true" />
                   </span>
                   <input
+                    id="f-eventDate"
                     type="date"
+                    required
+                    aria-required="true"
+                    aria-invalid={!!errors.eventDate}
                     value={clientInfo.eventDate}
                     onChange={(e) => setClientInfo({ ...clientInfo, eventDate: e.target.value })}
                     className={`w-full ps-9 pe-3 py-2.5 bg-[#FAF7F2] border ${errors.eventDate ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all`}
@@ -1315,13 +1362,17 @@ export default function App() {
 
               {/* מיקום האירוע */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">{t('step1.eventLocation')}</label>
+                <label htmlFor="f-eventLocation" className="block text-xs font-bold text-gray-700 mb-1.5">{t('step1.eventLocation')}</label>
                 <div className="relative">
                   <span className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400">
                     <MapPin className="w-4 h-4" aria-hidden="true" />
                   </span>
                   <input
+                    id="f-eventLocation"
                     type="text"
+                    required
+                    aria-required="true"
+                    aria-invalid={!!errors.eventLocation}
                     value={clientInfo.eventLocation}
                     onChange={(e) => setClientInfo({ ...clientInfo, eventLocation: e.target.value })}
                     placeholder={t('step1.eventLocationPh')}
@@ -1333,13 +1384,17 @@ export default function App() {
 
               {/* אימייל */}
               <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">{isAdmin ? t('admin.emailOptional') : t('step1.email')}</label>
+                <label htmlFor="f-email" className="block text-xs font-bold text-gray-700 mb-1.5">{isAdmin ? t('admin.emailOptional') : t('step1.email')}</label>
                 <div className="relative">
                   <span className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400">
                     <Mail className="w-4 h-4" aria-hidden="true" />
                   </span>
                   <input
+                    id="f-email"
                     type="email"
+                    required={!isAdmin}
+                    aria-required={!isAdmin}
+                    aria-invalid={!!errors.email}
                     value={clientInfo.email}
                     onChange={(e) => setClientInfo({ ...clientInfo, email: e.target.value })}
                     placeholder={t('step1.emailPh')}
@@ -2161,9 +2216,34 @@ export default function App() {
               )}
             </div>
 
+            {/* אישור תקנון ומדיניות פרטיות (חובה) */}
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-[#EAE3D2] no-print">
+              <label className="flex items-start gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(e) => { setTermsAccepted(e.target.checked); setShowTermsError(false); }}
+                  className="mt-0.5 w-4 h-4 accent-[#B29259]"
+                  aria-describedby={showTermsError ? 'terms-error' : undefined}
+                />
+                <span className="text-xs text-gray-700 leading-relaxed">
+                  {t('terms.label')} *{' '}
+                  <button type="button" onClick={() => setLegalModal('terms')} className="text-[#8C6D3F] underline font-bold">{t('legal.terms')}</button>
+                  {' · '}
+                  <button type="button" onClick={() => setLegalModal('privacy')} className="text-[#8C6D3F] underline font-bold">{t('legal.privacy')}</button>
+                </span>
+              </label>
+              {showTermsError && (
+                <p id="terms-error" role="alert" className="text-[11px] text-red-500 mt-1.5 flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                  {t('terms.required')}
+                </p>
+              )}
+            </div>
+
             {/* הודעת שגיאת שמירה */}
             {submitError && (
-              <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-3 rounded-xl no-print">
+              <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-3 rounded-xl no-print" role="alert">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 {submitError}
               </div>
@@ -2200,9 +2280,50 @@ export default function App() {
         <div className="border-t border-[#EAE3D2] pt-6 text-xs text-gray-400 space-y-0.5">
           <p className="font-bold text-[#8C6D3F] font-serif text-sm">LD Event Design</p>
           <p>{t('footer.line1')}</p>
+          <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mt-2" aria-label={t('legal.terms')}>
+            <button type="button" onClick={() => setLegalModal('privacy')} className="hover:text-[#B29259] underline">{t('legal.privacy')}</button>
+            <span aria-hidden="true">·</span>
+            <button type="button" onClick={() => setLegalModal('terms')} className="hover:text-[#B29259] underline">{t('legal.terms')}</button>
+            <span aria-hidden="true">·</span>
+            <button type="button" onClick={() => setLegalModal('accessibility')} className="hover:text-[#B29259] underline">{t('legal.accessibility')}</button>
+          </nav>
           <p className="mt-1">{t('footer.rights', { year: new Date().getFullYear() })}</p>
         </div>
       </footer>
+
+      {/* מודאל מסמכים משפטיים (פרטיות / תקנון / נגישות) */}
+      {legalModal && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 no-print"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="legal-title"
+          onClick={() => setLegalModal(null)}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-lg w-full max-h-[80vh] overflow-auto p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+            dir={dir}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h2 id="legal-title" className="text-lg font-bold text-[#8C6D3F]">{t(`legal.${legalModal}`)}</h2>
+              <button type="button" onClick={() => setLegalModal(null)} aria-label={t('legal.close')} className="text-gray-400 hover:text-gray-700">
+                <X className="w-5 h-5" aria-hidden="true" />
+              </button>
+            </div>
+            <div className="space-y-2.5 text-sm text-gray-600 leading-relaxed">
+              {tList(`legal.${legalModal}Body`).map((p, i) => <p key={i}>{p}</p>)}
+            </div>
+            <button
+              type="button"
+              onClick={() => setLegalModal(null)}
+              className="mt-5 w-full bg-[#B29259] hover:bg-[#8C6D3F] text-white py-2.5 rounded-xl text-sm font-bold"
+            >
+              {t('legal.close')}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

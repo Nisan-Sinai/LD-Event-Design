@@ -188,6 +188,36 @@
     "submitIdle": "Confirm & print the order",
     "submitting": "Saving & sending..."
   },
+  "a11y": {
+    "skip": "Skip to main content",
+    "step": "Step {n}",
+    "stepCurrent": "Current step"
+  },
+  "terms": {
+    "label": "I have read and accept the Terms of Use and Privacy Policy",
+    "required": "You must accept the Terms of Use and Privacy Policy to continue."
+  },
+  "legal": {
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Use",
+    "accessibility": "Accessibility Statement",
+    "close": "Close",
+    "privacyBody": [
+      "At LD Event Design we respect your privacy. The details you provide in the form (name, phone, email, event details and digital signature) are used solely to process the order, contact you and provide the service.",
+      "We do not share your details with third parties that are not required to provide the service, and we store them securely.",
+      "You may contact us at any time to review, correct or delete your information at 054-5740423."
+    ],
+    "termsBody": [
+      "The order is subject to the engagement terms and the cancellation policy detailed in the agreement document.",
+      "Confirming the order and the digital signature constitute acceptance of the terms. Prices are in ILS and include the components detailed in the order.",
+      "Changes, add-ons and cancellations are handled according to the policy detailed in the agreement."
+    ],
+    "accessibilityBody": [
+      "This site was built with a commitment to accessibility for all users, following the WCAG 2.1 AA guidelines.",
+      "The site supports full keyboard navigation, ARIA attributes, a proper heading structure, RTL/LTR direction and text resizing.",
+      "Encountered an accessibility issue? We'll be glad to help and fix it — call 054-5740423."
+    ]
+  },
   "footer": {
     "line1": "Event design · 054-5740423",
     "rights": "© {year} All rights reserved"
