@@ -724,6 +724,18 @@ export default function App() {
     spongeCount: ''
   });
 
+  // מצב הזמנה: לקוח פרטי / מנהל (בעל העסק יוצר עבור לקוח)
+  const [orderMode, setOrderMode] = useState<'client' | 'admin'>('client');
+  const isAdmin = orderMode === 'admin';
+  const [adminInfo, setAdminInfo] = useState({
+    source: '',
+    receivedBy: '',
+    status: 'draft',
+    internalNotes: '',
+    manualDiscount: '',
+    manualTotal: ''
+  });
+
   // חבילות נבחרות (ניתן לבחור יותר מחבילה אחת, גם בין קטגוריות)
   const [selectedPackageIds, setSelectedPackageIds] = useState<string[]>(['classic-s']);
   const [selectedTableTier, setSelectedTableTier] = useState(10);
@@ -816,7 +828,14 @@ export default function App() {
 
     const upgradesTotal = customUpgrades.reduce((sum, item) => sum + (item.price || 0), 0);
     const deliveryPrice = includeDelivery ? 500 : 0;
-    const totalPrice = basePrice + upgradesTotal + addonsTotal + deliveryPrice - couponDiscount;
+    const adminDiscount = isAdmin ? Math.max(0, parseFloat(adminInfo.manualDiscount) || 0) : 0;
+    const computedTotal = Math.max(
+      0,
+      basePrice + upgradesTotal + addonsTotal + deliveryPrice - couponDiscount - adminDiscount
+    );
+    const manualOverride =
+      isAdmin && adminInfo.manualTotal.trim() !== '' ? Math.max(0, parseFloat(adminInfo.manualTotal) || 0) : null;
+    const totalPrice = manualOverride !== null ? manualOverride : computedTotal;
 
     return {
       basePrice,
@@ -824,6 +843,8 @@ export default function App() {
       addonsTotal,
       deliveryPrice,
       couponDiscount,
+      adminDiscount,
+      manualOverride,
       totalPrice
     };
   };
@@ -882,8 +903,8 @@ export default function App() {
       if (!clientInfo.bridePhone.trim()) tempErrors.bridePhone = t('errors.bridePhoneRequired');
       if (!clientInfo.eventDate) tempErrors.eventDate = t('errors.eventDateRequired');
       if (!clientInfo.eventLocation.trim()) tempErrors.eventLocation = t('errors.eventLocationRequired');
-      if (!clientInfo.email.trim()) tempErrors.email = t('errors.emailRequired');
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientInfo.email)) tempErrors.email = t('errors.emailInvalid');
+      if (!isAdmin && !clientInfo.email.trim()) tempErrors.email = t('errors.emailRequired');
+      else if (clientInfo.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientInfo.email)) tempErrors.email = t('errors.emailInvalid');
     }
     setErrors(tempErrors);
     return Object.keys(tempErrors).length === 0;
@@ -1166,6 +1187,33 @@ export default function App() {
         {/* ================= שלב 1: פרטי החתן, הכלה והאירוע (עם 2 טלפונים חובה) ================= */}
         {currentStep === 1 && (
           <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-[#EAE3D2] space-y-6 animate-fadeIn">
+            {/* בחירת סוג מזמין: לקוח פרטי / מנהל */}
+            <div>
+              <p className="text-xs font-bold text-gray-700 mb-2">{t('orderType.title')}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" role="group" aria-label={t('orderType.title')}>
+                {([
+                  { mode: 'client' as const, icon: <User className="w-4 h-4" aria-hidden="true" />, title: t('orderType.client'), desc: t('orderType.clientDesc') },
+                  { mode: 'admin' as const, icon: <Users className="w-4 h-4" aria-hidden="true" />, title: t('orderType.admin'), desc: t('orderType.adminDesc') }
+                ]).map((opt) => (
+                  <button
+                    key={opt.mode}
+                    type="button"
+                    onClick={() => setOrderMode(opt.mode)}
+                    aria-pressed={orderMode === opt.mode}
+                    className={`text-start p-3 rounded-xl border flex items-start gap-2.5 transition-all ${
+                      orderMode === opt.mode ? 'border-[#B29259] bg-[#FAF7F2] ring-1 ring-[#B29259]/20' : 'border-gray-200 hover:border-[#B29259]/50'
+                    }`}
+                  >
+                    <span className={`mt-0.5 ${orderMode === opt.mode ? 'text-[#B29259]' : 'text-gray-400'}`}>{opt.icon}</span>
+                    <span>
+                      <span className="block text-sm font-bold text-gray-800">{opt.title}</span>
+                      <span className="block text-[11px] text-gray-500">{opt.desc}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="border-b border-gray-100 pb-4">
               <h2 className="text-xl font-bold text-[#8C6D3F] flex items-center gap-2">
                 <Users className="w-5.5 h-5.5 text-[#B29259]" aria-hidden="true" />
@@ -1285,7 +1333,7 @@ export default function App() {
 
               {/* אימייל */}
               <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">{t('step1.email')}</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">{isAdmin ? t('admin.emailOptional') : t('step1.email')}</label>
                 <div className="relative">
                   <span className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400">
                     <Mail className="w-4 h-4" aria-hidden="true" />
@@ -1302,6 +1350,69 @@ export default function App() {
               </div>
 
             </div>
+
+            {/* פאנל מנהל — מקור/סטטוס/הערות פנימיות */}
+            {isAdmin && (
+              <div className="bg-[#FAF7F2] border border-[#EAE3D2] rounded-2xl p-5 space-y-4">
+                <div>
+                  <h3 className="text-sm font-bold text-[#8C6D3F]">{t('admin.panelTitle')}</h3>
+                  <p className="text-[11px] text-gray-500">{t('admin.panelSub')}</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label htmlFor="admin-source" className="block text-xs font-bold text-gray-700 mb-1">{t('admin.source')}</label>
+                    <select
+                      id="admin-source"
+                      value={adminInfo.source}
+                      onChange={(e) => setAdminInfo({ ...adminInfo, source: e.target.value })}
+                      className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#B29259]"
+                    >
+                      <option value="">{t('admin.sourcePh')}</option>
+                      {['phone', 'whatsapp', 'meeting', 'instagram', 'facebook', 'other'].map((s) => (
+                        <option key={s} value={s}>{t(`admin.source_${s}`)}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="admin-received" className="block text-xs font-bold text-gray-700 mb-1">{t('admin.receivedBy')}</label>
+                    <select
+                      id="admin-received"
+                      value={adminInfo.receivedBy}
+                      onChange={(e) => setAdminInfo({ ...adminInfo, receivedBy: e.target.value })}
+                      className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#B29259]"
+                    >
+                      <option value="">{t('admin.sourcePh')}</option>
+                      <option value="owner">{t('admin.received_owner')}</option>
+                      <option value="employee">{t('admin.received_employee')}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="admin-status" className="block text-xs font-bold text-gray-700 mb-1">{t('admin.status')}</label>
+                    <select
+                      id="admin-status"
+                      value={adminInfo.status}
+                      onChange={(e) => setAdminInfo({ ...adminInfo, status: e.target.value })}
+                      className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#B29259]"
+                    >
+                      {['draft', 'pending', 'approved', 'deposit', 'paid', 'cancelled', 'done'].map((s) => (
+                        <option key={s} value={s}>{t(`admin.status_${s}`)}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="admin-notes" className="block text-xs font-bold text-gray-700 mb-1">{t('admin.internalNotes')}</label>
+                  <textarea
+                    id="admin-notes"
+                    value={adminInfo.internalNotes}
+                    onChange={(e) => setAdminInfo({ ...adminInfo, internalNotes: e.target.value })}
+                    rows={2}
+                    placeholder={t('admin.internalNotesPh')}
+                    className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#B29259]"
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="mt-6 flex justify-end">
               <button
@@ -1771,6 +1882,42 @@ export default function App() {
               </div>
             )}
 
+            {/* תמחור ידני — מנהל */}
+            {isAdmin && (
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EAE3D2] space-y-4">
+                <h3 className="text-base font-bold text-[#8C6D3F] flex items-center gap-1.5">
+                  <Plus className="w-4.5 h-4.5 text-[#B29259]" aria-hidden="true" />
+                  {t('admin.pricingTitle')}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="admin-discount" className="block text-xs font-bold text-gray-700 mb-1">{t('admin.manualDiscount')}</label>
+                    <input
+                      id="admin-discount"
+                      type="number"
+                      min="0"
+                      value={adminInfo.manualDiscount}
+                      onChange={(e) => setAdminInfo({ ...adminInfo, manualDiscount: e.target.value })}
+                      placeholder={t('admin.manualDiscountPh')}
+                      className="w-full px-3 py-2.5 bg-[#FAF7F2] border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#B29259]"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="admin-total" className="block text-xs font-bold text-gray-700 mb-1">{t('admin.manualTotal')}</label>
+                    <input
+                      id="admin-total"
+                      type="number"
+                      min="0"
+                      value={adminInfo.manualTotal}
+                      onChange={(e) => setAdminInfo({ ...adminInfo, manualTotal: e.target.value })}
+                      placeholder={t('admin.manualTotalPh')}
+                      className="w-full px-3 py-2.5 bg-[#FAF7F2] border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#B29259]"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* סיכום חוזה רשמי והזמנה לחתונה */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EAE3D2] space-y-6">
               <div className="text-center pb-4 border-b border-gray-100">
@@ -1817,6 +1964,32 @@ export default function App() {
                     <p className="font-bold text-gray-700 mt-0.5">{t('step3.tablesUnit', { n: clientInfo.spongeCount })}</p>
                   </div>
                 )}
+                {isAdmin && (
+                  <>
+                    <div>
+                      <span className="text-gray-400 font-medium">{t('admin.statusLabel')}</span>
+                      <p className="font-bold text-gray-700 mt-0.5">{t(`admin.status_${adminInfo.status}`)}</p>
+                    </div>
+                    {adminInfo.source && (
+                      <div>
+                        <span className="text-gray-400 font-medium">{t('admin.sourceLabel')}</span>
+                        <p className="font-bold text-gray-700 mt-0.5">{t(`admin.source_${adminInfo.source}`)}</p>
+                      </div>
+                    )}
+                    {adminInfo.receivedBy && (
+                      <div>
+                        <span className="text-gray-400 font-medium">{t('admin.receivedLabel')}</span>
+                        <p className="font-bold text-gray-700 mt-0.5">{t(`admin.received_${adminInfo.receivedBy}`)}</p>
+                      </div>
+                    )}
+                    {adminInfo.internalNotes.trim() && (
+                      <div className="col-span-2">
+                        <span className="text-gray-400 font-medium">{t('admin.notesLabel')}</span>
+                        <p className="font-bold text-gray-700 mt-0.5 whitespace-pre-wrap">{adminInfo.internalNotes}</p>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
 
               {/* פירוט כספי */}
@@ -1853,6 +2026,13 @@ export default function App() {
                   <div className="flex justify-between items-center text-emerald-600">
                     <span>{t('step3.lineCoupon', { name: localizedAddonName(giftAddon.id, giftAddon.name, lang) })}</span>
                     <span className="font-bold">−₪{pricing.couponDiscount.toLocaleString()}</span>
+                  </div>
+                )}
+
+                {pricing.adminDiscount > 0 && (
+                  <div className="flex justify-between items-center text-emerald-600">
+                    <span>{t('admin.lineDiscount')}</span>
+                    <span className="font-bold">−₪{pricing.adminDiscount.toLocaleString()}</span>
                   </div>
                 )}
 
