@@ -37,3 +37,6 @@ dist-ssr
 Thumbs.db
 
 .vercel
+
+# test coverage
+coverage
