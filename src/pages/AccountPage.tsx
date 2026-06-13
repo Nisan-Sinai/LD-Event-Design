@@ -4,12 +4,14 @@ import { Plus, Calendar, MapPin } from 'lucide-react';
 import { useI18n } from '../i18n/i18n';
 import { useAuth } from '../auth/AuthProvider';
 import { fetchOrders, type OrderRow } from '../lib/orders';
+import { OrderDetailModal } from '../components/OrderDetailModal';
 
 export function AccountPage() {
   const { t } = useI18n();
   const { user, configured } = useAuth();
   const [orders, setOrders] = useState<OrderRow[] | null>(null);
   const [blocked, setBlocked] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!configured || !user) {
@@ -44,7 +46,12 @@ export function AccountPage() {
       ) : (
         <div className="space-y-3">
           {orders.map((o) => (
-            <div key={o.id} className="bg-white border border-[#EAE3D2] rounded-2xl p-4 flex items-center justify-between gap-3">
+            <button
+              key={o.id}
+              type="button"
+              onClick={() => setSelectedId(o.id)}
+              className="w-full text-start bg-white border border-[#EAE3D2] hover:border-[#B29259] hover:shadow-sm rounded-2xl p-4 flex items-center justify-between gap-3 transition-all"
+            >
               <div className="min-w-0">
                 <p className="font-bold text-gray-800 text-sm truncate">{o.package_title}</p>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-gray-500 mt-1">
@@ -53,10 +60,12 @@ export function AccountPage() {
                 </div>
               </div>
               <span className="font-black text-[#8C6D3F] whitespace-nowrap">₪{Number(o.total_price).toLocaleString()}</span>
-            </div>
+            </button>
           ))}
         </div>
       )}
+
+      <OrderDetailModal orderId={selectedId} onClose={() => setSelectedId(null)} />
     </div>
   );
 }

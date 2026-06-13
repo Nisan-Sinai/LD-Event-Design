@@ -1,21 +1,28 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// מצב נשלט של ה-mock — משתנה בין בדיקות
 const mockState: {
   configured: boolean;
   result: { data: unknown; error: unknown };
+  single: { data: unknown; error: unknown };
+  signed: { data: unknown; error: unknown };
   eqCalls: unknown[][];
   fromCalls: number;
-} = { configured: true, result: { data: [], error: null }, eqCalls: [], fromCalls: 0 };
+} = {
+  configured: true,
+  result: { data: [], error: null },
+  single: { data: null, error: null },
+  signed: { data: null, error: null },
+  eqCalls: [],
+  fromCalls: 0
+};
 
 vi.mock('./supabase', () => {
-  function makeQuery() {
+  function makeListQuery() {
     const q = {
       eq: (...args: unknown[]) => {
         mockState.eqCalls.push(args);
         return q;
       },
-      // הופך את האובייקט ל-thenable כדי ש-await יקבל את התוצאה
       then: (resolve: (v: unknown) => unknown) => Promise.resolve(mockState.result).then(resolve)
     };
     return q;
@@ -27,17 +34,27 @@ vi.mock('./supabase', () => {
     supabase: {
       from: () => {
         mockState.fromCalls++;
-        return { select: () => ({ order: () => makeQuery() }) };
+        return {
+          select: () => ({
+            order: () => makeListQuery(),
+            eq: () => ({ single: () => Promise.resolve(mockState.single) })
+          })
+        };
+      },
+      storage: {
+        from: () => ({ createSignedUrl: () => Promise.resolve(mockState.signed) })
       }
     }
   };
 });
 
-import { fetchOrders } from './orders';
+import { fetchOrders, fetchOrderById, signatureUrl } from './orders';
 
 beforeEach(() => {
   mockState.configured = true;
   mockState.result = { data: [], error: null };
+  mockState.single = { data: null, error: null };
+  mockState.signed = { data: null, error: null };
   mockState.eqCalls = [];
   mockState.fromCalls = 0;
 });
@@ -57,7 +74,6 @@ describe('fetchOrders', () => {
   });
 
   it('customer mode: filters by user_id', async () => {
-    mockState.result = { data: [], error: null };
     await fetchOrders({ userId: 'u-123' });
     expect(mockState.eqCalls).toEqual([['user_id', 'u-123']]);
   });
@@ -70,5 +86,49 @@ describe('fetchOrders', () => {
   it('normalizes null data to an empty array', async () => {
     mockState.result = { data: null, error: null };
     expect(await fetchOrders()).toEqual([]);
+  });
+});
+
+describe('fetchOrderById', () => {
+  it('returns null when not configured', async () => {
+    mockState.configured = false;
+    expect(await fetchOrderById('o1')).toBeNull();
+  });
+
+  it('returns the order row on success', async () => {
+    const row = { id: 'o1', groom_name: 'דנה', total_price: 2500 };
+    mockState.single = { data: row, error: null };
+    expect(await fetchOrderById('o1')).toEqual(row);
+  });
+
+  it('throws on error', async () => {
+    mockState.single = { data: null, error: new Error('not found') };
+    await expect(fetchOrderById('o1')).rejects.toThrow('not found');
+  });
+});
+
+describe('signatureUrl', () => {
+  it('returns null when not configured', async () => {
+    mockState.configured = false;
+    expect(await signatureUrl('p/g.png')).toBeNull();
+  });
+
+  it('returns null for a null path', async () => {
+    expect(await signatureUrl(null)).toBeNull();
+  });
+
+  it('returns null when signing fails', async () => {
+    mockState.signed = { data: null, error: new Error('no access') };
+    expect(await signatureUrl('p/g.png')).toBeNull();
+  });
+
+  it('returns the signed url on success', async () => {
+    mockState.signed = { data: { signedUrl: 'https://x/y?token=abc' }, error: null };
+    expect(await signatureUrl('p/g.png')).toBe('https://x/y?token=abc');
+  });
+
+  it('returns null when data has no signedUrl', async () => {
+    mockState.signed = { data: {}, error: null };
+    expect(await signatureUrl('p/g.png')).toBeNull();
   });
 });

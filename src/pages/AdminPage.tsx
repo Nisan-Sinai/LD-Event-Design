@@ -4,12 +4,14 @@ import { LayoutDashboard, Plus } from 'lucide-react';
 import { useI18n } from '../i18n/i18n';
 import { useAuth } from '../auth/AuthProvider';
 import { fetchOrders, type OrderRow } from '../lib/orders';
+import { OrderDetailModal } from '../components/OrderDetailModal';
 
 export function AdminPage() {
   const { t } = useI18n();
   const { configured } = useAuth();
   const [orders, setOrders] = useState<OrderRow[] | null>(null);
   const [blocked, setBlocked] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!configured) {
@@ -62,7 +64,20 @@ export function AdminPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {orders.map((o) => (
-                  <tr key={o.id} className="hover:bg-[#FAF7F2]/60">
+                  <tr
+                    key={o.id}
+                    onClick={() => setSelectedId(o.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSelectedId(o.id);
+                      }
+                    }}
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`${t('adminPage.viewOrder')}: ${o.groom_name} & ${o.bride_name}`}
+                    className="cursor-pointer hover:bg-[#FAF7F2] focus:bg-[#FAF7F2] focus:outline-none transition-colors"
+                  >
                     <td className="p-3 text-gray-500 whitespace-nowrap">{new Date(o.created_at).toLocaleDateString()}</td>
                     <td className="p-3 font-bold text-gray-800">{o.groom_name} &amp; {o.bride_name}</td>
                     <td className="p-3 text-gray-600 whitespace-nowrap">{o.event_date ?? '—'}</td>
@@ -75,6 +90,8 @@ export function AdminPage() {
           </div>
         </div>
       )}
+
+      <OrderDetailModal orderId={selectedId} onClose={() => setSelectedId(null)} />
     </div>
   );
 }

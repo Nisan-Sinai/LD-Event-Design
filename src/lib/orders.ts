@@ -16,6 +16,27 @@ export interface OrderRow {
 const COLS =
   'id,created_at,groom_name,bride_name,email,event_date,event_location,package_title,total_price,status';
 
+/** הזמנה מלאה — כל העמודות (לתצוגת הפרטים בדף הניהול / האזור האישי). */
+export interface OrderDetail extends OrderRow {
+  groom_phone: string;
+  bride_phone: string;
+  package_id: string | null;
+  table_tier: number | null;
+  composites_count: string | null;
+  sponge_count: string | null;
+  include_delivery: boolean;
+  upgrades: { description: string; price: number }[];
+  base_price: number;
+  upgrades_total: number;
+  delivery_price: number;
+  coupon_code: string | null;
+  coupon_discount: number;
+  groom_sign_date: string | null;
+  bride_sign_date: string | null;
+  groom_signature_path: string | null;
+  bride_signature_path: string | null;
+}
+
 /** שולף הזמנות. עם userId — רק של אותו משתמש (לקוח); בלי — כל ההזמנות (מנהל). */
 export async function fetchOrders(opts: { userId?: string } = {}): Promise<OrderRow[]> {
   if (!isSupabaseConfigured) return [];
@@ -24,4 +45,20 @@ export async function fetchOrders(opts: { userId?: string } = {}): Promise<Order
   const { data, error } = await query;
   if (error) throw error;
   return (data ?? []) as OrderRow[];
+}
+
+/** שולף הזמנה בודדת עם כל פרטיה. */
+export async function fetchOrderById(id: string): Promise<OrderDetail | null> {
+  if (!isSupabaseConfigured) return null;
+  const { data, error } = await supabase.from('orders').select('*').eq('id', id).single();
+  if (error) throw error;
+  return data as OrderDetail;
+}
+
+/** מפיק כתובת חתומה זמנית לתמונת חתימה (bucket פרטי). מחזיר null אם אין גישה. */
+export async function signatureUrl(path: string | null): Promise<string | null> {
+  if (!isSupabaseConfigured || !path) return null;
+  const { data, error } = await supabase.storage.from('signatures').createSignedUrl(path, 3600);
+  if (error) return null;
+  return data?.signedUrl ?? null;
 }

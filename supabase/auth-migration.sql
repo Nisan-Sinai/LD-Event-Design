@@ -72,3 +72,13 @@ drop policy if exists "orders select own or admin" on public.orders;
 create policy "orders select own or admin" on public.orders
   for select to authenticated
   using (user_id = auth.uid() or public.is_admin());
+
+-- 4) Storage — חתימות (bucket "signatures"):
+--    אורח ומשתמש מחובר מעלים; מנהל יכול לקרוא (לתצוגת חתימה בדף הניהול).
+drop policy if exists "allow auth upload signatures" on storage.objects;
+create policy "allow auth upload signatures" on storage.objects
+  for insert to authenticated with check (bucket_id = 'signatures');
+
+drop policy if exists "allow admin read signatures" on storage.objects;
+create policy "allow admin read signatures" on storage.objects
+  for select to authenticated using (bucket_id = 'signatures' and public.is_admin());

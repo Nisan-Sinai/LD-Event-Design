@@ -7,7 +7,7 @@ import { AccountPage } from './AccountPage';
 const a = vi.hoisted(() => ({ configured: true, user: { id: 'u1' } as { id: string } | null }));
 const fetchOrders = vi.hoisted(() => vi.fn());
 vi.mock('../auth/AuthProvider', () => ({ useAuth: () => ({ configured: a.configured, user: a.user }) }));
-vi.mock('../lib/orders', () => ({ fetchOrders }));
+vi.mock('../lib/orders', () => ({ fetchOrders, fetchOrderById: vi.fn(), signatureUrl: vi.fn(async () => null) }));
 
 const renderAccount = () =>
   render(
