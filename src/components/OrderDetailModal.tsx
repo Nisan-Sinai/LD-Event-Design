@@ -13,6 +13,25 @@ function Row({ label, value }: { label: ReactNode; value: ReactNode }) {
   );
 }
 
+function SignatureImg({ url, label, fallback }: { url: string | null; label: string; fallback: string }) {
+  const [broken, setBroken] = useState(false);
+  if (url && !broken) {
+    return (
+      <img
+        src={url}
+        alt={label}
+        onError={() => setBroken(true)}
+        className="w-full h-20 object-contain bg-white border border-gray-200 rounded-lg"
+      />
+    );
+  }
+  return (
+    <div className="w-full h-20 flex items-center justify-center bg-white border border-dashed border-gray-200 rounded-lg text-[10px] text-gray-400">
+      {fallback}
+    </div>
+  );
+}
+
 function Section({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
   return (
     <div className="bg-[#FAF7F2] rounded-2xl p-4 border border-[#EAE3D2]">
@@ -154,13 +173,11 @@ export function OrderDetailModal({ orderId, onClose }: { orderId: string | null;
                   {([['groom', order.groom_sign_date], ['bride', order.bride_sign_date]] as const).map(([who, date]) => (
                     <div key={who}>
                       <p className="text-[11px] font-bold text-gray-600 mb-1">{t(who === 'groom' ? 'orderDetail.groomSign' : 'orderDetail.brideSign')}</p>
-                      {sigs[who] ? (
-                        <img src={sigs[who] as string} alt={t(who === 'groom' ? 'orderDetail.groomSign' : 'orderDetail.brideSign')} className="w-full h-20 object-contain bg-white border border-gray-200 rounded-lg" />
-                      ) : (
-                        <div className="w-full h-20 flex items-center justify-center bg-white border border-dashed border-gray-200 rounded-lg text-[10px] text-gray-400">
-                          {t('orderDetail.signatureOnFile')}
-                        </div>
-                      )}
+                      <SignatureImg
+                        url={sigs[who]}
+                        label={t(who === 'groom' ? 'orderDetail.groomSign' : 'orderDetail.brideSign')}
+                        fallback={t('orderDetail.signatureOnFile')}
+                      />
                       {date && <p className="text-[10px] text-gray-400 mt-1">{t('orderDetail.signedOn')}: {date}</p>}
                     </div>
                   ))}
