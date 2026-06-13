@@ -3,6 +3,7 @@ import { isSupabaseConfigured } from './lib/supabase';
 import { submitOrder } from './lib/submitOrder';
 import { calcPricing } from './lib/pricing';
 import { AccessibilityWidget } from './components/AccessibilityWidget';
+import { AuthModal } from './components/AuthModal';
 import { Link } from 'react-router-dom';
 import { useI18n } from './i18n/i18n';
 import { useAuth } from './auth/AuthProvider';
@@ -772,6 +773,10 @@ export default function App() {
   const [showTermsError, setShowTermsError] = useState(false);
   const [legalModal, setLegalModal] = useState<null | 'privacy' | 'terms' | 'accessibility'>(null);
 
+  // שער הזדהות באישור: אורח ממלא הכול, ורק באישור נדרש חשבון
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [pendingConfirm, setPendingConfirm] = useState(false);
+
   // מצב שליחה/שמירה
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -958,6 +963,12 @@ export default function App() {
       window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
       return;
     }
+    // אורח שמילא הכול — נדרש להתחבר/להירשם רק עכשיו, בלי לאבד את ההזמנה
+    if (isSupabaseConfigured && !user) {
+      setPendingConfirm(true);
+      setAuthModalOpen(true);
+      return;
+    }
     setShowSignatureError(false);
     setSubmitError(null);
 
@@ -1011,6 +1022,16 @@ export default function App() {
       setIsSubmitting(false);
     }
   };
+
+  // המשך אוטומטי של אישור ההזמנה מיד אחרי התחברות מוצלחת מהמודאל
+  useEffect(() => {
+    if (pendingConfirm && user) {
+      setPendingConfirm(false);
+      setAuthModalOpen(false);
+      void handleConfirm();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, pendingConfirm]);
 
   // אתחול קנבסים לחתימה דיגיטלית (חתן וכלה)
   useEffect(() => {
@@ -1480,7 +1501,7 @@ export default function App() {
             <div className="mt-6 flex justify-end">
               <button
                 onClick={handleNext}
-                className="bg-[#B29259] hover:bg-[#8C6D3F] text-white px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 shadow-sm transition-all"
+                className="sheen bg-[#B29259] hover:bg-[#8C6D3F] text-white px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 shadow-sm transition-all"
               >
                 {t('step1.next')}
                 {lang === 'he' ? <ArrowLeft className="w-4 h-4" aria-hidden="true" /> : <ArrowRight className="w-4 h-4" aria-hidden="true" />}
@@ -1556,10 +1577,10 @@ export default function App() {
                   <div
                     key={pkg.id}
                     onClick={() => togglePackage(pkg)}
-                    className={`bg-white rounded-2xl border-2 p-5 flex flex-col justify-between cursor-pointer transition-all relative ${
+                    className={`card-hover bg-white rounded-2xl border-2 p-5 flex flex-col justify-between cursor-pointer relative ${
                       isSelected
                         ? 'border-[#B29259] shadow-md ring-1 ring-[#B29259]/20'
-                        : 'border-[#EAE3D2] hover:border-gray-300'
+                        : 'border-[#EAE3D2]'
                     }`}
                   >
                     {/* תג חבילה נבחרת */}
@@ -1696,7 +1717,7 @@ export default function App() {
 
               <button
                 onClick={handleNext}
-                className="bg-[#B29259] hover:bg-[#8C6D3F] text-white px-6 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shadow-sm transition-all"
+                className="sheen bg-[#B29259] hover:bg-[#8C6D3F] text-white px-6 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shadow-sm transition-all"
               >
                 {t('step2.next')}
                 {lang === 'he' ? <ArrowLeft className="w-4 h-4" aria-hidden="true" /> : <ArrowRight className="w-4 h-4" aria-hidden="true" />}
@@ -2271,7 +2292,7 @@ export default function App() {
               <button
                 onClick={handleConfirm}
                 disabled={isSubmitting}
-                className="bg-[#B29259] hover:bg-[#8C6D3F] text-white px-6 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shadow-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                className="sheen bg-[#B29259] hover:bg-[#8C6D3F] text-white px-6 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shadow-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <Printer className="w-4 h-4" aria-hidden="true" />
                 {isSubmitting ? t('step3.submitting') : t('step3.submitIdle')}
@@ -2332,6 +2353,16 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* שער הזדהות באישור הזמנה (אורח) */}
+      <AuthModal
+        open={authModalOpen}
+        onClose={() => {
+          setAuthModalOpen(false);
+          setPendingConfirm(false);
+        }}
+        onSuccess={() => setAuthModalOpen(false)}
+      />
 
       {/* כפתור/וידג'ט נגישות צף */}
       <AccessibilityWidget onOpenStatement={() => setLegalModal('accessibility')} />

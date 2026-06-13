@@ -32,23 +32,23 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
         {t('a11y.skip')}
       </a>
 
-      <header className="bg-white border-b border-[#EAE3D2] shadow-sm sticky top-0 z-50">
+      <header className="bg-white/85 backdrop-blur-md border-b border-[#EAE3D2] sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="bg-[#B29259] text-white p-2 rounded-full shadow-md">
+          <Link to="/" className="flex items-center gap-2.5 group">
+            <div className="bg-gradient-to-br from-[#B29259] to-[#8C6D3F] text-white p-2 rounded-2xl shadow-md group-hover:scale-105 transition-transform">
               <Sparkles className="w-5 h-5" aria-hidden="true" />
             </div>
             <div className="text-start">
-              <h1 className="text-lg sm:text-xl font-bold text-[#8C6D3F] font-serif tracking-wide">LD Event Design</h1>
+              <h1 className="text-lg sm:text-xl font-bold text-[#8C6D3F] font-display tracking-wide">LD Event Design</h1>
               <p className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold">{t('brand.tagline')}</p>
             </div>
           </Link>
 
           <nav className="flex items-center gap-1 flex-wrap" aria-label={t('nav.menu')}>
-            <Link to="/" className={navLink}>{t('nav.home')}</Link>
-            <Link to="/order" className={navLink}>{t('nav.order')}</Link>
-            {(role === 'customer' || role === 'admin') && <Link to="/account" className={navLink}>{t('nav.account')}</Link>}
-            {role === 'admin' && <Link to="/admin" className={navLink}>{t('nav.admin')}</Link>}
+            <Link to="/" className={`link-underline ${navLink}`}>{t('nav.home')}</Link>
+            <Link to="/order" className={`link-underline ${navLink}`}>{t('nav.order')}</Link>
+            {(role === 'customer' || role === 'admin') && <Link to="/account" className={`link-underline ${navLink}`}>{t('nav.account')}</Link>}
+            {role === 'admin' && <Link to="/admin" className={`link-underline ${navLink}`}>{t('nav.admin')}</Link>}
           </nav>
 
           <div className="flex items-center gap-2">
@@ -88,20 +88,54 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      <footer className="max-w-5xl mx-auto w-full px-4 mt-10 pb-8 text-center">
-        <div className="border-t border-[#EAE3D2] pt-6 text-xs text-gray-400 space-y-0.5">
-          <p className="font-bold text-[#8C6D3F] font-serif text-sm flex items-center justify-center gap-1.5">
-            <Phone className="w-3.5 h-3.5" aria-hidden="true" />
-            <span dir="ltr">{t('brand.phone')}</span>
-          </p>
-          <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mt-2" aria-label={t('legal.terms')}>
-            <button type="button" onClick={() => setLegalModal('privacy')} className="hover:text-[#B29259] underline">{t('legal.privacy')}</button>
-            <span aria-hidden="true">·</span>
-            <button type="button" onClick={() => setLegalModal('terms')} className="hover:text-[#B29259] underline">{t('legal.terms')}</button>
-            <span aria-hidden="true">·</span>
-            <button type="button" onClick={() => setLegalModal('accessibility')} className="hover:text-[#B29259] underline">{t('legal.accessibility')}</button>
+      <footer className="mt-16 bg-[#2c241a] text-[#EAE3D2]">
+        <div className="max-w-5xl mx-auto px-4 py-12 grid grid-cols-1 sm:grid-cols-3 gap-10">
+          {/* מותג */}
+          <div>
+            <div className="flex items-center gap-2.5">
+              <div className="bg-gradient-to-br from-[#B29259] to-[#8C6D3F] text-white p-2 rounded-2xl">
+                <Sparkles className="w-4 h-4" aria-hidden="true" />
+              </div>
+              <span className="font-display font-bold text-lg text-white">LD Event Design</span>
+            </div>
+            <p className="text-xs text-[#EAE3D2]/60 mt-3 leading-relaxed max-w-xs">{t('home.heroSub')}</p>
+            <p className="flex items-center gap-1.5 text-sm font-bold mt-4 text-[#D8C29A]">
+              <Phone className="w-3.5 h-3.5" aria-hidden="true" />
+              <span dir="ltr">{t('brand.phone')}</span>
+            </p>
+          </div>
+
+          {/* ניווט */}
+          <nav aria-label={t('nav.menu')}>
+            <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#B29259] mb-4">{t('nav.menu')}</p>
+            <ul className="space-y-2.5 text-sm">
+              <li><Link to="/" className="link-underline hover:text-white transition-colors">{t('nav.home')}</Link></li>
+              <li><Link to="/order" className="link-underline hover:text-white transition-colors">{t('nav.order')}</Link></li>
+              {user ? (
+                <li><Link to="/account" className="link-underline hover:text-white transition-colors">{t('nav.account')}</Link></li>
+              ) : (
+                <>
+                  <li><Link to="/login" className="link-underline hover:text-white transition-colors">{t('nav.login')}</Link></li>
+                  <li><Link to="/register" className="link-underline hover:text-white transition-colors">{t('nav.register')}</Link></li>
+                </>
+              )}
+            </ul>
           </nav>
-          <p className="mt-1">{t('footer.rights', { year: new Date().getFullYear() })}</p>
+
+          {/* משפטי */}
+          <nav aria-label={t('legal.terms')}>
+            <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#B29259] mb-4">{t('legal.terms')}</p>
+            <ul className="space-y-2.5 text-sm">
+              <li><button type="button" onClick={() => setLegalModal('privacy')} className="link-underline hover:text-white transition-colors">{t('legal.privacy')}</button></li>
+              <li><button type="button" onClick={() => setLegalModal('terms')} className="link-underline hover:text-white transition-colors">{t('legal.terms')}</button></li>
+              <li><button type="button" onClick={() => setLegalModal('accessibility')} className="link-underline hover:text-white transition-colors">{t('legal.accessibility')}</button></li>
+            </ul>
+          </nav>
+        </div>
+        <div className="border-t border-white/10">
+          <p className="max-w-5xl mx-auto px-4 py-4 text-[11px] text-[#EAE3D2]/50 text-center">
+            {t('footer.rights', { year: new Date().getFullYear() })}
+          </p>
         </div>
       </footer>
 

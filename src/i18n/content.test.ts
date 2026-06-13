@@ -36,6 +36,9 @@ describe('localizedUnit', () => {
   it('returns undefined when there is no unit', () => {
     expect(localizedUnit(undefined, 'en')).toBeUndefined();
   });
+  it('passes through an untranslated unit in en mode', () => {
+    expect(localizedUnit('pcs', 'en')).toBe('pcs');
+  });
 });
 
 describe('PACKAGE_EN coverage', () => {

@@ -17,14 +17,8 @@ export function Root() {
           <Route path="/" element={<SiteLayout><HomePage /></SiteLayout>} />
           <Route path="/login" element={<SiteLayout><LoginPage /></SiteLayout>} />
           <Route path="/register" element={<SiteLayout><RegisterPage /></SiteLayout>} />
-          <Route
-            path="/order"
-            element={
-              <RequireAuth>
-                <OrderPage />
-              </RequireAuth>
-            }
-          />
+          {/* אורח יכול להרכיב הזמנה בחופשיות — ההזדהות נדרשת רק באישור (AuthModal בתוך העמוד) */}
+          <Route path="/order" element={<OrderPage />} />
           <Route
             path="/account"
             element={

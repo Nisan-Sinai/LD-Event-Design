@@ -240,14 +240,34 @@
     "menu": "Menu"
   },
   "home": {
-    "heroTitle": "Event design that makes every moment feel like a dream",
-    "heroSub": "An event design studio — weddings, henna, bar/bat mitzvah, brit and sweet bars, custom and handcrafted.",
+    "heroKicker": "Event design studio",
+    "heroLine1": "An event that looks",
+    "heroAccent": "like a dream",
+    "heroLine2": "and feels like home",
+    "heroSub": "Chuppahs, henna, bar/bat mitzvah and sweet bars — custom, handcrafted design with a big heart and an eye for the little details.",
     "ctaOrder": "Start order",
     "ctaPackages": "View packages",
     "ctaWhatsapp": "WhatsApp",
-    "packagesTitle": "Our packages",
-    "guestNote": "Browsing is open to everyone — to complete an order, please log in.",
-    "from": "From "
+    "pickKicker": "Liron's studio",
+    "pickTitle": "LD Event Design",
+    "value1Title": "True handcraft",
+    "value1Body": "Every floral clasp, composition and flowing fabric is built by hand — especially for you.",
+    "value2Title": "Fully personalized",
+    "value2Body": "Pick a package, add extras, upgrade — and the event takes on exactly your character.",
+    "value3Title": "With you to the big moment",
+    "value3Body": "Delivery, setup and teardown nationwide — you celebrate, we handle the rest.",
+    "marquee": ["✦ weddings", "henna", "✦ bar / bat mitzvah", "brit", "✦ sweet bars", "custom design", "✦ handmade"],
+    "packagesKicker": "Our collection",
+    "packagesTitle": "Design packages for every event",
+    "packagesSub": "Choose a category to see packages, prices and add-ons — and you can combine several packages together.",
+    "viewPackages": "View packages",
+    "guestNote": "Browsing and building an order are open to everyone — you sign up only when confirming the order.",
+    "from": "From ",
+    "ctaBandTitle": "Ready to make your event unforgettable?",
+    "ctaBandSub": "Build an order online in minutes — or talk to us directly on WhatsApp.",
+    "statsEvents": "events designed",
+    "statsPackages": "design packages",
+    "statsService": "nationwide service"
   },
   "auth": {
     "loginTitle": "Log in",
@@ -265,7 +285,11 @@
     "notConfigured": "The login system isn't enabled yet (Supabase setup required). You can browse the site as a guest in the meantime.",
     "registerSuccess": "Registration successful! You can now log in. If email verification is enabled — check your inbox.",
     "invalidEmail": "Invalid email address",
-    "shortPassword": "Password must be at least 6 characters"
+    "shortPassword": "Password must be at least 6 characters",
+    "gateTitle": "One moment — just log in",
+    "gateSub": "Confirming and saving the order requires an account. Don't worry — the order you built stays exactly as it is, and we'll continue from the same point.",
+    "tabLogin": "Log in",
+    "tabRegister": "Quick sign-up"
   },
   "account": {
     "title": "My orders",

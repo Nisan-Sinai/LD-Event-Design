@@ -1,15 +1,13 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { parseAdminEmails, roleForEmail, type Role } from './roles';
 
 // אימיילים שמקבלים הרשאת מנהל אוטומטית (לא ניתן להפוך למנהל מהממשק).
 // ניתן לעקוף דרך VITE_ADMIN_EMAILS (מופרד בפסיקים).
-const ADMIN_EMAILS = ((import.meta.env.VITE_ADMIN_EMAILS as string | undefined) ?? 'luroni704@gmail.com')
-  .split(',')
-  .map((e) => e.trim().toLowerCase())
-  .filter(Boolean);
+const ADMIN_EMAILS = parseAdminEmails(import.meta.env.VITE_ADMIN_EMAILS as string | undefined);
 
-export type Role = 'guest' | 'customer' | 'admin';
+export type { Role };
 
 interface AuthResult {
   error: string | null;
@@ -29,9 +27,7 @@ interface AuthValue {
 const AuthContext = createContext<AuthValue | null>(null);
 
 function roleFor(user: User | null): Role {
-  if (!user) return 'guest';
-  const email = (user.email ?? '').toLowerCase();
-  return ADMIN_EMAILS.includes(email) ? 'admin' : 'customer';
+  return roleForEmail(user?.email ?? null, ADMIN_EMAILS);
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {

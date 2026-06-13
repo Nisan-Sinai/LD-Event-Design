@@ -56,6 +56,18 @@ describe('calcPricing', () => {
     expect(r.totalPrice).toBe(0);
   });
 
+  it('handles a zero base price (only add-ons)', () => {
+    const r = calcPricing({ ...base, basePrice: 0, addonsTotal: 700 });
+    expect(r.basePrice).toBe(0);
+    expect(r.totalPrice).toBe(700);
+  });
+
+  it('ignores a NaN manual total and uses the computed total', () => {
+    const r = calcPricing({ ...base, basePrice: 2900, manualTotal: Number.NaN });
+    expect(r.manualOverride).toBeNull();
+    expect(r.totalPrice).toBe(2900);
+  });
+
   it('combines all factors correctly', () => {
     const r = calcPricing({
       basePrice: 2900 + 4600,

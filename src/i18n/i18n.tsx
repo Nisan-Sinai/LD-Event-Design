@@ -31,9 +31,12 @@ interface I18nValue {
 const I18nContext = createContext<I18nValue | null>(null);
 
 function getInitialLang(): Lang {
-  if (typeof window === 'undefined') return 'he';
-  const saved = window.localStorage.getItem(STORAGE_KEY);
-  if (saved === 'he' || saved === 'en') return saved;
+  try {
+    const saved = window.localStorage.getItem(STORAGE_KEY);
+    if (saved === 'he' || saved === 'en') return saved;
+  } catch {
+    /* localStorage לא זמין */
+  }
   return 'he';
 }
 
