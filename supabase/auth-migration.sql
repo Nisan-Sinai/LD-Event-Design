@@ -47,6 +47,12 @@ $$;
 --    כך אין צורך לשנות את קוד שליחת ההזמנה, ושליחה של אורח (anon) תקבל null.
 alter table public.orders add column if not exists user_id uuid references auth.users (id) default auth.uid();
 
+-- עמודות שהיו חסרות ב-DB ישן (הקוד שולח אותן) — תוספת בטוחה.
+alter table public.orders add column if not exists coupon_code     text;
+alter table public.orders add column if not exists coupon_discount numeric not null default 0;
+-- רענון מטמון הסכמה של PostgREST כדי שהעמודות יזוהו מיד
+notify pgrst, 'reload schema';
+
 -- 3) RLS להזמנות: לקוח רואה/יוצר את שלו, מנהל רואה הכול.
 -- מחליפים את מדיניות האורח הקיימת ("allow anonymous insert" עם check true)
 -- בגרסה בטוחה שמונעת זיוף user_id.
