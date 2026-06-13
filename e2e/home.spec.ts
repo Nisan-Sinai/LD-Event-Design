@@ -16,10 +16,11 @@ test.describe('Home (guest)', () => {
 
   test('switches language to English and back', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('button', { name: 'EN' }).click();
-    await expect(page.getByRole('link', { name: 'Home' })).toBeVisible();
-    await page.getByRole('button', { name: 'עברית' }).click();
-    await expect(page.getByRole('link', { name: 'בית' })).toBeVisible();
+    const header = page.getByRole('banner');
+    await header.getByRole('button', { name: 'EN' }).click();
+    await expect(header.getByRole('link', { name: 'Home' })).toBeVisible();
+    await header.getByRole('button', { name: 'עברית' }).click();
+    await expect(header.getByRole('link', { name: 'בית' })).toBeVisible();
   });
 
   test('opens the accessibility widget and increases text size', async ({ page }) => {
