@@ -24,7 +24,7 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
   const navLink = 'text-xs font-bold text-gray-600 hover:text-[#B29259] transition-colors px-2 py-1';
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] text-gray-800 font-sans antialiased flex flex-col" dir={dir}>
+    <div className="min-h-screen bg-[#FAF7F2] text-gray-800 font-sans antialiased flex flex-col overflow-x-hidden" dir={dir}>
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:top-2 focus:start-2 focus:bg-[#B29259] focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg focus:text-sm focus:font-bold"
@@ -44,7 +44,7 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
             </div>
           </Link>
 
-          <nav className="flex items-center gap-1 flex-wrap" aria-label={t('nav.menu')}>
+          <nav className="order-last sm:order-none w-full sm:w-auto flex items-center justify-center gap-1 flex-wrap border-t sm:border-0 border-[#EAE3D2] pt-2 sm:pt-0" aria-label={t('nav.menu')}>
             <Link to="/" className={`link-underline ${navLink}`}>{t('nav.home')}</Link>
             <Link to="/order" className={`link-underline ${navLink}`}>{t('nav.order')}</Link>
             {(role === 'customer' || role === 'admin') && <Link to="/account" className={`link-underline ${navLink}`}>{t('nav.account')}</Link>}

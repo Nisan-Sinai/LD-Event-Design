@@ -1146,7 +1146,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] text-gray-800 font-sans antialiased pb-12 selection:bg-[#B29259] selection:text-white animate-fadeIn" dir={dir}>
+    <div className="min-h-screen bg-[#FAF7F2] text-gray-800 font-sans antialiased pb-12 overflow-x-hidden selection:bg-[#B29259] selection:text-white animate-fadeIn" dir={dir}>
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:top-2 focus:start-2 focus:bg-[#B29259] focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg focus:text-sm focus:font-bold"
@@ -1679,8 +1679,9 @@ export default function App() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">{t('step2.compositesCount')}</label>
+                    <label htmlFor="f-composites" className="block text-xs font-bold text-gray-700 mb-1">{t('step2.compositesCount')}</label>
                     <input
+                      id="f-composites"
                       type="number"
                       min="0"
                       value={clientInfo.compositesCount}
@@ -1691,8 +1692,9 @@ export default function App() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">{t('step2.spongeCount')}</label>
+                    <label htmlFor="f-sponge" className="block text-xs font-bold text-gray-700 mb-1">{t('step2.spongeCount')}</label>
                     <input
+                      id="f-sponge"
                       type="number"
                       min="0"
                       value={clientInfo.spongeCount}
@@ -1793,8 +1795,9 @@ export default function App() {
 
                 <form onSubmit={handleAddUpgrade} className="flex flex-col sm:flex-row gap-3 bg-[#FAF7F2] p-4 rounded-xl border border-[#EAE3D2]">
                   <div className="flex-1">
-                    <label className="block text-[10px] font-bold text-gray-600 mb-1">{t('step3.upgradeDesc')}</label>
+                    <label htmlFor="f-upgrade-desc" className="block text-[10px] font-bold text-gray-600 mb-1">{t('step3.upgradeDesc')}</label>
                     <input
+                      id="f-upgrade-desc"
                       type="text"
                       value={newUpgradeDesc}
                       onChange={(e) => setNewUpgradeDesc(e.target.value)}
@@ -1803,8 +1806,9 @@ export default function App() {
                     />
                   </div>
                   <div className="sm:w-32">
-                    <label className="block text-[10px] font-bold text-gray-600 mb-1">{t('step3.upgradePrice')}</label>
+                    <label htmlFor="f-upgrade-price" className="block text-[10px] font-bold text-gray-600 mb-1">{t('step3.upgradePrice')}</label>
                     <input
+                      id="f-upgrade-price"
                       type="number"
                       value={newUpgradePrice}
                       onChange={(e) => setNewUpgradePrice(e.target.value)}
@@ -1910,8 +1914,9 @@ export default function App() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-600 mb-1">{t('step3.couponLabel')}</label>
+                  <label htmlFor="f-coupon" className="block text-[10px] font-bold text-gray-600 mb-1">{t('step3.couponLabel')}</label>
                   <input
+                    id="f-coupon"
                     type="text"
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value)}

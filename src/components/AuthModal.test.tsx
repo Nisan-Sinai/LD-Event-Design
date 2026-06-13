@@ -1,0 +1,106 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { I18nProvider } from '../i18n/i18n';
+import { AuthModal } from './AuthModal';
+
+const a = vi.hoisted(() => ({
+  configured: true,
+  signUp: vi.fn(async () => ({ error: null as string | null })),
+  signIn: vi.fn(async () => ({ error: null as string | null }))
+}));
+vi.mock('../auth/AuthProvider', () => ({
+  useAuth: () => ({ signUp: a.signUp, signIn: a.signIn, configured: a.configured })
+}));
+
+function renderModal(props: Partial<{ open: boolean; onClose: () => void; onSuccess: () => void }> = {}) {
+  const onClose = props.onClose ?? vi.fn();
+  const onSuccess = props.onSuccess ?? vi.fn();
+  render(
+    <I18nProvider>
+      <AuthModal open={props.open ?? true} onClose={onClose} onSuccess={onSuccess} />
+    </I18nProvider>
+  );
+  return { onClose, onSuccess };
+}
+
+const fill = (email: string, pw: string) => {
+  fireEvent.change(screen.getByLabelText('אימייל'), { target: { value: email } });
+  fireEvent.change(screen.getByLabelText('סיסמה'), { target: { value: pw } });
+};
+
+beforeEach(() => {
+  a.configured = true;
+  a.signUp.mockClear().mockResolvedValue({ error: null });
+  a.signIn.mockClear().mockResolvedValue({ error: null });
+});
+
+describe('AuthModal', () => {
+  it('renders nothing when closed', () => {
+    renderModal({ open: false });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('opens on the quick sign-up tab', () => {
+    renderModal();
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /הרשמה מהירה/ })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('blocks submit when not configured', () => {
+    a.configured = false;
+    renderModal();
+    fill('a@b.com', '123456');
+    fireEvent.click(screen.getByRole('button', { name: 'הרשמה' }));
+    expect(a.signUp).not.toHaveBeenCalled();
+  });
+
+  it('validates email and password', async () => {
+    renderModal();
+    const form = screen.getByLabelText('אימייל').closest('form')!;
+    fill('bad', '123456');
+    fireEvent.submit(form);
+    await waitFor(() => expect(screen.getByText('כתובת אימייל אינה תקינה')).toBeInTheDocument());
+    fill('a@b.com', '12');
+    fireEvent.submit(form);
+    await waitFor(() => expect(screen.getByText('הסיסמה חייבת לכלול לפחות 6 תווים')).toBeInTheDocument());
+  });
+
+  it('registers (signUp + signIn) and calls onSuccess', async () => {
+    const { onSuccess } = renderModal();
+    fill('a@b.com', '123456');
+    fireEvent.click(screen.getByRole('button', { name: 'הרשמה' }));
+    await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+    expect(a.signUp).toHaveBeenCalled();
+    expect(a.signIn).toHaveBeenCalled();
+  });
+
+  it('login tab only signs in', async () => {
+    const { onSuccess } = renderModal();
+    fireEvent.click(screen.getByRole('tab', { name: /התחברות/ }));
+    fill('a@b.com', '123456');
+    fireEvent.click(screen.getByRole('button', { name: 'התחברות' }));
+    await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+    expect(a.signUp).not.toHaveBeenCalled();
+    expect(a.signIn).toHaveBeenCalled();
+  });
+
+  it('shows an auth error and does not call onSuccess', async () => {
+    a.signIn.mockResolvedValue({ error: 'Invalid login credentials' });
+    const { onSuccess } = renderModal();
+    fireEvent.click(screen.getByRole('tab', { name: /התחברות/ }));
+    fill('a@b.com', '123456');
+    fireEvent.click(screen.getByRole('button', { name: 'התחברות' }));
+    await waitFor(() => expect(screen.getByText('Invalid login credentials')).toBeInTheDocument());
+    expect(onSuccess).not.toHaveBeenCalled();
+  });
+
+  it('closes on Escape, backdrop click, and the X button', () => {
+    const { onClose } = renderModal();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('dialog'));
+    expect(onClose).toHaveBeenCalledTimes(2);
+    fireEvent.click(screen.getByRole('button', { name: 'סגירה' }));
+    expect(onClose).toHaveBeenCalledTimes(3);
+  });
+});

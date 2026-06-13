@@ -1,0 +1,282 @@
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { I18nProvider } from './i18n/i18n';
+
+// ---- mocks ----
+const env = vi.hoisted(() => ({
+  configured: false,
+  user: null as { id: string; email?: string } | null,
+  submit: vi.fn(async () => ({ id: 'order-1' }))
+}));
+vi.mock('./lib/supabase', () => ({
+  get isSupabaseConfigured() {
+    return env.configured;
+  },
+  supabase: {}
+}));
+vi.mock('./lib/submitOrder', () => ({ submitOrder: env.submit }));
+vi.mock('./auth/AuthProvider', () => ({
+  useAuth: () => ({ user: env.user, signOut: vi.fn() })
+}));
+
+import App from './App';
+
+beforeAll(() => {
+  // jsdom חסר: print / scrollTo / canvas 2d context
+  window.print = vi.fn();
+  window.scrollTo = vi.fn() as unknown as typeof window.scrollTo;
+  HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
+    strokeStyle: '',
+    lineWidth: 0,
+    lineCap: '',
+    beginPath: vi.fn(),
+    moveTo: vi.fn(),
+    lineTo: vi.fn(),
+    stroke: vi.fn(),
+    clearRect: vi.fn()
+  })) as unknown as typeof HTMLCanvasElement.prototype.getContext;
+  HTMLCanvasElement.prototype.toDataURL = vi.fn(() => 'data:image/png;base64,xx');
+});
+
+const renderApp = () =>
+  render(
+    <I18nProvider>
+      <MemoryRouter><App /></MemoryRouter>
+    </I18nProvider>
+  );
+
+function fillStep1(opts: { email?: string } = {}) {
+  fireEvent.change(screen.getByLabelText(/שם בעל האירוע/), { target: { value: 'ישראל ישראלי' } });
+  fireEvent.change(screen.getByLabelText(/שם בעלת האירוע/), { target: { value: 'דנה ישראלי' } });
+  fireEvent.change(screen.getByLabelText(/טלפון בעל האירוע/), { target: { value: '0501111111' } });
+  fireEvent.change(screen.getByLabelText(/טלפון בעלת האירוע/), { target: { value: '0502222222' } });
+  fireEvent.change(screen.getByLabelText(/תאריך האירוע/), { target: { value: '2026-09-01' } });
+  fireEvent.change(screen.getByLabelText(/מיקום האירוע/), { target: { value: 'אולמי היער, חדרה' } });
+  if (opts.email !== '') {
+    fireEvent.change(screen.getByLabelText(/אימייל/), { target: { value: opts.email ?? 'a@b.com' } });
+  }
+}
+
+const next1 = () => fireEvent.click(screen.getByRole('button', { name: /המשך לבחירת חבילת עיצוב/ }));
+const next2 = () => fireEvent.click(screen.getByRole('button', { name: /המשך לתוספות וחתימה/ }));
+
+function sign() {
+  const canvases = document.querySelectorAll('canvas');
+  canvases.forEach((c) => {
+    fireEvent.mouseDown(c, { clientX: 5, clientY: 5 });
+    fireEvent.mouseMove(c, { clientX: 20, clientY: 20 });
+    fireEvent.mouseUp(c);
+  });
+}
+
+beforeEach(() => {
+  env.configured = false;
+  env.user = null;
+  env.submit.mockClear().mockResolvedValue({ id: 'order-1' });
+  (window.print as ReturnType<typeof vi.fn>).mockClear();
+});
+
+describe('Order wizard — step 1', () => {
+  it('shows validation errors for empty required fields', () => {
+    renderApp();
+    next1();
+    expect(screen.getByText('חובה להזין שם בעל האירוע')).toBeInTheDocument();
+    expect(screen.getByText('חובה להזין כתובת אימייל')).toBeInTheDocument();
+  });
+
+  it('rejects a single-word name and an invalid email', () => {
+    renderApp();
+    fireEvent.change(screen.getByLabelText(/שם בעל האירוע/), { target: { value: 'ישראל' } });
+    fireEvent.change(screen.getByLabelText(/אימייל/), { target: { value: 'bad' } });
+    next1();
+    expect(screen.getByText('חובה להזין שם פרטי ושם משפחה')).toBeInTheDocument();
+    expect(screen.getByText('כתובת אימייל אינה תקינה')).toBeInTheDocument();
+  });
+
+  it('advances to step 2 with valid details', () => {
+    renderApp();
+    fillStep1();
+    next1();
+    expect(screen.getAllByText('מה כלול בחבילה?').length).toBeGreaterThan(0);
+  });
+});
+
+describe('Order wizard — admin mode', () => {
+  it('reveals the admin panel and makes email optional', () => {
+    renderApp();
+    fireEvent.click(screen.getByRole('button', { name: /בעל העסק \/ מנהל/ }));
+    expect(screen.getByText('פרטי הזמנה — מנהל')).toBeInTheDocument();
+    // ללא אימייל — עדיין מתקדם
+    fillStep1({ email: '' });
+    next1();
+    expect(screen.getAllByText('מה כלול בחבילה?').length).toBeGreaterThan(0);
+  });
+});
+
+describe('Order wizard — step 2', () => {
+  it('requires at least one package', () => {
+    renderApp();
+    fillStep1();
+    next1();
+    // ביטול בחירת החבילה שנבחרה כברירת מחדל
+    fireEvent.click(screen.getByRole('button', { name: /הסר חבילה/ }));
+    next2();
+    expect(screen.getByText('יש לבחור לפחות חבילה אחת כדי להמשיך.')).toBeInTheDocument();
+  });
+
+  it('supports multi-select across categories', () => {
+    renderApp();
+    fillStep1();
+    next1();
+    // מעבר לקטגוריית בר ובחירת חבילה נוספת
+    fireEvent.click(screen.getByRole('button', { name: 'עמדות בר מתוק' }));
+    fireEvent.click(screen.getByText('בר חמצוצים וגומי צבעוני'));
+    expect(screen.getByText(/החבילות שבחרת/)).toBeInTheDocument();
+  });
+
+  it('shows the events tier selector', () => {
+    renderApp();
+    fillStep1();
+    next1();
+    fireEvent.click(screen.getByRole('button', { name: /אירועים/ }));
+    expect(screen.getByText(/כמה שולחנות יש באירוע/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '20 שולחנות' }));
+  });
+});
+
+describe('Order wizard — step 3 + submit (guest, not configured)', () => {
+  function reachStep3() {
+    renderApp();
+    fillStep1();
+    next1();
+    next2();
+  }
+
+  it('requires delivery, then terms, then signatures, then prints', async () => {
+    reachStep3();
+    const confirm = () => fireEvent.click(screen.getByRole('button', { name: /אישור והדפסת ההזמנה/ }));
+
+    confirm();
+    expect(screen.getByText(/חובה לאשר את שירות ההובלה/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText(/הובלה, הרכבה ופירוק מלא/));
+    confirm();
+    expect(screen.getByText(/יש לאשר את תנאי השימוש/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('checkbox'));
+    confirm();
+    expect(screen.getByText(/נדרשת חתימה/)).toBeInTheDocument();
+
+    sign();
+    confirm();
+    await waitFor(() => expect(window.print).toHaveBeenCalled());
+  });
+
+  it('adds a custom upgrade and a catalog add-on', () => {
+    reachStep3();
+    fireEvent.change(screen.getByPlaceholderText(/לדוגמה: תוספת/), { target: { value: 'תוספת מיוחדת' } });
+    fireEvent.change(screen.getByPlaceholderText('₪'), { target: { value: '250' } });
+    fireEvent.click(screen.getByRole('button', { name: 'הוסף תוספת' }));
+    // מופיע גם ברשימת התוספות וגם בסיכום הכספי
+    expect(screen.getAllByText('תוספת מיוחדת').length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('Order wizard — more flows', () => {
+  it('renders the henna category packages', () => {
+    renderApp();
+    fillStep1();
+    next1();
+    fireEvent.click(screen.getByRole('button', { name: 'חינה' }));
+    expect(screen.getByText('חבילת בר עוגיות מרוקאיות מסורתי')).toBeInTheDocument();
+  });
+
+  it('navigates back from step 2 and step 3', () => {
+    renderApp();
+    fillStep1();
+    next1();
+    next2();
+    fireEvent.click(screen.getByRole('button', { name: /חזור לחבילות/ }));
+    expect(screen.getAllByText('מה כלול בחבילה?').length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: /חזור לפרטים/ }));
+    expect(screen.getByLabelText(/שם בעל האירוע/)).toBeInTheDocument();
+  });
+
+  it('captures table composition counts (wedding) into the contract', () => {
+    renderApp();
+    fillStep1();
+    next1();
+    fireEvent.change(screen.getByLabelText(/כמה שולחנות עם קומפוזיציה/), { target: { value: '8' } });
+    fireEvent.change(screen.getByLabelText(/כמה שולחנות עם סידור עגול/), { target: { value: '2' } });
+    next2();
+    expect(screen.getByText('8 שולחנות')).toBeInTheDocument();
+  });
+
+  it('clears a signature with the נקה button', () => {
+    renderApp();
+    fillStep1();
+    next1();
+    next2();
+    sign();
+    const clears = screen.getAllByRole('button', { name: 'נקה' });
+    expect(clears.length).toBeGreaterThan(0);
+    fireEvent.click(clears[0]);
+  });
+
+  it('validates the coupon code (invalid then valid-without-item)', () => {
+    renderApp();
+    fillStep1();
+    next1();
+    next2();
+    const couponInput = screen.getByLabelText('קוד קופון');
+    fireEvent.change(couponInput, { target: { value: 'שגוי' } });
+    expect(screen.getByText('קוד הקופון שהוזן אינו תקין.')).toBeInTheDocument();
+    fireEvent.change(couponInput, { target: { value: 'מתנה' } });
+    expect(screen.getByText(/הקוד תקין!/)).toBeInTheDocument();
+  });
+
+  it('removes a custom upgrade', () => {
+    renderApp();
+    fillStep1();
+    next1();
+    next2();
+    fireEvent.change(screen.getByPlaceholderText(/לדוגמה: תוספת/), { target: { value: 'נר נוסף' } });
+    fireEvent.change(screen.getByPlaceholderText('₪'), { target: { value: '50' } });
+    fireEvent.click(screen.getByRole('button', { name: 'הוסף תוספת' }));
+    expect(screen.getAllByText('נר נוסף').length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: 'מחק תוספת' }));
+    expect(screen.getByText(/לא הוזנו תוספות מיוחדות/)).toBeInTheDocument();
+  });
+
+  it('submits via submitOrder when configured and logged in', async () => {
+    env.configured = true;
+    env.user = { id: 'u1', email: 'c@x.com' };
+    renderApp();
+    fillStep1();
+    next1();
+    next2();
+    fireEvent.click(screen.getByText(/הובלה, הרכבה ופירוק מלא/));
+    fireEvent.click(screen.getByRole('checkbox'));
+    sign();
+    fireEvent.click(screen.getByRole('button', { name: /אישור והדפסת ההזמנה/ }));
+    await waitFor(() => expect(env.submit).toHaveBeenCalled());
+    await waitFor(() => expect(window.print).toHaveBeenCalled());
+  });
+});
+
+describe('Order wizard — guest auth gate (configured)', () => {
+  it('opens the auth modal at confirm when no user is logged in', () => {
+    env.configured = true;
+    env.user = null;
+    renderApp();
+    fillStep1();
+    next1();
+    next2();
+    fireEvent.click(screen.getByText(/הובלה, הרכבה ופירוק מלא/));
+    fireEvent.click(screen.getByRole('checkbox'));
+    sign();
+    fireEvent.click(screen.getByRole('button', { name: /אישור והדפסת ההזמנה/ }));
+    expect(screen.getByText('רגע אחד — נשאר רק להתחבר')).toBeInTheDocument();
+  });
+});

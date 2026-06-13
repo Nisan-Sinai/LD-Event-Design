@@ -1,22 +1,24 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, MessageCircle, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, MessageCircle, Sparkles, Gift } from 'lucide-react';
 import { useI18n } from '../i18n/i18n';
-import { PACKAGES, CATEGORIES, renderPackageSVG } from '../App';
-import { categoryLabel } from '../i18n/content';
+import { PACKAGES, CATEGORIES, renderPackageSVG, type Package } from '../App';
+import { categoryLabel, PACKAGE_EN } from '../i18n/content';
 
 export function HomePage() {
   const { t, tList, lang } = useI18n();
   const Arrow = lang === 'he' ? ArrowLeft : ArrowRight;
 
-  const cats = Object.values(CATEGORIES).map((cat) => {
-    const pkgs = PACKAGES.filter((p) => p.category === cat);
-    return {
-      cat,
-      count: pkgs.length,
-      minPrice: pkgs.length ? Math.min(...pkgs.map((p) => p.price)) : 0,
-      svgType: pkgs[0]?.svgType ?? ''
-    };
-  });
+  // טקסט חבילה בשפה הנוכחית (לצפייה חופשית של אורחים)
+  const pkgText = (p: Package) =>
+    lang === 'en' && PACKAGE_EN[p.id]
+      ? { title: PACKAGE_EN[p.id].title, subtitle: PACKAGE_EN[p.id].subtitle, benefits: PACKAGE_EN[p.id].benefits }
+      : { title: p.title, subtitle: p.subtitle, benefits: p.benefits };
+
+  const CATEGORIES_ORDER = Object.values(CATEGORIES);
+  const byCategory = CATEGORIES_ORDER.map((cat) => ({
+    cat,
+    pkgs: PACKAGES.filter((p) => p.category === cat)
+  }));
 
   const values = [
     { kicker: '01', title: t('home.value1Title'), body: t('home.value1Body') },
@@ -131,10 +133,10 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* ============== קטלוג קטגוריות ============== */}
+      {/* ============== קטלוג חבילות מלא — צפייה חופשית לכולם ============== */}
       <section id="packages" className="bg-[#FAF7F2] py-16 sm:py-20 scroll-mt-20">
         <div className="max-w-5xl mx-auto px-4">
-          <div className="mb-10">
+          <div className="mb-8 sm:mb-10">
             <div className="text-[11px] font-medium uppercase tracking-[0.32em] text-gray-500">
               <span className="divider-gold" aria-hidden="true" /> {t('home.packagesKicker')}
             </div>
@@ -144,27 +146,63 @@ export function HomePage() {
             <p className="mt-3 max-w-xl text-sm text-gray-600 leading-relaxed">{t('home.packagesSub')}</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {cats.map(({ cat, count, minPrice, svgType }) => (
-              <Link
+          {/* ניווט קטגוריות מהיר (עוגנים) */}
+          <div className="flex flex-wrap gap-2 mb-10">
+            {byCategory.map(({ cat }) => (
+              <a
                 key={cat}
-                to="/order"
-                className="card-hover group bg-white rounded-3xl border border-[#EAE3D2] p-5 flex flex-col"
+                href={`#cat-${CATEGORIES_ORDER.indexOf(cat)}`}
+                className="text-xs font-bold px-3.5 py-2 rounded-full bg-white border border-[#EAE3D2] text-[#8C6D3F] hover:border-[#B29259] transition-colors"
               >
-                <div className="bg-[#FAF7F2] rounded-2xl p-2 mb-4 flex items-center justify-center border border-[#EAE3D2] overflow-hidden">
-                  {renderPackageSVG(svgType)}
-                </div>
-                <h4 className="font-display font-bold text-lg text-gray-900">{categoryLabel(cat, lang)}</h4>
-                <p className="text-xs text-gray-500 mt-1">
-                  {count} {lang === 'he' ? 'חבילות' : 'packages'} · {t('home.from')}₪{minPrice.toLocaleString()}
-                </p>
-                <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-[#8C6D3F] group-hover:gap-3 transition-all">
-                  {t('home.viewPackages')}
-                  <Arrow className="w-3.5 h-3.5" aria-hidden="true" />
-                </span>
-              </Link>
+                {categoryLabel(cat, lang)}
+              </a>
             ))}
           </div>
+
+          <div className="space-y-12">
+            {byCategory.map(({ cat, pkgs }) => (
+              <div key={cat} id={`cat-${CATEGORIES_ORDER.indexOf(cat)}`} className="scroll-mt-24">
+                <h4 className="font-display text-2xl font-bold text-gray-900 mb-5 flex items-center gap-3">
+                  <span className="divider-gold" aria-hidden="true" />
+                  {categoryLabel(cat, lang)}
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {pkgs.map((p) => {
+                    const txt = pkgText(p);
+                    return (
+                      <div key={p.id} className="card-hover bg-white rounded-3xl border border-[#EAE3D2] p-5 flex flex-col">
+                        <div className="bg-[#FAF7F2] rounded-2xl p-2 mb-4 flex items-center justify-center border border-[#EAE3D2] overflow-hidden">
+                          {renderPackageSVG(p.svgType)}
+                        </div>
+                        <div className="flex items-start justify-between gap-2">
+                          <h5 className="font-bold text-gray-900 leading-tight">{txt.title}</h5>
+                          <span className="text-[#B29259] font-black whitespace-nowrap">
+                            {p.pricingTiers ? t('home.from') : ''}₪{p.price.toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1.5 leading-relaxed flex-1">{txt.subtitle}</p>
+                        {txt.benefits && (
+                          <p className="mt-3 inline-flex items-start gap-1.5 text-[11px] font-bold text-emerald-600">
+                            <Gift className="w-3.5 h-3.5 shrink-0 mt-px" aria-hidden="true" />
+                            {txt.benefits}
+                          </p>
+                        )}
+                        <Link
+                          to="/order"
+                          className="mt-4 inline-flex items-center justify-center gap-1.5 text-xs font-bold text-white bg-[#8C6D3F] hover:bg-[#6d5430] rounded-xl py-2.5 transition-colors"
+                        >
+                          {t('home.ctaOrder')}
+                          <Arrow className="w-3.5 h-3.5" aria-hidden="true" />
+                        </Link>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-10 text-center text-xs text-gray-500">{t('home.guestNote')}</p>
         </div>
       </section>
 
