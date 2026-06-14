@@ -253,6 +253,7 @@
   },
   "nav": {
     "home": "Home",
+    "back": "Back",
     "order": "Start order",
     "account": "My area",
     "admin": "Admin",

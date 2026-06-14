@@ -1510,8 +1510,23 @@ export default function App() {
         </div>
       </header>
 
+      {/* --- כפתור חזרה עליון (תמיד גלוי): שלב 1 → דף הבית · שלבים 2-3 → השלב הקודם --- */}
+      <div className="max-w-4xl mx-auto px-4 pt-4 no-print">
+        {currentStep === 1 ? (
+          <Link to="/" className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-600 hover:text-[#B29259] transition-colors">
+            {lang === 'he' ? <ArrowRight className="w-4 h-4" aria-hidden="true" /> : <ArrowLeft className="w-4 h-4" aria-hidden="true" />}
+            {t('step1.backHome')}
+          </Link>
+        ) : (
+          <button type="button" onClick={handleBack} className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-600 hover:text-[#B29259] transition-colors">
+            {lang === 'he' ? <ArrowRight className="w-4 h-4" aria-hidden="true" /> : <ArrowLeft className="w-4 h-4" aria-hidden="true" />}
+            {t('nav.back')}
+          </button>
+        )}
+      </div>
+
       {/* --- מד התקדמות השלבים --- */}
-      <div className="max-w-4xl mx-auto px-4 pt-6 no-print">
+      <div className="max-w-4xl mx-auto px-4 pt-4 no-print">
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-[#EAE3D2] mb-6">
           <div className="flex justify-between items-center relative">
             <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-0.5 bg-gray-100 z-0"></div>
@@ -1834,14 +1849,7 @@ export default function App() {
               </div>
             )}
 
-            <div className="mt-6 flex justify-between items-center gap-3">
-              <Link
-                to="/"
-                className="text-gray-600 hover:text-[#B29259] text-xs font-bold flex items-center gap-1 px-3 py-1.5"
-              >
-                {lang === 'he' ? <ArrowRight className="w-4 h-4" aria-hidden="true" /> : <ArrowLeft className="w-4 h-4" aria-hidden="true" />}
-                {t('step1.backHome')}
-              </Link>
+            <div className="mt-6 flex justify-end">
               <button
                 onClick={handleNext}
                 className="sheen bg-[#B29259] hover:bg-[#8C6D3F] text-white px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 shadow-sm transition-all"
