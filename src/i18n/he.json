@@ -107,6 +107,7 @@
     "brideNameFull": "חובה להזין שם פרטי ושם משפחה",
     "groomPhoneRequired": "חובה להזין מספר טלפון בעל האירוע",
     "bridePhoneRequired": "חובה להזין מספר טלפון בעלת האירוע",
+    "phoneInvalid": "מספר טלפון אינו תקין",
     "eventDateRequired": "חובה להזין תאריך אירוע",
     "eventLocationRequired": "חובה להזין מיקום אולם/אירוע",
     "emailRequired": "חובה להזין כתובת אימייל",

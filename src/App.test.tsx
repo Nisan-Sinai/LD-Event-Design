@@ -102,6 +102,14 @@ describe('Order wizard — step 1', () => {
     next1();
     expect(screen.getAllByText('מה כלול בחבילה?').length).toBeGreaterThan(0);
   });
+
+  it('rejects a too-short phone number', () => {
+    renderApp();
+    fillStep1();
+    fireEvent.change(screen.getByLabelText(/טלפון בעל האירוע/), { target: { value: '123' } });
+    next1();
+    expect(screen.getByText('מספר טלפון אינו תקין')).toBeInTheDocument();
+  });
 });
 
 describe('Order wizard — admin mode', () => {

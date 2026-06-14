@@ -107,6 +107,7 @@
     "brideNameFull": "First and last name are required",
     "groomPhoneRequired": "Host phone number is required",
     "bridePhoneRequired": "Co-host phone number is required",
+    "phoneInvalid": "Invalid phone number",
     "eventDateRequired": "Event date is required",
     "eventLocationRequired": "Venue / event location is required",
     "emailRequired": "Email address is required",
