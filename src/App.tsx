@@ -291,7 +291,7 @@ export const PACKAGES: Package[] = [
         'עיצוב אותנטי מלא הכולל כלי זהב מלכותיים, נרות אווירה ומפות ייחודיות'
       ]
     },
-    svgType: 'henna'
+    svgType: 'henna-market'
   },
 
   // --- חבילות אירועים ומצווה ---
@@ -377,7 +377,7 @@ export const PACKAGES: Package[] = [
         'כולל שלט קפה מעוצב עם שם החוגג/ת'
       ]
     },
-    svgType: 'bar'
+    svgType: 'bar-branded'
   },
   {
     id: 'bar-boutique',
@@ -394,7 +394,7 @@ export const PACKAGES: Package[] = [
         'תצוגה סופר אלגנטית ומוקפדת'
       ]
     },
-    svgType: 'bar'
+    svgType: 'bar-boutique'
   }
 ];
 
@@ -528,24 +528,41 @@ export function renderPackageSVG(type: string) {
     </svg>
   );
 
-  // איור חופה קלאסית: 2 בדים נשפכים בצדדים + תליית בד עליונה + 2 זרי ורדים
-  const chuppahCurtains = (withDrapes: boolean) =>
-    chuppahFrame(
+  // איור חופה קלאסית מותאם לדרגה: S פשוט · M עשיר יותר · L יוקרתי ומלא
+  // ככל שעולים בדרגה — מתווספים כתר פרחים על הקורה ונרות לאורך השביל.
+  const chuppahCurtains = (level: 's' | 'm' | 'l') => {
+    const bouqScale = level === 'l' ? 1.35 : level === 'm' ? 1.22 : 1.12;
+    return chuppahFrame(
       <>
-        {withDrapes && (
-          <g opacity="0.85" fill="url(#ldFabric)" stroke={gold} strokeOpacity="0.35" strokeWidth="0.6">
-            {/* תליית בד מרכזית (swag) */}
-            <path d="M50 28 Q100 60 150 28 Q138 44 100 50 Q62 44 50 28 Z" />
-            {/* פאנל בד שמאל */}
-            <path d="M52 28 Q44 64 54 95 Q60 70 60 30 Z" />
-            {/* פאנל בד ימין */}
-            <path d="M148 28 Q156 64 146 95 Q140 70 140 30 Z" />
-          </g>
-        )}
-        <Bouquet cx={52} cy={34} s={1.15} />
-        <Bouquet cx={148} cy={34} s={1.15} />
+        <g opacity="0.85" fill="url(#ldFabric)" stroke={gold} strokeOpacity="0.35" strokeWidth="0.6">
+          {/* תליית בד מרכזית (swag) */}
+          <path d="M50 28 Q100 60 150 28 Q138 44 100 50 Q62 44 50 28 Z" />
+          <path d="M52 28 Q44 64 54 95 Q60 70 60 30 Z" />
+          <path d="M148 28 Q156 64 146 95 Q140 70 140 30 Z" />
+        </g>
+
+        {/* M — אשכול פרחים מרכזי על הקורה */}
+        {level === 'm' && [92, 100, 108].map((x, i) => (
+          <Rose key={`mr${i}`} cx={x} cy={23} r={2.9} fill={i === 1 ? ART.gold : ART.soft} />
+        ))}
+
+        {/* L — כתר פרחים מלא לאורך כל הקורה */}
+        {level === 'l' && [56, 68, 80, 92, 104, 116, 128, 140].map((x, i) => (
+          <Rose key={`lr${i}`} cx={x} cy={22 + (i % 2 ? 1.5 : -1)} r={3} fill={i % 2 ? ART.gold : ART.soft} />
+        ))}
+
+        {/* זרי צד — גדלים לפי דרגה */}
+        <Bouquet cx={52} cy={34} s={bouqScale} />
+        <Bouquet cx={148} cy={34} s={bouqScale} />
+
+        {/* נרות שביל — M: 2 · L: 4 */}
+        {level !== 's' && <PillarCandle x={28} base={96} h={13} w={6} />}
+        {level !== 's' && <PillarCandle x={172} base={96} h={13} w={6} />}
+        {level === 'l' && <PillarCandle x={42} base={96} h={10} w={5} />}
+        {level === 'l' && <PillarCandle x={158} base={96} h={10} w={5} />}
       </>
     );
+  };
 
   // איור חופת בדים נשפכים: תליית בד רחבה + 4 בדים זורמים + 2 זרים גדולים
   const chuppahDrapes = () =>
@@ -695,17 +712,119 @@ export function renderPackageSVG(type: string) {
     </svg>
   );
 
+  // איור בר ממותג: שלט שם + קופסאות מתנה ממותגות עם פפיון + עמודי בלונים
+  const barBranded = () => (
+    <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
+      <ArtDefs />
+      <rect x="18" y="86" width="164" height="8" rx="2" fill={soft} stroke={gold} strokeWidth="0.6" />
+      {/* שלט קפה ממותג עם שם */}
+      <rect x="78" y="28" width="44" height="30" rx="3" fill={cream} stroke={gold} strokeWidth="1.3" />
+      {[38, 44, 50].map((y, i) => (
+        <line key={i} x1="86" y1={y} x2={i === 1 ? 108 : 114} y2={y} stroke={soft} strokeWidth="2.2" strokeLinecap="round" />
+      ))}
+      <rect x="98.5" y="58" width="3" height="26" fill={gold} />
+      {/* קופסאות מתנה ממותגות מוערמות */}
+      {[
+        { x: 40, y: 64, w: 26, h: 20, c: gold },
+        { x: 46, y: 50, w: 16, h: 14, c: soft },
+        { x: 132, y: 66, w: 28, h: 18, c: soft },
+        { x: 138, y: 52, w: 16, h: 14, c: gold }
+      ].map((b, i) => (
+        <g key={`gb${i}`}>
+          <rect x={b.x} y={b.y} width={b.w} height={b.h} rx="2" fill={b.c} opacity="0.92" stroke={gold} strokeWidth="0.5" />
+          <rect x={b.x + b.w / 2 - 1.4} y={b.y} width="2.8" height={b.h} fill={cream} opacity="0.85" />
+          <path d={`M${b.x + b.w / 2} ${b.y} q -5 -4 -6.5 0 q 4 1 6.5 0 q 2.5 1 6.5 0 q -1.5 -4 -6.5 0`} fill={cream} stroke={gold} strokeWidth="0.4" />
+        </g>
+      ))}
+      {/* עמודי בלונים בצדדים */}
+      {[24, 176].map((x, c) => (
+        <g key={`bc${c}`}>
+          {[80, 70, 60, 51].map((y, i) => (
+            <circle key={i} cx={x + (i % 2 ? 3 : -3)} cy={y} r={5 - i * 0.3} fill={i % 2 ? gold : soft} opacity="0.9" />
+          ))}
+        </g>
+      ))}
+    </svg>
+  );
+
+  // איור בר בוטיק: מעמד קינוחים תלת-קומתי אלגנטי + כיפת זכוכית + זר משי
+  const barBoutique = () => (
+    <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
+      <ArtDefs />
+      <rect x="18" y="86" width="164" height="8" rx="2" fill={soft} stroke={gold} strokeWidth="0.6" />
+      {/* מעמד קינוחים תלת-קומתי */}
+      <rect x="84" y="40" width="3" height="46" fill={gold} />
+      {[
+        { cy: 84, rx: 26 },
+        { cy: 64, rx: 19 },
+        { cy: 46, rx: 12 }
+      ].map((p, i) => (
+        <g key={`tier${i}`}>
+          <ellipse cx="85.5" cy={p.cy} rx={p.rx} ry="3.4" fill={cream} stroke={gold} strokeWidth="0.7" />
+          {Array.from({ length: Math.max(2, Math.round(p.rx / 4)) }).map((_, k) => {
+            const dx = -p.rx + 5 + k * 7;
+            return <circle key={k} cx={85.5 + dx} cy={p.cy - 3} r="2.5" fill={k % 2 ? gold : soft} opacity="0.92" />;
+          })}
+        </g>
+      ))}
+      <circle cx="85.5" cy="41" r="3" fill={gold} />
+      {/* כיפת זכוכית (cloche) עם עוגה */}
+      <path d="M134 84 A18 22 0 0 1 170 84 Z" fill="url(#ldFabric)" opacity="0.4" stroke={soft} strokeWidth="0.8" />
+      <rect x="142" y="74" width="20" height="10" rx="1.5" fill={cream} stroke={gold} strokeWidth="0.6" />
+      <circle cx="152" cy="60" r="2.6" fill={gold} />
+      <ellipse cx="152" cy="85" rx="20" ry="3" fill={soft} stroke={gold} strokeWidth="0.5" />
+      {/* זר משי */}
+      <Bouquet cx={36} cy={64} s={0.85} />
+      <path d="M30 78 Q29 85 32 86 L40 86 Q43 85 42 78 Z" fill={cream} stroke={soft} />
+    </svg>
+  );
+
+  // איור "שוק חינה": שקי יוטה עם פיצוחים + כף עץ + נר אווירה
+  const hennaMarket = () => (
+    <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
+      <ArtDefs />
+      <GroundShadow cx={100} cy={92} rx={78} ry={4} />
+      {[
+        { x: 44, w: 30, h: 32 },
+        { x: 82, w: 36, h: 40 },
+        { x: 126, w: 30, h: 32 }
+      ].map((s, i) => {
+        const top = 86 - s.h;
+        const mid = s.x + s.w / 2;
+        return (
+          <g key={`sack${i}`}>
+            <path d={`M${s.x} ${top + 6} Q${s.x - 3} 86 ${s.x + 7} 86 L${s.x + s.w - 7} 86 Q${s.x + s.w + 3} 86 ${s.x + s.w} ${top + 6} Z`} fill={soft} stroke={gold} strokeWidth="0.6" opacity="0.9" />
+            <line x1={mid} y1={top + 10} x2={mid} y2="84" stroke={gold} strokeOpacity="0.3" strokeWidth="0.6" />
+            <path d={`M${s.x - 1} ${top + 6} Q${mid} ${top - 3} ${s.x + s.w + 1} ${top + 6} Q${mid} ${top + 12} ${s.x - 1} ${top + 6} Z`} fill={cream} stroke={gold} strokeWidth="0.5" />
+            {[[-5, 5], [3, 4], [-1, 8], [6, 8], [-7, 8]].map(([dx, dy], k) => (
+              <circle key={k} cx={mid + dx} cy={top + 4 + dy} r="1.9" fill={k % 2 ? gold : ART.deep} opacity="0.85" />
+            ))}
+          </g>
+        );
+      })}
+      {/* כף עץ נשענת */}
+      <line x1="160" y1="84" x2="173" y2="58" stroke={ART.deep} strokeWidth="2" strokeLinecap="round" />
+      <ellipse cx="175" cy="55" rx="5" ry="3.2" fill={cream} stroke={gold} strokeWidth="0.6" transform="rotate(24 175 55)" />
+      {/* נר אווירה */}
+      <PillarCandle x={26} base={86} h={14} w={6} />
+    </svg>
+  );
+
   switch (type) {
     case 'chuppah-s':
+      return chuppahCurtains('s');
     case 'chuppah-m':
+      return chuppahCurtains('m');
     case 'chuppah-l':
-      return chuppahCurtains(true);
+      return chuppahCurtains('l');
     case 'chuppah-drapes':
       return chuppahDrapes();
     case 'gypsophila':
       return gypsophila();
     case 'henna':
       return henna();
+    case 'henna-market':
+      return hennaMarket();
     case 'event-classic':
       return eventClassic();
     case 'event-balloon':
@@ -716,6 +835,10 @@ export function renderPackageSVG(type: string) {
       return eventClassic();
     case 'bar':
       return bar();
+    case 'bar-branded':
+      return barBranded();
+    case 'bar-boutique':
+      return barBoutique();
     default:
       return (
         <div className="flex items-center justify-center h-[92px]">
