@@ -1,12 +1,19 @@
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, MessageCircle, Sparkles, Gift } from 'lucide-react';
 import { useI18n } from '../i18n/i18n';
 import { PACKAGES, CATEGORIES, renderPackageSVG, type Package } from '../App';
+import { usePackages } from '../packages/PackagesProvider';
+import { buildCatalog } from '../lib/packages';
 import { categoryLabel, PACKAGE_EN } from '../i18n/content';
 
 export function HomePage() {
   const { t, tList, lang } = useI18n();
+  const { overrides } = usePackages();
   const Arrow = lang === 'he' ? ArrowLeft : ArrowRight;
+
+  // קטלוג אפקטיבי לאחר דריסות המנהל + חבילות חדשות (מחיר/טקסט/תמונה/הסתרה)
+  const packages = useMemo(() => buildCatalog(PACKAGES, overrides), [overrides]);
 
   // טקסט חבילה בשפה הנוכחית (לצפייה חופשית של אורחים)
   const pkgText = (p: Package) =>
@@ -17,7 +24,7 @@ export function HomePage() {
   const CATEGORIES_ORDER = Object.values(CATEGORIES);
   const byCategory = CATEGORIES_ORDER.map((cat) => ({
     cat,
-    pkgs: PACKAGES.filter((p) => p.category === cat)
+    pkgs: packages.filter((p) => p.category === cat)
   }));
 
   const values = [
@@ -172,7 +179,11 @@ export function HomePage() {
                     return (
                       <div key={p.id} className="card-hover bg-white rounded-3xl border border-[#EAE3D2] p-5 flex flex-col">
                         <div className="bg-[#FAF7F2] rounded-2xl p-2 mb-4 flex items-center justify-center border border-[#EAE3D2] overflow-hidden">
-                          {renderPackageSVG(p.svgType)}
+                          {p.image ? (
+                            <img src={p.image} alt={txt.title} loading="lazy" className="h-[104px] w-full object-cover rounded-xl" />
+                          ) : (
+                            renderPackageSVG(p.svgType)
+                          )}
                         </div>
                         <div className="flex items-start justify-between gap-2">
                           <h5 className="font-bold text-gray-900 leading-tight">{txt.title}</h5>
@@ -238,7 +249,7 @@ export function HomePage() {
             <div className="grid grid-cols-3 gap-4 mt-12 border-t border-white/20 pt-8 max-w-lg mx-auto">
               {[
                 { num: '100+', label: t('home.statsEvents') },
-                { num: String(PACKAGES.length), label: t('home.statsPackages') },
+                { num: String(packages.length), label: t('home.statsPackages') },
                 { num: '✓', label: t('home.statsService') }
               ].map((s, i) => (
                 <div key={i}>

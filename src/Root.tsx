@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthProvider';
+import { PackagesProvider } from './packages/PackagesProvider';
 import { SiteLayout } from './components/SiteLayout';
 import { RequireAuth, RequireAdmin } from './auth/guards';
 import { HomePage } from './pages/HomePage';
@@ -12,7 +13,8 @@ import OrderPage from './App';
 export function Root() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <PackagesProvider>
+        <BrowserRouter>
         <Routes>
           <Route path="/" element={<SiteLayout><HomePage /></SiteLayout>} />
           <Route path="/login" element={<SiteLayout><LoginPage /></SiteLayout>} />
@@ -37,7 +39,8 @@ export function Root() {
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
+        </BrowserRouter>
+      </PackagesProvider>
     </AuthProvider>
   );
 }

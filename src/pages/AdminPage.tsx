@@ -5,6 +5,7 @@ import { useI18n } from '../i18n/i18n';
 import { useAuth } from '../auth/AuthProvider';
 import { fetchOrders, type OrderRow } from '../lib/orders';
 import { OrderDetailModal } from '../components/OrderDetailModal';
+import { PackageManager } from '../components/PackageManager';
 
 export function AdminPage() {
   const { t } = useI18n();
@@ -42,6 +43,9 @@ export function AdminPage() {
           {t('adminPage.newForClient')}
         </Link>
       </div>
+
+      {/* ניהול קטלוג חבילות — מחיר/טקסט/הסתרה לכלל הלקוחות */}
+      <PackageManager />
 
       {orders === null ? (
         <p className="text-sm text-gray-400">{t('adminPage.loading')}</p>

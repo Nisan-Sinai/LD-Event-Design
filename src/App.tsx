@@ -8,6 +8,8 @@ import { AuthModal } from './components/AuthModal';
 import { Link } from 'react-router-dom';
 import { useI18n } from './i18n/i18n';
 import { useAuth } from './auth/AuthProvider';
+import { usePackages } from './packages/PackagesProvider';
+import { buildCatalog } from './lib/packages';
 import { categoryLabel, PACKAGE_EN, localizedAddonName, localizedUnit } from './i18n/content';
 import {
   Sparkles,
@@ -116,6 +118,8 @@ export interface Package {
   details: PackageDetails;
   svgType: string;
   pricingTiers?: Record<number, number>;
+  /** תמונה שהועלתה בניהול — מוצגת במקום האיור הווקטורי */
+  image?: string;
 }
 
 interface ClientInfo {
@@ -766,6 +770,10 @@ function renderTableChoiceSVG() {
 export default function App() {
   const { t, tList, lang, dir, setLang } = useI18n();
   const { user, signOut } = useAuth();
+  const { overrides } = usePackages();
+
+  // קטלוג אפקטיבי: חבילות הבסיס לאחר דריסות + חבילות חדשות שנוצרו בניהול
+  const packages = React.useMemo(() => buildCatalog(PACKAGES, overrides), [overrides]);
 
   // טקסט חבילה בשפה הנוכחית (עברית מהנתונים, אנגלית ממודול התוכן)
   const L = (pkg: Package) =>
@@ -862,7 +870,7 @@ export default function App() {
   const [isGroomDrawing, setIsGroomDrawing] = useState(false);
   const [isBrideDrawing, setIsBrideDrawing] = useState(false);
 
-  const selectedPackages = PACKAGES.filter(p => selectedPackageIds.includes(p.id));
+  const selectedPackages = packages.filter(p => selectedPackageIds.includes(p.id));
 
   const hasWeddingPackage = selectedPackages.some(p => p.category === CATEGORIES.WEDDING);
   const hasBarPackage = selectedPackages.some(p => p.category === CATEGORIES.BARS);
@@ -1274,15 +1282,15 @@ export default function App() {
       {/* --- לוגו וכותרת ראשית --- */}
       <header className="bg-white border-b border-[#EAE3D2] shadow-sm sticky top-0 z-50 no-print">
         <div className="max-w-4xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="bg-[#B29259] text-white p-2 rounded-full shadow-md">
+          <Link to="/" className="flex items-center gap-2.5 group" aria-label={t('nav.home')}>
+            <div className="bg-[#B29259] text-white p-2 rounded-full shadow-md group-hover:scale-105 transition-transform">
               <Sparkles className="w-5.5 h-5.5 animate-pulse" />
             </div>
             <div className="text-start">
               <h1 className="text-xl sm:text-2xl font-bold text-[#8C6D3F] font-serif tracking-wide">LD Event Design</h1>
               <p className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold">{t('brand.tagline')}</p>
             </div>
-          </div>
+          </Link>
 
           <div className="flex items-center gap-2">
             <Link to="/" className="flex items-center gap-1 text-[11px] font-bold text-gray-600 hover:text-[#B29259] px-2 py-1.5" title={t('nav.home')}>
@@ -1715,7 +1723,7 @@ export default function App() {
 
             {/* גריד חבילות דינמי */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {PACKAGES.filter(p => p.category === activeCategory).map((pkg) => {
+              {packages.filter(p => p.category === activeCategory).map((pkg) => {
                 const isSelected = selectedPackageIds.includes(pkg.id);
 
                 const currentPrice = packagePrice(pkg);
@@ -1740,9 +1748,13 @@ export default function App() {
                     )}
 
                     <div>
-                      {/* איור וקטורי */}
-                      <div className="bg-[#FAF7F2] rounded-xl p-3 mb-3 flex items-center justify-center border border-[#FAF7F2]">
-                        {renderPackageSVG(pkg.svgType)}
+                      {/* תמונה שהועלתה בניהול, או איור וקטורי כברירת מחדל */}
+                      <div className="bg-[#FAF7F2] rounded-xl p-3 mb-3 flex items-center justify-center border border-[#FAF7F2] overflow-hidden">
+                        {pkg.image ? (
+                          <img src={pkg.image} alt={Lp.title} loading="lazy" className="h-[104px] w-full object-cover rounded-lg" />
+                        ) : (
+                          renderPackageSVG(pkg.svgType)
+                        )}
                       </div>
 
                       <div className="flex justify-between items-start gap-2 mb-1">

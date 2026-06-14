@@ -84,3 +84,44 @@ alter table public.orders add column if not exists coupon_discount numeric not n
 -- "איך הגעת אלינו" + שם האולם/הממליץ (סעיף הפניה)
 alter table public.orders add column if not exists referral_source text;
 alter table public.orders add column if not exists referral_detail text;
+
+-- 5) דריסות קטלוג חבילות — המנהל משנה מחיר/טקסט/הסתרה לכלל הלקוחות ----
+--    קריאה ציבורית (הקטלוג גלוי לכולם) · כתיבה למנהל בלבד.
+create table if not exists public.package_overrides (
+  package_id    text primary key,
+  price         numeric,
+  title         text,
+  subtitle      text,
+  description   text,
+  benefits      text,
+  image_url     text,
+  category      text,          -- לחבילות חדשות (is_custom)
+  svg_type      text,          -- איור ברירת מחדל אם אין תמונה
+  pricing_tiers jsonb,
+  hidden        boolean not null default false,
+  is_custom     boolean not null default false,  -- חבילה חדשה שנוצרה בניהול
+  sort_order    numeric,
+  updated_at    timestamptz not null default now()
+);
+alter table public.package_overrides enable row level security;
+
+drop policy if exists "package_overrides public read" on public.package_overrides;
+create policy "package_overrides public read" on public.package_overrides
+  for select to anon, authenticated using (true);
+
+drop policy if exists "package_overrides admin write" on public.package_overrides;
+create policy "package_overrides admin write" on public.package_overrides
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+-- bucket ציבורי לתמונות חבילות (קריאה לכולם · העלאה למנהל)
+insert into storage.buckets (id, name, public)
+values ('package-images', 'package-images', true)
+on conflict (id) do nothing;
+
+drop policy if exists "package images public read" on storage.objects;
+create policy "package images public read" on storage.objects
+  for select to anon, authenticated using (bucket_id = 'package-images');
+
+drop policy if exists "package images admin write" on storage.objects;
+create policy "package images admin write" on storage.objects
+  for insert to authenticated with check (bucket_id = 'package-images' and public.is_admin());
