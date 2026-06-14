@@ -8,7 +8,10 @@ const m = vi.hoisted(() => ({
   deleted: null as string | null,
   selectError: null as null | { message: string },
   upsertError: null as null | { message: string },
-  deleteError: null as null | { message: string }
+  deleteError: null as null | { message: string },
+  uploadedPath: null as string | null,
+  uploadOpts: null as Record<string, unknown> | null,
+  uploadError: null as null | { message: string }
 }));
 
 vi.mock('./supabase', () => ({
@@ -29,7 +32,17 @@ vi.mock('./supabase', () => ({
           return Promise.resolve({ error: m.deleteError });
         }
       })
-    })
+    }),
+    storage: {
+      from: () => ({
+        upload: (path: string, _file: unknown, opts: Record<string, unknown>) => {
+          m.uploadedPath = path;
+          m.uploadOpts = opts;
+          return Promise.resolve({ error: m.uploadError });
+        },
+        getPublicUrl: (path: string) => ({ data: { publicUrl: `https://cdn.example/${path}` } })
+      })
+    }
   }
 }));
 
@@ -38,6 +51,7 @@ import {
   fetchPackageOverrides,
   savePackageOverride,
   deletePackageOverride,
+  uploadPackageImage,
   type PackageOverride
 } from './packages';
 import { PACKAGES } from '../App';
@@ -67,6 +81,9 @@ beforeEach(() => {
   m.selectError = null;
   m.upsertError = null;
   m.deleteError = null;
+  m.uploadedPath = null;
+  m.uploadOpts = null;
+  m.uploadError = null;
 });
 
 describe('buildCatalog', () => {
@@ -155,5 +172,31 @@ describe('packages data layer', () => {
     m.upsertError = null;
     m.deleteError = { message: 'del' };
     await expect(deletePackageOverride('classic-s')).rejects.toEqual({ message: 'del' });
+  });
+});
+
+describe('uploadPackageImage', () => {
+  const file = new File(['x'], 'Photo.PNG', { type: 'image/png' });
+
+  it('uploads with content type and returns a public URL', async () => {
+    const url = await uploadPackageImage(file);
+    expect(m.uploadedPath).toMatch(/\.png$/); // הסיומת מנורמלת לאותיות קטנות
+    expect(m.uploadOpts).toMatchObject({ contentType: 'image/png', upsert: false });
+    expect(url).toBe(`https://cdn.example/${m.uploadedPath}`);
+  });
+
+  it('defaults the extension to jpg when the filename has none', async () => {
+    await uploadPackageImage(new File(['x'], 'noext', { type: 'image/jpeg' }));
+    expect(m.uploadedPath).toMatch(/\.jpg$/);
+  });
+
+  it('throws when Supabase is not configured', async () => {
+    m.configured = false;
+    await expect(uploadPackageImage(file)).rejects.toThrow(/not configured/i);
+  });
+
+  it('throws when the upload fails', async () => {
+    m.uploadError = { message: 'upload failed' };
+    await expect(uploadPackageImage(file)).rejects.toEqual({ message: 'upload failed' });
   });
 });

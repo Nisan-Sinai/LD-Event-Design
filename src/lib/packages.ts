@@ -56,7 +56,8 @@ export async function deletePackageOverride(packageId: string): Promise<void> {
 /** מעלה תמונת חבילה ל-Storage ומחזיר כתובת ציבורית. */
 export async function uploadPackageImage(file: File): Promise<string> {
   if (!isSupabaseConfigured) throw new Error('Supabase not configured');
-  const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+  const parts = file.name.split('.');
+  const ext = parts.length > 1 ? parts.pop()!.toLowerCase() : 'jpg';
   const path = `${crypto.randomUUID()}.${ext}`;
   const { error } = await supabase.storage
     .from('package-images')

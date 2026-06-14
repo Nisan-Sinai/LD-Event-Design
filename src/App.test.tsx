@@ -330,3 +330,31 @@ describe('Order wizard — guest auth gate (configured)', () => {
     expect(screen.getByText('רגע אחד — נשאר רק להתחבר')).toBeInTheDocument();
   });
 });
+
+describe('Order wizard — edge cases & navigation', () => {
+  it('admin manual final price overrides the computed total', () => {
+    renderApp();
+    fireEvent.click(screen.getByRole('button', { name: /בעל העסק \/ מנהל/ }));
+    fillStep1({ email: '' });
+    next1();
+    next2();
+    fireEvent.change(screen.getByLabelText('מחיר סופי ידני (₪)'), { target: { value: '9999' } });
+    expect(screen.getAllByText('₪9,999').length).toBeGreaterThan(0);
+  });
+
+  it('changing the events table tier updates the package price', () => {
+    renderApp();
+    fillStep1();
+    next1();
+    fireEvent.click(screen.getByRole('button', { name: /אירועים/ }));
+    fireEvent.click(screen.getByRole('button', { name: '20 שולחנות' }));
+    // חבילת "קלאסיק" במדרגת 20 שולחנות = ₪4,600 (ייחודי לחבילה זו)
+    expect(screen.getAllByText('₪4,600').length).toBeGreaterThan(0);
+  });
+
+  it('step 1 offers a back-to-home link', () => {
+    renderApp();
+    const back = screen.getByRole('link', { name: 'חזרה לדף הבית' });
+    expect(back).toHaveAttribute('href', '/');
+  });
+});
