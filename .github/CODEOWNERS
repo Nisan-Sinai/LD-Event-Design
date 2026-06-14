@@ -1,0 +1,5 @@
+# All files are owned by @Nisan-Sinai.
+# Combined with branch protection's `require_code_owner_reviews=true`, this means
+# any contributor PR needs his approval before it can be merged into `main`.
+# His own PRs bypass the rule (enforce_admins=false) so he can merge freely.
+* @Nisan-Sinai
