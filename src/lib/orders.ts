@@ -33,6 +33,10 @@ export interface OrderDetail extends OrderRow {
   delivery_price: number;
   coupon_code: string | null;
   coupon_discount: number;
+  order_source: string | null;
+  received_by: string | null;
+  internal_notes: string | null;
+  admin_discount: number;
   groom_sign_date: string | null;
   bride_sign_date: string | null;
   groom_signature_path: string | null;

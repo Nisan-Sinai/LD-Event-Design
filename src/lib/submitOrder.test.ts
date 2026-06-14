@@ -36,7 +36,8 @@ const payload: OrderPayload = {
   referralSource: 'venue', referralDetail: 'אולמי היער', includeDelivery: true,
   upgrades: [{ description: 'x', price: 1 }], basePrice: 2900, upgradesTotal: 1,
   deliveryPrice: 500, couponCode: '', couponDiscount: 0, totalPrice: 3401,
-  groomSignDate: '2026-01-01', brideSignDate: '2026-01-01'
+  groomSignDate: '2026-01-01', brideSignDate: '2026-01-01',
+  status: 'approved', orderSource: 'whatsapp', receivedBy: 'owner', internalNotes: 'הערה', adminDiscount: 100
 };
 const sig = 'data:image/png;base64,aGVsbG8=';
 
@@ -57,20 +58,29 @@ describe('submitOrder', () => {
     expect(s.inserted?.groom_signature_path).toContain('groom.png');
   });
 
-  it('stores referral fields when provided', async () => {
+  it('stores referral + admin metadata when provided', async () => {
     await submitOrder(payload, sig, sig);
     expect(s.inserted?.referral_source).toBe('venue');
     expect(s.inserted?.referral_detail).toBe('אולמי היער');
+    expect(s.inserted?.status).toBe('approved');
+    expect(s.inserted?.order_source).toBe('whatsapp');
+    expect(s.inserted?.received_by).toBe('owner');
+    expect(s.inserted?.internal_notes).toBe('הערה');
+    expect(s.inserted?.admin_discount).toBe(100);
   });
 
-  it('stores null for empty optional dates/fields', async () => {
-    await submitOrder({ ...payload, eventDate: '', compositesCount: '', spongeCount: '', referralSource: '', referralDetail: '', couponCode: '', groomSignDate: '', brideSignDate: '' }, sig, sig);
+  it('stores null/defaults for empty optional fields', async () => {
+    await submitOrder({ ...payload, eventDate: '', compositesCount: '', spongeCount: '', referralSource: '', referralDetail: '', couponCode: '', groomSignDate: '', brideSignDate: '', status: '', orderSource: '', receivedBy: '', internalNotes: '', adminDiscount: 0 }, sig, sig);
     expect(s.inserted?.event_date).toBeNull();
     expect(s.inserted?.composites_count).toBeNull();
     expect(s.inserted?.referral_source).toBeNull();
     expect(s.inserted?.referral_detail).toBeNull();
     expect(s.inserted?.coupon_code).toBeNull();
     expect(s.inserted?.groom_sign_date).toBeNull();
+    expect(s.inserted?.status).toBe('new');
+    expect(s.inserted?.order_source).toBeNull();
+    expect(s.inserted?.internal_notes).toBeNull();
+    expect(s.inserted?.admin_discount).toBe(0);
   });
 
   it('throws if the groom signature upload fails', async () => {

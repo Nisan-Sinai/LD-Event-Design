@@ -85,6 +85,12 @@ alter table public.orders add column if not exists coupon_discount numeric not n
 alter table public.orders add column if not exists referral_source text;
 alter table public.orders add column if not exists referral_detail text;
 
+-- מטא-דאטה של מנהל (נשמר כשהזמנה נוצרת במצב מנהל): מקור, מי קיבל, הערות פנימיות, הנחת מנהל
+alter table public.orders add column if not exists order_source   text;
+alter table public.orders add column if not exists received_by    text;
+alter table public.orders add column if not exists internal_notes text;
+alter table public.orders add column if not exists admin_discount numeric not null default 0;
+
 -- 5) דריסות קטלוג חבילות — המנהל משנה מחיר/טקסט/הסתרה לכלל הלקוחות ----
 --    קריאה ציבורית (הקטלוג גלוי לכולם) · כתיבה למנהל בלבד.
 create table if not exists public.package_overrides (

@@ -17,6 +17,7 @@ test.describe('Regression — guest flows', () => {
     await page.getByLabel('איך הגעת אלינו?').selectOption('venue');
     await page.getByLabel('שם האולם').fill('אולם הבדיקה');
     await page.getByRole('button', { name: /המשך לבחירת חבילת עיצוב/ }).click();
+    await page.getByText('חבילת עיצוב חתונה - Classic S').click();
     await page.getByRole('button', { name: /המשך לתוספות וחתימה/ }).click();
     await expect(page.getByText('הגעת אלינו דרך:')).toBeVisible();
     await expect(page.getByText(/אולם הבדיקה/)).toBeVisible();

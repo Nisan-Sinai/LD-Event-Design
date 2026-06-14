@@ -1002,8 +1002,8 @@ export default function App() {
   // מפתחות: `pkg:<id>` / `addon:<id>`. ריק = ערך ברירת המחדל.
   const [lineEdits, setLineEdits] = useState<Record<string, { label?: string; amount?: number }>>({});
 
-  // חבילות נבחרות (ניתן לבחור יותר מחבילה אחת, גם בין קטגוריות)
-  const [selectedPackageIds, setSelectedPackageIds] = useState<string[]>(['classic-s']);
+  // חבילות נבחרות (ללא ברירת מחדל — הלקוח בוחר. ניתן לבחור יותר מאחת, גם בין קטגוריות)
+  const [selectedPackageIds, setSelectedPackageIds] = useState<string[]>([]);
   const [selectedTableTier, setSelectedTableTier] = useState(10);
   const [packagesError, setPackagesError] = useState(false);
 
@@ -1314,7 +1314,12 @@ export default function App() {
           couponDiscount: pricing.couponDiscount,
           totalPrice: pricing.totalPrice,
           groomSignDate,
-          brideSignDate
+          brideSignDate,
+          status: isAdmin ? adminInfo.status : 'new',
+          orderSource: isAdmin ? adminInfo.source : '',
+          receivedBy: isAdmin ? adminInfo.receivedBy : '',
+          internalNotes: isAdmin ? adminInfo.internalNotes.trim() : '',
+          adminDiscount: pricing.adminDiscount
         },
         groomSignatureDataUrl,
         brideSignatureDataUrl
@@ -1444,9 +1449,13 @@ export default function App() {
     const rect = canvas.getBoundingClientRect();
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    // קנה-מידה בין גודל התצוגה (w-full) לרזולוציה הפנימית של הקנבס (350×96) —
+    // אחרת החתימה מצוירת בהיסט/דחיסה אופקית בכל רוחב מסך שאינו 350px בדיוק.
+    const scaleX = rect.width ? canvas.width / rect.width : 1;
+    const scaleY = rect.height ? canvas.height / rect.height : 1;
     return {
-      x: clientX - rect.left,
-      y: clientY - rect.top
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY
     };
   };
 

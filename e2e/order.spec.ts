@@ -14,8 +14,9 @@ test.describe('Order wizard (guest)', () => {
     await page.getByLabel(/אימייל/).fill('guest@example.com');
     await page.getByRole('button', { name: /המשך לבחירת חבילת עיצוב/ }).click();
 
-    // שלב 2 — חבילות (אורח רואה ובוחר חופשי)
+    // שלב 2 — חבילות (אין ברירת מחדל; בוחרים חבילה)
     await expect(page.getByText('מה כלול בחבילה?').first()).toBeVisible();
+    await page.getByText('חבילת עיצוב חתונה - Classic S').click();
     await page.getByRole('button', { name: /המשך לתוספות וחתימה/ }).click();
 
     // שלב 3 — חוזה

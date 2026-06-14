@@ -60,6 +60,8 @@ function fillStep1(opts: { email?: string } = {}) {
 
 const next1 = () => fireEvent.click(screen.getByRole('button', { name: /המשך לבחירת חבילת עיצוב/ }));
 const next2 = () => fireEvent.click(screen.getByRole('button', { name: /המשך לתוספות וחתימה/ }));
+// אין חבילת ברירת מחדל — בוחרים מפורשות (לחיצה על כרטיס Classic S בקטגוריית חתונה)
+const pickPackage = () => fireEvent.click(screen.getByText('חבילת עיצוב חתונה - Classic S'));
 
 function sign() {
   const canvases = document.querySelectorAll('canvas');
@@ -119,8 +121,7 @@ describe('Order wizard — step 2', () => {
     renderApp();
     fillStep1();
     next1();
-    // ביטול בחירת החבילה שנבחרה כברירת מחדל
-    fireEvent.click(screen.getByRole('button', { name: /הסר חבילה/ }));
+    // ללא חבילה נבחרת (אין ברירת מחדל) — לא ניתן להמשיך
     next2();
     expect(screen.getByText('יש לבחור לפחות חבילה אחת כדי להמשיך.')).toBeInTheDocument();
   });
@@ -150,6 +151,7 @@ describe('Order wizard — step 3 + submit (guest, not configured)', () => {
     renderApp();
     fillStep1();
     next1();
+    pickPackage();
     next2();
   }
 
@@ -196,6 +198,7 @@ describe('Order wizard — more flows', () => {
     renderApp();
     fillStep1();
     next1();
+    pickPackage();
     next2();
     fireEvent.click(screen.getByRole('button', { name: /חזור לחבילות/ }));
     expect(screen.getAllByText('מה כלול בחבילה?').length).toBeGreaterThan(0);
@@ -207,6 +210,7 @@ describe('Order wizard — more flows', () => {
     renderApp();
     fillStep1();
     next1();
+    pickPackage();
     fireEvent.change(screen.getByLabelText(/כמה שולחנות עם קומפוזיציה/), { target: { value: '8' } });
     fireEvent.change(screen.getByLabelText(/כמה שולחנות עם סידור עגול/), { target: { value: '2' } });
     next2();
@@ -217,6 +221,7 @@ describe('Order wizard — more flows', () => {
     renderApp();
     fillStep1();
     next1();
+    pickPackage();
     next2();
     sign();
     const clears = screen.getAllByRole('button', { name: 'נקה' });
@@ -228,6 +233,7 @@ describe('Order wizard — more flows', () => {
     renderApp();
     fillStep1();
     next1();
+    pickPackage();
     next2();
     const couponInput = screen.getByLabelText('קוד קופון');
     fireEvent.change(couponInput, { target: { value: 'שגוי' } });
@@ -240,6 +246,7 @@ describe('Order wizard — more flows', () => {
     renderApp();
     fillStep1();
     next1();
+    pickPackage();
     next2();
     fireEvent.change(screen.getByPlaceholderText(/לדוגמה: תוספת/), { target: { value: 'נר נוסף' } });
     fireEvent.change(screen.getByPlaceholderText('₪'), { target: { value: '50' } });
@@ -255,6 +262,7 @@ describe('Order wizard — more flows', () => {
     renderApp();
     fillStep1();
     next1();
+    pickPackage();
     next2();
     fireEvent.click(screen.getByText(/הובלה, הרכבה ופירוק מלא/));
     fireEvent.click(screen.getByRole('checkbox'));
@@ -272,6 +280,7 @@ describe('Order wizard — referral field', () => {
     fireEvent.change(screen.getByLabelText('איך הגעת אלינו?'), { target: { value: 'venue' } });
     fireEvent.change(screen.getByLabelText('שם האולם'), { target: { value: 'אולם הברקת' } });
     next1();
+    pickPackage();
     next2();
     expect(screen.getByText('הגעת אלינו דרך:')).toBeInTheDocument();
     expect(screen.getByText('דרך האולם / ספק האירוע — אולם הברקת')).toBeInTheDocument();
@@ -284,6 +293,7 @@ describe('Order wizard — admin line editing', () => {
     fireEvent.click(screen.getByRole('button', { name: /בעל העסק \/ מנהל/ }));
     fillStep1({ email: '' });
     next1();
+    pickPackage();
     next2();
   }
 
@@ -322,6 +332,7 @@ describe('Order wizard — guest auth gate (configured)', () => {
     renderApp();
     fillStep1();
     next1();
+    pickPackage();
     next2();
     fireEvent.click(screen.getByText(/הובלה, הרכבה ופירוק מלא/));
     fireEvent.click(screen.getByRole('checkbox'));
@@ -337,6 +348,7 @@ describe('Order wizard — edge cases & navigation', () => {
     fireEvent.click(screen.getByRole('button', { name: /בעל העסק \/ מנהל/ }));
     fillStep1({ email: '' });
     next1();
+    pickPackage();
     next2();
     fireEvent.change(screen.getByLabelText('מחיר סופי ידני (₪)'), { target: { value: '9999' } });
     expect(screen.getAllByText('₪9,999').length).toBeGreaterThan(0);

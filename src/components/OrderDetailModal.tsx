@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { X, User, Calendar, MapPin, Phone, Mail, Package, Gift, FileSignature } from 'lucide-react';
+import { X, User, Calendar, MapPin, Phone, Mail, Package, Gift, FileSignature, ClipboardList } from 'lucide-react';
 import { useI18n } from '../i18n/i18n';
 import { fetchOrderById, signatureUrl, type OrderDetail } from '../lib/orders';
 
@@ -44,7 +44,7 @@ function Section({ icon, title, children }: { icon: ReactNode; title: string; ch
   );
 }
 
-export function OrderDetailModal({ orderId, onClose }: { orderId: string | null; onClose: () => void }) {
+export function OrderDetailModal({ orderId, onClose, showInternal = false }: { orderId: string | null; onClose: () => void; showInternal?: boolean }) {
   const { t, dir } = useI18n();
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(false);
@@ -83,11 +83,11 @@ export function OrderDetailModal({ orderId, onClose }: { orderId: string | null;
 
   if (!orderId) return null;
 
-  const statusLabel = (s: string) => {
-    const k = `admin.status_${s}`;
-    const label = t(k);
-    return label === k ? s : label;
+  const labelOr = (key: string, fallback: string) => {
+    const label = t(key);
+    return label === key ? fallback : label;
   };
+  const statusLabel = (s: string) => labelOr(`admin.status_${s}`, s);
   const money = (n: number | null | undefined) => `₪${Number(n ?? 0).toLocaleString()}`;
   const none = t('orderDetail.none');
 
@@ -166,11 +166,23 @@ export function OrderDetailModal({ orderId, onClose }: { orderId: string | null;
                 <Row label={t('orderDetail.deliveryFee')} value={order.delivery_price ? money(order.delivery_price) : null} />
                 <Row label={t('orderDetail.coupon')} value={order.coupon_code} />
                 <Row label={t('orderDetail.discount')} value={order.coupon_discount ? `−${money(order.coupon_discount)}` : null} />
+                {showInternal && order.admin_discount ? (
+                  <Row label={t('orderDetail.adminDiscount')} value={`−${money(order.admin_discount)}`} />
+                ) : null}
                 <div className="flex justify-between gap-3 pt-2 mt-1 border-t border-gray-200 text-sm font-black text-[#8C6D3F]">
                   <span>{t('orderDetail.total')}</span>
                   <span>{money(order.total_price)}</span>
                 </div>
               </Section>
+
+              {/* מטא-דאטה של מנהל — מוצג רק לצוות (showInternal), לעולם לא ללקוח */}
+              {showInternal && (order.order_source || order.received_by || order.internal_notes) && (
+                <Section icon={<ClipboardList className="w-4 h-4" aria-hidden="true" />} title={t('orderDetail.sectionAdmin')}>
+                  <Row label={t('orderDetail.source')} value={order.order_source ? labelOr(`admin.source_${order.order_source}`, order.order_source) : null} />
+                  <Row label={t('orderDetail.receivedBy')} value={order.received_by ? labelOr(`admin.received_${order.received_by}`, order.received_by) : null} />
+                  <Row label={t('orderDetail.internalNotes')} value={order.internal_notes ? <span className="whitespace-pre-wrap">{order.internal_notes}</span> : null} />
+                </Section>
+              )}
 
               <Section icon={<FileSignature className="w-4 h-4" aria-hidden="true" />} title={t('orderDetail.sectionSignatures')}>
                 <div className="grid grid-cols-2 gap-3">
