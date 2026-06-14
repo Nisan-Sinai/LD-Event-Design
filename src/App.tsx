@@ -430,10 +430,41 @@ function ArtDefs() {
         <stop offset="55%" stopColor="#F0C75E" />
         <stop offset="100%" stopColor={ART.gold} />
       </radialGradient>
+      <radialGradient id="ldGlow" cx="50%" cy="42%" r="62%">
+        <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.9" />
+        <stop offset="55%" stopColor="#F6EEDE" stopOpacity="0.45" />
+        <stop offset="100%" stopColor="#EAE3D2" stopOpacity="0" />
+      </radialGradient>
       <filter id="ldShadow" x="-20%" y="-20%" width="140%" height="140%">
         <feGaussianBlur stdDeviation="1.6" />
       </filter>
     </defs>
+  );
+}
+
+// ניצוץ זהב בן 4 קצוות
+function Sparkle({ x, y, r, o = 0.5 }: { x: number; y: number; r: number; o?: number }) {
+  const a = r * 0.32;
+  return (
+    <path
+      d={`M${x} ${y - r} L${x + a} ${y - a} L${x + r} ${y} L${x + a} ${y + a} L${x} ${y + r} L${x - a} ${y + a} L${x - r} ${y} L${x - a} ${y - a} Z`}
+      fill={ART.gold}
+      opacity={o}
+    />
+  );
+}
+
+// רקע "במה" משותף לכל איור: זוהר חמים רך + ניצוצות זהב מרחפים (יוקרה ואחידות)
+function SceneBackdrop() {
+  const sparks: [number, number, number, number][] = [
+    [18, 22, 2.2, 0.5], [184, 28, 1.7, 0.45], [14, 72, 1.6, 0.4],
+    [188, 70, 2.1, 0.5], [100, 11, 1.5, 0.4], [40, 14, 1.2, 0.35], [160, 16, 1.3, 0.35]
+  ];
+  return (
+    <g aria-hidden="true">
+      <rect x="0" y="0" width="200" height="108" fill="url(#ldGlow)" />
+      {sparks.map(([x, y, r, o], i) => <Sparkle key={i} x={x} y={y} r={r} o={o} />)}
+    </g>
   );
 }
 
@@ -442,15 +473,19 @@ function GroundShadow({ cx, cy, rx, ry = 3 }: { cx: number; cy: number; rx: numb
   return <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill={ART.deep} opacity="0.12" filter="url(#ldShadow)" />;
 }
 
-// ורד יחיד — עיגול עם סלסול ספירלה פנימי, גרדיאנט עומק ונקודת אור
+// ורד יחיד — עלי כותרת מרובדים, גרדיאנט עומק ונקודת אור (מראה מלא ועשיר)
 function Rose({ cx, cy, r, fill }: { cx: number; cy: number; r: number; fill: string }) {
   const grad = fill === ART.gold ? 'url(#ldRose)' : 'url(#ldRoseSoft)';
+  const sw = (k: number) => Math.max(0.4, r * k);
   return (
     <g>
       <circle cx={cx} cy={cy} r={r} fill={grad} />
-      <path d={`M${cx} ${cy} m ${-r * 0.45} 0 a ${r * 0.45} ${r * 0.45} 0 1 1 ${r * 0.9} 0`} fill="none" stroke={ART.deep} strokeWidth={Math.max(0.5, r * 0.18)} opacity="0.4" strokeLinecap="round" />
-      <path d={`M${cx} ${cy} q ${r * 0.4} ${-r * 0.3} 0 ${-r * 0.6}`} fill="none" stroke={ART.deep} strokeWidth={Math.max(0.5, r * 0.16)} opacity="0.38" strokeLinecap="round" />
-      <circle cx={cx - r * 0.3} cy={cy - r * 0.32} r={Math.max(0.4, r * 0.22)} fill="#FFFFFF" opacity="0.5" />
+      {/* עלי כותרת חיצוניים */}
+      <path d={`M${cx} ${cy} m ${-r * 0.72} 0 a ${r * 0.72} ${r * 0.72} 0 1 1 ${r * 1.44} 0`} fill="none" stroke={ART.deep} strokeWidth={sw(0.1)} opacity="0.28" strokeLinecap="round" />
+      {/* סלסול פנימי */}
+      <path d={`M${cx} ${cy} m ${-r * 0.44} 0 a ${r * 0.44} ${r * 0.44} 0 1 1 ${r * 0.88} 0`} fill="none" stroke={ART.deep} strokeWidth={sw(0.16)} opacity="0.42" strokeLinecap="round" />
+      <path d={`M${cx} ${cy} q ${r * 0.4} ${-r * 0.3} 0 ${-r * 0.6}`} fill="none" stroke={ART.deep} strokeWidth={sw(0.15)} opacity="0.4" strokeLinecap="round" />
+      <circle cx={cx - r * 0.28} cy={cy - r * 0.3} r={Math.max(0.4, r * 0.22)} fill="#FFFFFF" opacity="0.55" />
     </g>
   );
 }
@@ -516,6 +551,7 @@ export function renderPackageSVG(type: string) {
   const chuppahFrame = (children: React.ReactNode) => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
       <ArtDefs />
+      <SceneBackdrop />
       <GroundShadow cx={100} cy={99} rx={70} ry={3.5} />
       <path d="M40 26 Q100 18 160 26" stroke="url(#ldPost)" strokeWidth="3.6" fill="none" strokeLinecap="round" />
       <rect x="44" y="25" width="4.5" height="72" rx="2.25" fill="url(#ldPost)" />
@@ -586,6 +622,7 @@ export function renderPackageSVG(type: string) {
   const henna = () => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
       <ArtDefs />
+      <SceneBackdrop />
       <GroundShadow cx={100} cy={92} rx={78} ry={4} />
       {/* מגדל עוגיות */}
       <ellipse cx="66" cy="84" rx="34" ry="7" fill={soft} stroke={gold} />
@@ -633,6 +670,7 @@ export function renderPackageSVG(type: string) {
   const eventClassic = () => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
       <ArtDefs />
+      <SceneBackdrop />
       <GroundShadow cx={100} cy={93} rx={74} ry={4} />
       {/* צילינדר נר צף מרכזי */}
       <rect x="93" y="52" width="15" height="38" rx="2" fill={cream} stroke={soft} />
@@ -654,6 +692,7 @@ export function renderPackageSVG(type: string) {
   const eventBalloon = () => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
       <ArtDefs />
+      <SceneBackdrop />
       {balloonArch(100, 92, 66, 64, 13, 'arch')}
       <line x1="34" y1="92" x2="166" y2="92" stroke={gold} strokeWidth="1.6" opacity="0.4" />
     </svg>
@@ -663,6 +702,7 @@ export function renderPackageSVG(type: string) {
   const eventVip = () => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
       <ArtDefs />
+      <SceneBackdrop />
       <rect x="72" y="34" width="56" height="50" rx="6" fill={cream} stroke={gold} strokeWidth="1.5" />
       <circle cx="100" cy="56" r="10" fill="none" stroke={soft} strokeWidth="1.5" />
       {balloonArch(100, 88, 72, 66, 11, 'vip')}
@@ -687,6 +727,7 @@ export function renderPackageSVG(type: string) {
   const bar = () => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
       <ArtDefs />
+      <SceneBackdrop />
       {/* שולחן הבר */}
       <rect x="18" y="86" width="164" height="8" rx="2" fill={soft} stroke={gold} strokeWidth="0.6" />
       {/* 2 צנצנות ממתקים (אפותקרי) */}
@@ -716,6 +757,7 @@ export function renderPackageSVG(type: string) {
   const barBranded = () => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
       <ArtDefs />
+      <SceneBackdrop />
       <rect x="18" y="86" width="164" height="8" rx="2" fill={soft} stroke={gold} strokeWidth="0.6" />
       {/* שלט קפה ממותג עם שם */}
       <rect x="78" y="28" width="44" height="30" rx="3" fill={cream} stroke={gold} strokeWidth="1.3" />
@@ -751,6 +793,7 @@ export function renderPackageSVG(type: string) {
   const barBoutique = () => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
       <ArtDefs />
+      <SceneBackdrop />
       <rect x="18" y="86" width="164" height="8" rx="2" fill={soft} stroke={gold} strokeWidth="0.6" />
       {/* מעמד קינוחים תלת-קומתי */}
       <rect x="84" y="40" width="3" height="46" fill={gold} />
@@ -783,6 +826,7 @@ export function renderPackageSVG(type: string) {
   const hennaMarket = () => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
       <ArtDefs />
+      <SceneBackdrop />
       <GroundShadow cx={100} cy={92} rx={78} ry={4} />
       {[
         { x: 44, w: 30, h: 32 },
