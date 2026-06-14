@@ -2,9 +2,185 @@
 @tailwind components;
 @tailwind utilities;
 
+/* --- שיפוץ כללי: ליטוש בסיס (שלב 1) --- */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* פס גלילה ממותג בגווני הזהב של LD */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #C9B488 #F3ECDD;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: #F3ECDD;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: #C9B488;
+  border-radius: 9999px;
+  border: 2px solid #F3ECDD;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: #B29259;
+}
+
 @layer utilities {
   .animate-fadeIn {
     animation: fadeIn 0.4s ease-out both;
+  }
+}
+
+/* ============================================================
+   מערכת עיצוב — LD Event Design (השראה: סטודיו shel-yah)
+   פלטה: זהב #B29259 · זהב כהה #8C6D3F · שמנת #FAF7F2 · בון #EAE3D2
+   ============================================================ */
+
+.font-display {
+  font-family: "Frank Ruhl Libre", Georgia, serif;
+  letter-spacing: -0.02em;
+}
+
+::selection {
+  background: #8c6d3f;
+  color: #faf7f2;
+}
+
+/* ---------- HERO: זוהר רדיאלי עדין ---------- */
+.hero-glow {
+  background-image:
+    radial-gradient(60% 120% at 100% 0%, rgba(178, 146, 89, 0.28), transparent 60%),
+    radial-gradient(50% 100% at 0% 100%, rgba(140, 109, 63, 0.12), transparent 55%);
+}
+
+/* ---------- ריחוף איטי לכתמי רקע ---------- */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-18px); }
+}
+.float-slow {
+  animation: float 8s ease-in-out infinite;
+}
+
+/* ---------- אנימציות כניסה מדורגות ---------- */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-rise { animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-rise-delay-1 { animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both; }
+.animate-rise-delay-2 { animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.24s both; }
+.animate-rise-delay-3 { animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.36s both; }
+
+/* ---------- טקסט גרדיאנט זהב ---------- */
+.gradient-text {
+  background: linear-gradient(90deg, #5f4a28, #b29259, #5f4a28);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  transition: background-position 1.1s ease;
+}
+.gradient-text:hover {
+  background-position: 200% center;
+}
+
+/* ---------- קו תחתון מתגלה (מותאם RTL) ---------- */
+.link-underline {
+  position: relative;
+}
+.link-underline::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  bottom: -4px;
+  height: 1.5px;
+  width: 0;
+  background: currentColor;
+  transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.link-underline:hover::after {
+  width: 100%;
+}
+
+/* ---------- ריחוף כרטיס מעודן ---------- */
+.card-hover {
+  transition:
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.55s ease;
+  will-change: transform;
+}
+.card-hover:hover {
+  transform: translateY(-8px);
+  box-shadow:
+    0 1px 2px rgba(60, 47, 24, 0.04),
+    0 28px 60px -28px rgba(140, 109, 63, 0.35);
+  border-color: rgba(178, 146, 89, 0.6);
+}
+
+/* ---------- ברק חולף על כפתורים ---------- */
+.sheen {
+  position: relative;
+  overflow: hidden;
+}
+.sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.4) 50%, transparent 70%);
+  transform: translateX(-160%);
+  transition: transform 0.9s ease;
+}
+.sheen:hover::after {
+  transform: translateX(160%);
+}
+
+/* ---------- מפריד דקורטיבי ---------- */
+.divider-gold {
+  display: inline-block;
+  width: 2.5rem;
+  height: 1px;
+  background: #b29259;
+  vertical-align: middle;
+}
+
+/* ---------- צל חם ---------- */
+.shadow-warm {
+  box-shadow:
+    0 1px 2px rgba(60, 47, 24, 0.04),
+    0 12px 32px -16px rgba(178, 146, 89, 0.22),
+    0 30px 60px -30px rgba(60, 47, 24, 0.18);
+}
+
+/* ---------- פס נע (marquee) ---------- */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(50%); }
+}
+.marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 30s linear infinite;
+}
+
+/* ---------- כיבוד reduced-motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
@@ -19,9 +195,149 @@
   }
 }
 
-/* הסתרת בקרי ניווט בעת הדפסה */
+/* ---------- מגירה נשלפת מלמטה (bottom sheet) ---------- */
+@keyframes sheetUp {
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-sheetUp { animation: sheetUp 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* ============================================================
+   אפקטים חיים לאיורי החבילות (נצנוץ, ריצוד נר, ריחוף, זוהר נושם)
+   כל האנימציות נכבות אוטומטית עבור prefers-reduced-motion (כלל גלובלי למטה).
+   ============================================================ */
+@keyframes ldTwinkle {
+  0%, 100% { opacity: 0.15; transform: scale(0.65) rotate(0deg); }
+  50% { opacity: 0.95; transform: scale(1.25) rotate(45deg); }
+}
+@keyframes ldFlicker {
+  0%, 100% { opacity: 0.85; transform: scaleY(1) scaleX(1); }
+  35% { opacity: 1; transform: scaleY(1.16) scaleX(0.92); }
+  65% { opacity: 0.9; transform: scaleY(0.95) scaleX(1.05); }
+}
+@keyframes ldFloatSoft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2.6px); }
+}
+@keyframes ldGlowPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.85; }
+}
+.ld-twinkle { animation: ldTwinkle 2.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.ld-flame { animation: ldFlicker 1.3s ease-in-out infinite; transform-box: fill-box; transform-origin: center bottom; }
+.ld-float { animation: ldFloatSoft 4.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.ld-glowpulse { animation: ldGlowPulse 4.2s ease-in-out infinite; }
+
+/* מעטפת איור: ריחוף עדין של כל הסצנה + ברק אור חולף (shimmer) — נראה בכל כרטיס */
+.ld-illus { position: relative; }
+.ld-illus > svg { animation: ldFloatSoft 5s ease-in-out infinite; }
+.ld-illus::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 28%, rgba(255, 255, 255, 0.6) 47%, rgba(255, 245, 222, 0.35) 54%, transparent 72%);
+  transform: translateX(-130%);
+  animation: ldShimmer 3.6s ease-in-out infinite;
+}
+@keyframes ldShimmer {
+  0% { transform: translateX(-130%); }
+  55%, 100% { transform: translateX(130%); }
+}
+
+/* --- אפשרויות וידג'ט הנגישות --- */
+/* ניגודיות גבוהה */
+body.a11y-contrast {
+  background: #ffffff;
+}
+body.a11y-contrast,
+body.a11y-contrast .text-gray-400,
+body.a11y-contrast .text-gray-500,
+body.a11y-contrast .text-gray-600,
+body.a11y-contrast .text-gray-700,
+body.a11y-contrast .text-gray-800 {
+  color: #111111 !important;
+}
+body.a11y-contrast .text-\[\#8C6D3F\],
+body.a11y-contrast .text-\[\#B29259\] {
+  color: #6b4f1d !important;
+}
+
+/* הדגשת קישורים וכפתורים */
+body.a11y-links a,
+body.a11y-links button {
+  text-decoration: underline !important;
+  outline: 1px dashed currentColor;
+  outline-offset: 2px;
+}
+
+/* גופן קריא */
+body.a11y-readable,
+body.a11y-readable * {
+  font-family: Arial, "Segoe UI", sans-serif !important;
+  letter-spacing: 0.02em;
+}
+
+/* פוקוס נראה לבירור לאורך כל האתר (נגישות מקלדת) */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #8C6D3F;
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   הדפסה / PDF — מסמך נקי וממותג של ההסכם בלבד
+   ============================================================ */
+
+/* תוכן שמוצג רק בהדפסה (כותרת ממותגת, חתימת תודה) */
+.print-only {
+  display: none;
+}
+
 @media print {
+  /* מסתירים את כל הקלט/ניווט; מותירים את ההסכם בלבד */
   .no-print {
     display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+
+  /* גיליון נקי: רקע לבן, צבעים מדויקים (גוונים ופאנלים בז') */
+  html,
+  body {
+    background: #ffffff !important;
+  }
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  @page {
+    margin: 12mm;
+  }
+
+  /* כרטיס ההסכם — ללא צל/מסגרת/ריווח כפול בהדפסה */
+  .print-contract {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* שמירה על בלוקים שלמים בעמוד (חתימות, סעיפי מדיניות) */
+  .print-avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* ביטול אנימציות בהדפסה */
+  * {
+    animation: none !important;
+    transition: none !important;
   }
 }
