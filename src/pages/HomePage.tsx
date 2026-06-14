@@ -178,7 +178,7 @@ export function HomePage() {
                     const txt = pkgText(p);
                     return (
                       <div key={p.id} className="card-hover bg-white rounded-3xl border border-[#EAE3D2] p-5 flex flex-col">
-                        <div className="bg-[#FAF7F2] rounded-2xl p-2 mb-4 flex items-center justify-center border border-[#EAE3D2] overflow-hidden">
+                        <div className="ld-illus bg-[#FAF7F2] rounded-2xl p-2 mb-4 flex items-center justify-center border border-[#EAE3D2] overflow-hidden">
                           {p.image ? (
                             <img src={p.image} alt={txt.title} loading="lazy" className="h-[104px] w-full object-cover rounded-xl" />
                           ) : (

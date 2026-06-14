@@ -223,10 +223,27 @@ body {
   0%, 100% { opacity: 0.4; }
   50% { opacity: 0.85; }
 }
-.ld-twinkle { animation: ldTwinkle 2.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.ld-twinkle { animation: ldTwinkle 2.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
 .ld-flame { animation: ldFlicker 1.3s ease-in-out infinite; transform-box: fill-box; transform-origin: center bottom; }
 .ld-float { animation: ldFloatSoft 4.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
 .ld-glowpulse { animation: ldGlowPulse 4.2s ease-in-out infinite; }
+
+/* מעטפת איור: ריחוף עדין של כל הסצנה + ברק אור חולף (shimmer) — נראה בכל כרטיס */
+.ld-illus { position: relative; }
+.ld-illus > svg { animation: ldFloatSoft 5s ease-in-out infinite; }
+.ld-illus::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 28%, rgba(255, 255, 255, 0.6) 47%, rgba(255, 245, 222, 0.35) 54%, transparent 72%);
+  transform: translateX(-130%);
+  animation: ldShimmer 3.6s ease-in-out infinite;
+}
+@keyframes ldShimmer {
+  0% { transform: translateX(-130%); }
+  55%, 100% { transform: translateX(130%); }
+}
 
 /* --- אפשרויות וידג'ט הנגישות --- */
 /* ניגודיות גבוהה */

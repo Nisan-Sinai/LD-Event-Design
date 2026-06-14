@@ -467,8 +467,8 @@ function Sparkle({ x, y, r, o = 0.5, delay = 0 }: { x: number; y: number; r: num
 // רקע "במה" משותף לכל איור: זוהר חמים נושם + ניצוצות זהב מנצנצים (יוקרה ואחידות)
 function SceneBackdrop() {
   const sparks: [number, number, number, number][] = [
-    [18, 22, 2.4, 0.5], [184, 28, 1.8, 0.45], [14, 72, 1.7, 0.4],
-    [188, 70, 2.3, 0.5], [100, 11, 1.6, 0.4], [40, 14, 1.3, 0.35], [160, 16, 1.4, 0.35]
+    [18, 22, 3.6, 0.75], [184, 26, 3, 0.7], [12, 70, 2.8, 0.6],
+    [188, 72, 3.4, 0.75], [100, 10, 2.6, 0.65], [44, 13, 2.2, 0.55], [158, 15, 2.4, 0.55]
   ];
   return (
     <g aria-hidden="true">
@@ -1929,7 +1929,7 @@ export default function App() {
 
                     <div>
                       {/* תמונה שהועלתה בניהול, או איור וקטורי כברירת מחדל */}
-                      <div className="bg-[#FAF7F2] rounded-xl p-3 mb-3 flex items-center justify-center border border-[#FAF7F2] overflow-hidden">
+                      <div className="ld-illus bg-[#FAF7F2] rounded-xl p-3 mb-3 flex items-center justify-center border border-[#FAF7F2] overflow-hidden">
                         {pkg.image ? (
                           <img src={pkg.image} alt={Lp.title} loading="lazy" className="h-[104px] w-full object-cover rounded-lg" />
                         ) : (
