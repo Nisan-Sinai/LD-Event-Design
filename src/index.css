@@ -202,6 +202,32 @@ body {
 }
 .animate-sheetUp { animation: sheetUp 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
+/* ============================================================
+   אפקטים חיים לאיורי החבילות (נצנוץ, ריצוד נר, ריחוף, זוהר נושם)
+   כל האנימציות נכבות אוטומטית עבור prefers-reduced-motion (כלל גלובלי למטה).
+   ============================================================ */
+@keyframes ldTwinkle {
+  0%, 100% { opacity: 0.15; transform: scale(0.65) rotate(0deg); }
+  50% { opacity: 0.95; transform: scale(1.25) rotate(45deg); }
+}
+@keyframes ldFlicker {
+  0%, 100% { opacity: 0.85; transform: scaleY(1) scaleX(1); }
+  35% { opacity: 1; transform: scaleY(1.16) scaleX(0.92); }
+  65% { opacity: 0.9; transform: scaleY(0.95) scaleX(1.05); }
+}
+@keyframes ldFloatSoft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2.6px); }
+}
+@keyframes ldGlowPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.85; }
+}
+.ld-twinkle { animation: ldTwinkle 2.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.ld-flame { animation: ldFlicker 1.3s ease-in-out infinite; transform-box: fill-box; transform-origin: center bottom; }
+.ld-float { animation: ldFloatSoft 4.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.ld-glowpulse { animation: ldGlowPulse 4.2s ease-in-out infinite; }
+
 /* --- אפשרויות וידג'ט הנגישות --- */
 /* ניגודיות גבוהה */
 body.a11y-contrast {

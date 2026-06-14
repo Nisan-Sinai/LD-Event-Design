@@ -438,15 +438,25 @@ function ArtDefs() {
       <filter id="ldShadow" x="-20%" y="-20%" width="140%" height="140%">
         <feGaussianBlur stdDeviation="1.6" />
       </filter>
+      {/* זוהר רך לאלמנטים זוהרים (להבת נר) */}
+      <filter id="ldFlameGlow" x="-120%" y="-120%" width="340%" height="340%">
+        <feGaussianBlur stdDeviation="1.5" result="b" />
+        <feMerge>
+          <feMergeNode in="b" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
     </defs>
   );
 }
 
-// ניצוץ זהב בן 4 קצוות
-function Sparkle({ x, y, r, o = 0.5 }: { x: number; y: number; r: number; o?: number }) {
+// ניצוץ זהב בן 4 קצוות — מנצנץ (twinkle)
+function Sparkle({ x, y, r, o = 0.5, delay = 0 }: { x: number; y: number; r: number; o?: number; delay?: number }) {
   const a = r * 0.32;
   return (
     <path
+      className="ld-twinkle"
+      style={{ animationDelay: `${delay}s` }}
       d={`M${x} ${y - r} L${x + a} ${y - a} L${x + r} ${y} L${x + a} ${y + a} L${x} ${y + r} L${x - a} ${y + a} L${x - r} ${y} L${x - a} ${y - a} Z`}
       fill={ART.gold}
       opacity={o}
@@ -454,16 +464,16 @@ function Sparkle({ x, y, r, o = 0.5 }: { x: number; y: number; r: number; o?: nu
   );
 }
 
-// רקע "במה" משותף לכל איור: זוהר חמים רך + ניצוצות זהב מרחפים (יוקרה ואחידות)
+// רקע "במה" משותף לכל איור: זוהר חמים נושם + ניצוצות זהב מנצנצים (יוקרה ואחידות)
 function SceneBackdrop() {
   const sparks: [number, number, number, number][] = [
-    [18, 22, 2.2, 0.5], [184, 28, 1.7, 0.45], [14, 72, 1.6, 0.4],
-    [188, 70, 2.1, 0.5], [100, 11, 1.5, 0.4], [40, 14, 1.2, 0.35], [160, 16, 1.3, 0.35]
+    [18, 22, 2.4, 0.5], [184, 28, 1.8, 0.45], [14, 72, 1.7, 0.4],
+    [188, 70, 2.3, 0.5], [100, 11, 1.6, 0.4], [40, 14, 1.3, 0.35], [160, 16, 1.4, 0.35]
   ];
   return (
     <g aria-hidden="true">
-      <rect x="0" y="0" width="200" height="108" fill="url(#ldGlow)" />
-      {sparks.map(([x, y, r, o], i) => <Sparkle key={i} x={x} y={y} r={r} o={o} />)}
+      <rect className="ld-glowpulse" x="0" y="0" width="200" height="108" fill="url(#ldGlow)" />
+      {sparks.map(([x, y, r, o], i) => <Sparkle key={i} x={x} y={y} r={r} o={o} delay={i * 0.34} />)}
     </g>
   );
 }
@@ -536,9 +546,12 @@ function PillarCandle({ x, base, h, w = 7 }: { x: number; base: number; h: numbe
       <rect x={x - w / 2} y={base - h} width={w * 0.32} height={h} rx="2" fill="#FFFFFF" opacity="0.4" />
       <ellipse cx={x} cy={base - h} rx={w / 2} ry="1.6" fill={ART.soft} opacity="0.6" />
       <line x1={x} y1={base - h} x2={x} y2={base - h - 3} stroke={ART.deep} strokeWidth="0.8" />
-      {/* הילת זוהר */}
-      <circle cx={x} cy={base - h - 6} r="6" fill="url(#ldFlame)" opacity="0.25" />
-      <path d={`M${x} ${base - h - 3} q 3 -3 0 -7 q -3 4 0 7`} fill="url(#ldFlame)" />
+      {/* הילת זוהר נושמת */}
+      <circle className="ld-glowpulse" cx={x} cy={base - h - 6} r="6.5" fill="url(#ldFlame)" opacity="0.3" />
+      {/* להבה מרצדת וזוהרת */}
+      <g className="ld-flame">
+        <path d={`M${x} ${base - h - 3} q 3 -3 0 -7 q -3 4 0 7`} fill="url(#ldFlame)" filter="url(#ldFlameGlow)" />
+      </g>
     </g>
   );
 }
@@ -659,7 +672,7 @@ export function renderPackageSVG(type: string) {
       const by = yBase - Math.sin(angle) * radiusY;
       const r = 5 + (i % 3);
       return (
-        <g key={`${prefix}-${i}`}>
+        <g key={`${prefix}-${i}`} className="ld-float" style={{ animationDelay: `${i * 0.16}s` }}>
           <circle cx={bx} cy={by} r={r} fill={i % 2 ? gold : soft} opacity="0.92" />
           <circle cx={bx - r * 0.3} cy={by - r * 0.35} r={r * 0.28} fill="#FFFFFF" opacity="0.55" />
         </g>
