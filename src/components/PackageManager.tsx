@@ -232,7 +232,7 @@ export function PackageManager() {
           <div className="grid grid-cols-1 sm:grid-cols-6 gap-2">
             <div className="sm:col-span-2">
               <label className={labelCls}>{t('packageManager.category')}</label>
-              <select value={newDraft.category} onChange={(e) => setNewDraft({ ...newDraft, category: e.target.value })} className={inputCls}>
+              <select aria-label={`${t('packageManager.category')} — ${t('packageManager.newPackage')}`} value={newDraft.category} onChange={(e) => setNewDraft({ ...newDraft, category: e.target.value })} className={inputCls}>
                 <option value="">—</option>
                 {Object.values(CATEGORIES).map((c) => (
                   <option key={c} value={c}>{categoryLabel(c, lang)}</option>
@@ -241,23 +241,23 @@ export function PackageManager() {
             </div>
             <div className="sm:col-span-3">
               <label className={labelCls}>{t('packageManager.titleField')}</label>
-              <input type="text" value={newDraft.title} onChange={(e) => setNewDraft({ ...newDraft, title: e.target.value })} className={inputCls} />
+              <input type="text" aria-label={`${t('packageManager.titleField')} — ${t('packageManager.newPackage')}`} value={newDraft.title} onChange={(e) => setNewDraft({ ...newDraft, title: e.target.value })} className={inputCls} />
             </div>
             <div className="sm:col-span-1">
               <label className={labelCls}>{t('packageManager.price')}</label>
-              <input type="number" min="0" value={newDraft.price} onChange={(e) => setNewDraft({ ...newDraft, price: e.target.value })} className={`${inputCls} text-center`} />
+              <input type="number" min="0" aria-label={`${t('packageManager.price')} — ${t('packageManager.newPackage')}`} value={newDraft.price} onChange={(e) => setNewDraft({ ...newDraft, price: e.target.value })} className={`${inputCls} text-center`} />
             </div>
             <div className="sm:col-span-3">
               <label className={labelCls}>{t('packageManager.subtitleField')}</label>
-              <input type="text" value={newDraft.subtitle} onChange={(e) => setNewDraft({ ...newDraft, subtitle: e.target.value })} className={inputCls} />
+              <input type="text" aria-label={`${t('packageManager.subtitleField')} — ${t('packageManager.newPackage')}`} value={newDraft.subtitle} onChange={(e) => setNewDraft({ ...newDraft, subtitle: e.target.value })} className={inputCls} />
             </div>
             <div className="sm:col-span-3">
               <label className={labelCls}>{t('packageManager.benefitsField')}</label>
-              <input type="text" value={newDraft.benefits} onChange={(e) => setNewDraft({ ...newDraft, benefits: e.target.value })} className={inputCls} />
+              <input type="text" aria-label={`${t('packageManager.benefitsField')} — ${t('packageManager.newPackage')}`} value={newDraft.benefits} onChange={(e) => setNewDraft({ ...newDraft, benefits: e.target.value })} className={inputCls} />
             </div>
             <div className="sm:col-span-6">
               <label className={labelCls}>{t('packageManager.descriptionField')}</label>
-              <textarea rows={2} value={newDraft.description} onChange={(e) => setNewDraft({ ...newDraft, description: e.target.value })} className={inputCls} />
+              <textarea rows={2} aria-label={`${t('packageManager.descriptionField')} — ${t('packageManager.newPackage')}`} value={newDraft.description} onChange={(e) => setNewDraft({ ...newDraft, description: e.target.value })} className={inputCls} />
             </div>
             <div className="sm:col-span-6">
               {imageControl('__new__', newDraft.image_url, (u) => setNewDraft({ ...newDraft, image_url: u }))}

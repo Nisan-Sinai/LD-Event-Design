@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, MessageCircle, Sparkles, Gift } from 'lucide-react';
 import { useI18n } from '../i18n/i18n';
-import { PACKAGES, CATEGORIES, renderPackageSVG, type Package } from '../App';
+import { PACKAGES, CATEGORIES, renderPackageSVG, ArtDefsHost, type Package } from '../App';
 import { usePackages } from '../packages/PackagesProvider';
 import { buildCatalog } from '../lib/packages';
 import { categoryLabel, PACKAGE_EN } from '../i18n/content';
@@ -37,6 +37,7 @@ export function HomePage() {
 
   return (
     <>
+      <ArtDefsHost />
       {/* ============== HERO — עריכתי, דו-טורי ============== */}
       <section className="relative overflow-hidden bg-white hero-glow pb-16 pt-12 sm:pt-16">
         {/* כתמי רקע מרחפים */}

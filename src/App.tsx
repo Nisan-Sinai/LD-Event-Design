@@ -130,7 +130,6 @@ interface ClientInfo {
   email: string;
   eventDate: string;
   eventLocation: string;
-  notes: string;
   compositesCount: string;
   spongeCount: string;
   referralSource: string;
@@ -450,6 +449,16 @@ function ArtDefs() {
   );
 }
 
+// אירוח ה-defs פעם אחת בלבד במסמך (מונע id-ים כפולים בריבוי איורים).
+// כל איור מפנה אל ה-url(#...) המשותף, וההגדרה קיימת תמיד בעמוד.
+export function ArtDefsHost() {
+  return (
+    <svg width="0" height="0" aria-hidden="true" focusable="false" style={{ position: 'absolute' }}>
+      <ArtDefs />
+    </svg>
+  );
+}
+
 // ניצוץ זהב בן 4 קצוות — מנצנץ (twinkle)
 function Sparkle({ x, y, r, o = 0.5, delay = 0 }: { x: number; y: number; r: number; o?: number; delay?: number }) {
   const a = r * 0.32;
@@ -563,7 +572,6 @@ export function renderPackageSVG(type: string) {
   // מסגרת חופה משותפת: עמודים, קורה עליונה ורצפה
   const chuppahFrame = (children: React.ReactNode) => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
-      <ArtDefs />
       <SceneBackdrop />
       <GroundShadow cx={100} cy={99} rx={70} ry={3.5} />
       <path d="M40 26 Q100 18 160 26" stroke="url(#ldPost)" strokeWidth="3.6" fill="none" strokeLinecap="round" />
@@ -634,7 +642,6 @@ export function renderPackageSVG(type: string) {
   // איור בר חינה מרוקאי: מגדל עוגיות תלת-קומתי + קומקום נחושת + כוסות + נרות
   const henna = () => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
-      <ArtDefs />
       <SceneBackdrop />
       <GroundShadow cx={100} cy={92} rx={78} ry={4} />
       {/* מגדל עוגיות */}
@@ -682,7 +689,6 @@ export function renderPackageSVG(type: string) {
   // איור "קלאסיק" לאירועים: 2 אגרטלים עם זרי ורדים + צילינדר נר צף במרכז
   const eventClassic = () => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
-      <ArtDefs />
       <SceneBackdrop />
       <GroundShadow cx={100} cy={93} rx={74} ry={4} />
       {/* צילינדר נר צף מרכזי */}
@@ -704,7 +710,6 @@ export function renderPackageSVG(type: string) {
   // איור "בלון ארט": שער בלונים חגיגי
   const eventBalloon = () => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
-      <ArtDefs />
       <SceneBackdrop />
       {balloonArch(100, 92, 66, 64, 13, 'arch')}
       <line x1="34" y1="92" x2="166" y2="92" stroke={gold} strokeWidth="1.6" opacity="0.4" />
@@ -714,7 +719,6 @@ export function renderPackageSVG(type: string) {
   // איור "הצגה" (VIP): עמדת צילום — קיר רקע מוקף בקשת בלונים
   const eventVip = () => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
-      <ArtDefs />
       <SceneBackdrop />
       <rect x="72" y="34" width="56" height="50" rx="6" fill={cream} stroke={gold} strokeWidth="1.5" />
       <circle cx="100" cy="56" r="10" fill="none" stroke={soft} strokeWidth="1.5" />
@@ -739,7 +743,6 @@ export function renderPackageSVG(type: string) {
   // איור עמדת בר מתוק: שולחן + 2 צנצנות ממתקים + מגדל קינוחים + זר משי
   const bar = () => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
-      <ArtDefs />
       <SceneBackdrop />
       {/* שולחן הבר */}
       <rect x="18" y="86" width="164" height="8" rx="2" fill={soft} stroke={gold} strokeWidth="0.6" />
@@ -769,7 +772,6 @@ export function renderPackageSVG(type: string) {
   // איור בר ממותג: שלט שם + קופסאות מתנה ממותגות עם פפיון + עמודי בלונים
   const barBranded = () => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
-      <ArtDefs />
       <SceneBackdrop />
       <rect x="18" y="86" width="164" height="8" rx="2" fill={soft} stroke={gold} strokeWidth="0.6" />
       {/* שלט קפה ממותג עם שם */}
@@ -805,7 +807,6 @@ export function renderPackageSVG(type: string) {
   // איור בר בוטיק: מעמד קינוחים תלת-קומתי אלגנטי + כיפת זכוכית + זר משי
   const barBoutique = () => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
-      <ArtDefs />
       <SceneBackdrop />
       <rect x="18" y="86" width="164" height="8" rx="2" fill={soft} stroke={gold} strokeWidth="0.6" />
       {/* מעמד קינוחים תלת-קומתי */}
@@ -838,7 +839,6 @@ export function renderPackageSVG(type: string) {
   // איור "שוק חינה": שקי יוטה עם פיצוחים + כף עץ + נר אווירה
   const hennaMarket = () => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
-      <ArtDefs />
       <SceneBackdrop />
       <GroundShadow cx={100} cy={92} rx={78} ry={4} />
       {[
@@ -979,7 +979,6 @@ export default function App() {
     email: '',
     eventDate: '',
     eventLocation: '',
-    notes: '',
     compositesCount: '',
     spongeCount: '',
     referralSource: '',
@@ -1002,8 +1001,8 @@ export default function App() {
   // מפתחות: `pkg:<id>` / `addon:<id>`. ריק = ערך ברירת המחדל.
   const [lineEdits, setLineEdits] = useState<Record<string, { label?: string; amount?: number }>>({});
 
-  // חבילות נבחרות (ניתן לבחור יותר מחבילה אחת, גם בין קטגוריות)
-  const [selectedPackageIds, setSelectedPackageIds] = useState<string[]>(['classic-s']);
+  // חבילות נבחרות (ללא ברירת מחדל — הלקוח בוחר. ניתן לבחור יותר מאחת, גם בין קטגוריות)
+  const [selectedPackageIds, setSelectedPackageIds] = useState<string[]>([]);
   const [selectedTableTier, setSelectedTableTier] = useState(10);
   const [packagesError, setPackagesError] = useState(false);
 
@@ -1129,10 +1128,11 @@ export default function App() {
   const isCouponEligible = selectedPackages.some(p => p.benefits.includes('₪500'));
   const isCouponValid = isCouponEligible && couponCode.trim() === COUPON_CODE;
 
-  // הפריט שעליו ממומשת ההטבה (חייב להיות זכאי) וההנחה בפועל (עד ₪500, לא יותר משווי הפריט)
+  // הפריט שעליו ממומשת ההטבה (חייב להיות זכאי) וההנחה בפועל (עד ₪500, לא יותר משווי הפריט
+  // האפקטיבי — כולל עריכת מנהל)
   const giftAddon = giftEligibleAddons.find(a => a.id === giftAddonId);
   const couponDiscount = isCouponValid && giftAddon
-    ? Math.min(COUPON_VALUE, giftAddon.price * giftAddon.qty)
+    ? Math.min(COUPON_VALUE, effAddonAmount(giftAddon))
     : 0;
 
   // חישוב מחירים
@@ -1173,7 +1173,7 @@ export default function App() {
     const newUpgrade: Upgrade = {
       id: Date.now().toString(),
       description: newUpgradeDesc,
-      price: parseFloat(newUpgradePrice) || 0
+      price: Math.max(0, parseFloat(newUpgradePrice) || 0)
     };
 
     setCustomUpgrades([...customUpgrades, newUpgrade]);
@@ -1221,8 +1221,12 @@ export default function App() {
       const brideNameTrimmed = clientInfo.brideName.trim();
       if (!brideNameTrimmed) tempErrors.brideName = t('errors.brideNameRequired');
       else if (brideNameTrimmed.split(/\s+/).length < 2) tempErrors.brideName = t('errors.brideNameFull');
+      // טלפון: חובה + בדיקת פורמט בסיסית (לפחות 9 ספרות)
+      const isPhoneValid = (p: string) => p.replace(/\D/g, '').length >= 9;
       if (!clientInfo.groomPhone.trim()) tempErrors.groomPhone = t('errors.groomPhoneRequired');
+      else if (!isPhoneValid(clientInfo.groomPhone)) tempErrors.groomPhone = t('errors.phoneInvalid');
       if (!clientInfo.bridePhone.trim()) tempErrors.bridePhone = t('errors.bridePhoneRequired');
+      else if (!isPhoneValid(clientInfo.bridePhone)) tempErrors.bridePhone = t('errors.phoneInvalid');
       if (!clientInfo.eventDate) tempErrors.eventDate = t('errors.eventDateRequired');
       if (!clientInfo.eventLocation.trim()) tempErrors.eventLocation = t('errors.eventLocationRequired');
       if (!isAdmin && !clientInfo.email.trim()) tempErrors.email = t('errors.emailRequired');
@@ -1314,7 +1318,12 @@ export default function App() {
           couponDiscount: pricing.couponDiscount,
           totalPrice: pricing.totalPrice,
           groomSignDate,
-          brideSignDate
+          brideSignDate,
+          status: isAdmin ? adminInfo.status : 'new',
+          orderSource: isAdmin ? adminInfo.source : '',
+          receivedBy: isAdmin ? adminInfo.receivedBy : '',
+          internalNotes: isAdmin ? adminInfo.internalNotes.trim() : '',
+          adminDiscount: pricing.adminDiscount
         },
         groomSignatureDataUrl,
         brideSignatureDataUrl
@@ -1444,14 +1453,19 @@ export default function App() {
     const rect = canvas.getBoundingClientRect();
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    // קנה-מידה בין גודל התצוגה (w-full) לרזולוציה הפנימית של הקנבס (350×96) —
+    // אחרת החתימה מצוירת בהיסט/דחיסה אופקית בכל רוחב מסך שאינו 350px בדיוק.
+    const scaleX = rect.width ? canvas.width / rect.width : 1;
+    const scaleY = rect.height ? canvas.height / rect.height : 1;
     return {
-      x: clientX - rect.left,
-      y: clientY - rect.top
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY
     };
   };
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] text-gray-800 font-sans antialiased pb-12 overflow-x-hidden selection:bg-[#B29259] selection:text-white animate-fadeIn" dir={dir}>
+      <ArtDefsHost />
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:top-2 focus:start-2 focus:bg-[#B29259] focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg focus:text-sm focus:font-bold"
@@ -1510,8 +1524,23 @@ export default function App() {
         </div>
       </header>
 
+      {/* --- כפתור חזרה עליון (תמיד גלוי): שלב 1 → דף הבית · שלבים 2-3 → השלב הקודם --- */}
+      <div className="max-w-4xl mx-auto px-4 pt-4 no-print">
+        {currentStep === 1 ? (
+          <Link to="/" className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-600 hover:text-[#B29259] transition-colors">
+            {lang === 'he' ? <ArrowRight className="w-4 h-4" aria-hidden="true" /> : <ArrowLeft className="w-4 h-4" aria-hidden="true" />}
+            {t('step1.backHome')}
+          </Link>
+        ) : (
+          <button type="button" onClick={handleBack} className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-600 hover:text-[#B29259] transition-colors">
+            {lang === 'he' ? <ArrowRight className="w-4 h-4" aria-hidden="true" /> : <ArrowLeft className="w-4 h-4" aria-hidden="true" />}
+            {t('nav.back')}
+          </button>
+        )}
+      </div>
+
       {/* --- מד התקדמות השלבים --- */}
-      <div className="max-w-4xl mx-auto px-4 pt-6 no-print">
+      <div className="max-w-4xl mx-auto px-4 pt-4 no-print">
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-[#EAE3D2] mb-6">
           <div className="flex justify-between items-center relative">
             <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-0.5 bg-gray-100 z-0"></div>
@@ -2290,7 +2319,7 @@ export default function App() {
                         <option value="">{t('step3.couponChoose')}</option>
                         {giftEligibleAddons.map((a) => (
                           <option key={a.id} value={a.id}>
-                            {addonLineDescription(a)} (₪{(a.price * a.qty).toLocaleString()})
+                            {addonLineDescription(a)} (₪{effAddonAmount(a).toLocaleString()})
                           </option>
                         ))}
                       </select>

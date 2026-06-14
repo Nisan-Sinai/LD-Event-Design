@@ -119,7 +119,7 @@ export function AdminPage() {
         </div>
       ))}
 
-      <OrderDetailModal orderId={selectedId} onClose={() => setSelectedId(null)} />
+      <OrderDetailModal orderId={selectedId} onClose={() => setSelectedId(null)} showInternal />
     </div>
   );
 }

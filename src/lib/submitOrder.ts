@@ -30,6 +30,12 @@ export interface OrderPayload {
   totalPrice: number;
   groomSignDate: string;
   brideSignDate: string;
+  // מטא-דאטה של מנהל (נשמר רק כשהזמנה נוצרת במצב מנהל)
+  status: string;
+  orderSource: string;
+  receivedBy: string;
+  internalNotes: string;
+  adminDiscount: number;
 }
 
 // המרת dataURL (מהקנבס) ל-Blob להעלאה ל-Storage
@@ -92,6 +98,11 @@ export async function submitOrder(
     coupon_code: payload.couponCode || null,
     coupon_discount: payload.couponDiscount,
     total_price: payload.totalPrice,
+    status: payload.status || 'new',
+    order_source: payload.orderSource || null,
+    received_by: payload.receivedBy || null,
+    internal_notes: payload.internalNotes || null,
+    admin_discount: payload.adminDiscount || 0,
     groom_sign_date: payload.groomSignDate || null,
     bride_sign_date: payload.brideSignDate || null,
     groom_signature_path: groomPath,

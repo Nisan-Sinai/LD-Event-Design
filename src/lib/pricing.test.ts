@@ -68,6 +68,20 @@ describe('calcPricing', () => {
     expect(r.totalPrice).toBe(2900);
   });
 
+  it('treats a manual total of 0 as an explicit override (not "use computed")', () => {
+    const r = calcPricing({ ...base, basePrice: 2900, manualTotal: 0 });
+    expect(r.manualOverride).toBe(0);
+    expect(r.totalPrice).toBe(0);
+  });
+
+  it('clamps negative component inputs to zero', () => {
+    const r = calcPricing({ ...base, basePrice: -100, addonsTotal: -50, upgradesTotal: -10, couponDiscount: -5, adminDiscount: -5 });
+    expect(r.basePrice).toBe(0);
+    expect(r.addonsTotal).toBe(0);
+    expect(r.upgradesTotal).toBe(0);
+    expect(r.totalPrice).toBe(0);
+  });
+
   it('combines all factors correctly', () => {
     const r = calcPricing({
       basePrice: 2900 + 4600,

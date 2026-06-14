@@ -224,16 +224,23 @@ Deno.serve(async (req) => {
       wrap('התקבלה הזמנה חדשה 🎉', orderRows(o) + sigLinks)
     );
 
-    // 2) מייל אישור ללקוח
-    await sendEmail(
-      o.email,
-      'אישור הזמנה — LD Event Design',
-      wrap(
-        `שלום ${o.groom_name} ו${o.bride_name}, תודה על הזמנתכם! 💐`,
-        `<p>קיבלנו את ההזמנה שלכם ונחזור אליכם בהקדם. להלן סיכום:</p>${orderRows(o)}
-         <p style="font-size:13px;color:#888">לכל שאלה ניתן לפנות אלינו בטלפון 054-5740423.</p>`
-      )
-    );
+    // 2) מייל אישור ללקוח — רק אם קיים אימייל תקין (הזמנת מנהל יכולה להיות בלי),
+    //    וכשל בשליחה לא מפיל את הפונקציה ולא חוסם את סנכרון היומן.
+    if (o.email && o.email.includes('@')) {
+      try {
+        await sendEmail(
+          o.email,
+          'אישור הזמנה — LD Event Design',
+          wrap(
+            `שלום ${o.groom_name} ו${o.bride_name}, תודה על הזמנתכם! 💐`,
+            `<p>קיבלנו את ההזמנה שלכם ונחזור אליכם בהקדם. להלן סיכום:</p>${orderRows(o)}
+             <p style="font-size:13px;color:#888">לכל שאלה ניתן לפנות אלינו בטלפון 054-5740423.</p>`
+          )
+        );
+      } catch (mailErr) {
+        console.error('customer confirmation email failed:', mailErr);
+      }
+    }
 
     // 3) הוספת האירוע ליומן Google של לירון (לא מפיל את הפונקציה אם נכשל)
     try {
