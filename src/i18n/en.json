@@ -320,6 +320,10 @@
     "blocked": "Supabase setup is required to display saved orders."
   },
   "adminPage": {
+    "adminArea": "Admin area",
+    "adminAreaSub": "Manage orders and the package catalog",
+    "tabOrders": "Order management",
+    "tabCatalog": "Catalog management",
     "title": "Order management",
     "subtitle": "All orders in the system",
     "empty": "No orders yet.",

@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LayoutDashboard, Plus } from 'lucide-react';
+import { LayoutDashboard, Plus, ClipboardList, Package as PackageIcon } from 'lucide-react';
 import { useI18n } from '../i18n/i18n';
 import { useAuth } from '../auth/AuthProvider';
 import { fetchOrders, type OrderRow } from '../lib/orders';
 import { OrderDetailModal } from '../components/OrderDetailModal';
 import { PackageManager } from '../components/PackageManager';
 
+type AdminTab = 'orders' | 'catalog';
+
 export function AdminPage() {
   const { t } = useI18n();
   const { configured } = useAuth();
+  const [tab, setTab] = useState<AdminTab>('orders');
   const [orders, setOrders] = useState<OrderRow[] | null>(null);
   const [blocked, setBlocked] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -28,26 +31,47 @@ export function AdminPage() {
       });
   }, [configured]);
 
+  const tabBtn = (key: AdminTab, label: string, Icon: typeof ClipboardList) => (
+    <button
+      type="button"
+      onClick={() => setTab(key)}
+      aria-pressed={tab === key}
+      className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+        tab === key ? 'bg-[#B29259] text-white shadow-sm' : 'text-gray-600 hover:bg-[#FAF7F2] hover:text-[#B29259]'
+      }`}
+    >
+      <Icon className="w-4 h-4" aria-hidden="true" />
+      {label}
+    </button>
+  );
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
         <div>
           <h2 className="text-xl font-bold text-[#8C6D3F] flex items-center gap-2">
             <LayoutDashboard className="w-5 h-5 text-[#B29259]" aria-hidden="true" />
-            {t('adminPage.title')}
+            {t('adminPage.adminArea')}
           </h2>
-          <p className="text-xs text-gray-400 mt-0.5">{t('adminPage.subtitle')}</p>
+          <p className="text-xs text-gray-400 mt-0.5">{t('adminPage.adminAreaSub')}</p>
         </div>
-        <Link to="/order" className="bg-[#B29259] hover:bg-[#8C6D3F] text-white px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5">
-          <Plus className="w-4 h-4" aria-hidden="true" />
-          {t('adminPage.newForClient')}
-        </Link>
+        {tab === 'orders' && (
+          <Link to="/order" className="bg-[#B29259] hover:bg-[#8C6D3F] text-white px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5">
+            <Plus className="w-4 h-4" aria-hidden="true" />
+            {t('adminPage.newForClient')}
+          </Link>
+        )}
       </div>
 
-      {/* ניהול קטלוג חבילות — מחיר/טקסט/הסתרה לכלל הלקוחות */}
-      <PackageManager />
+      {/* מתג בין ניהול הזמנות לניהול קטלוג */}
+      <div className="bg-white p-1.5 rounded-2xl border border-[#EAE3D2] shadow-sm inline-flex gap-1 mb-6" role="tablist" aria-label={t('adminPage.adminArea')}>
+        {tabBtn('orders', t('adminPage.tabOrders'), ClipboardList)}
+        {tabBtn('catalog', t('adminPage.tabCatalog'), PackageIcon)}
+      </div>
 
-      {orders === null ? (
+      {tab === 'catalog' && <PackageManager />}
+
+      {tab === 'orders' && (orders === null ? (
         <p className="text-sm text-gray-400">{t('adminPage.loading')}</p>
       ) : blocked ? (
         <div className="bg-white border border-[#EAE3D2] rounded-2xl p-6 text-center text-sm text-gray-500">{t('adminPage.blocked')}</div>
@@ -93,7 +117,7 @@ export function AdminPage() {
             </table>
           </div>
         </div>
-      )}
+      ))}
 
       <OrderDetailModal orderId={selectedId} onClose={() => setSelectedId(null)} />
     </div>

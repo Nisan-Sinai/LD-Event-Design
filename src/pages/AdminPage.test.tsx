@@ -56,6 +56,16 @@ describe('AdminPage', () => {
     await waitFor(() => expect(screen.getByText(/נדרשת הגדרת Supabase/)).toBeInTheDocument());
   });
 
+  it('switches to the catalog tab and hides the orders table', async () => {
+    fetchOrders.mockResolvedValue([
+      { id: 'o1', created_at: '2026-06-02T10:00:00Z', groom_name: 'דנה', bride_name: 'יוסי', event_date: '2026-09-01', package_title: 'בר מתוק', total_price: 2500 }
+    ]);
+    renderAdmin();
+    await waitFor(() => expect(screen.getByText('בר מתוק')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /ניהול קטלוג/ }));
+    expect(screen.queryByText('בר מתוק')).not.toBeInTheDocument();
+  });
+
   it('opens the full order detail modal when a row is clicked', async () => {
     fetchOrders.mockResolvedValue([
       { id: 'o1', created_at: '2026-06-02T10:00:00Z', groom_name: 'דנה', bride_name: 'יוסי', event_date: '2026-09-01', package_title: 'בר מתוק', total_price: 2500 }
