@@ -48,7 +48,7 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
           <nav className="order-last sm:order-none w-full sm:w-auto flex items-center justify-center gap-1 flex-wrap border-t sm:border-0 border-[#EAE3D2] pt-2 sm:pt-0" aria-label={t('nav.menu')}>
             <Link to="/" className={`link-underline ${navLink}`}>{t('nav.home')}</Link>
             <Link to="/order" className={`link-underline ${navLink}`}>{t('nav.order')}</Link>
-            {(role === 'customer' || role === 'admin') && <Link to="/account" className={`link-underline ${navLink}`}>{t('nav.account')}</Link>}
+            {role === 'customer' && <Link to="/account" className={`link-underline ${navLink}`}>{t('nav.account')}</Link>}
             {role === 'admin' && <Link to="/admin" className={`link-underline ${navLink}`}>{t('nav.admin')}</Link>}
           </nav>
 
@@ -112,9 +112,13 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
             <ul className="space-y-2.5 text-sm">
               <li><Link to="/" className="link-underline hover:text-white transition-colors">{t('nav.home')}</Link></li>
               <li><Link to="/order" className="link-underline hover:text-white transition-colors">{t('nav.order')}</Link></li>
-              {user ? (
+              {role === 'admin' && (
+                <li><Link to="/admin" className="link-underline hover:text-white transition-colors">{t('nav.admin')}</Link></li>
+              )}
+              {role === 'customer' && (
                 <li><Link to="/account" className="link-underline hover:text-white transition-colors">{t('nav.account')}</Link></li>
-              ) : (
+              )}
+              {!user && (
                 <>
                   <li><Link to="/login" className="link-underline hover:text-white transition-colors">{t('nav.login')}</Link></li>
                   <li><Link to="/register" className="link-underline hover:text-white transition-colors">{t('nav.register')}</Link></li>
