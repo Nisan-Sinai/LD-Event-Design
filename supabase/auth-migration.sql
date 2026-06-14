@@ -50,6 +50,9 @@ alter table public.orders add column if not exists user_id uuid references auth.
 -- עמודות שהיו חסרות ב-DB ישן (הקוד שולח אותן) — תוספת בטוחה.
 alter table public.orders add column if not exists coupon_code     text;
 alter table public.orders add column if not exists coupon_discount numeric not null default 0;
+-- סעיף "איך הגעת אלינו" + שם האולם/הממליץ (כבר הוחל ב-DB החי דרך Management API)
+alter table public.orders add column if not exists referral_source text;
+alter table public.orders add column if not exists referral_detail text;
 -- רענון מטמון הסכמה של PostgREST כדי שהעמודות יזוהו מיד
 notify pgrst, 'reload schema';
 
