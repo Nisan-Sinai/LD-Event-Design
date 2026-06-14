@@ -24,6 +24,8 @@ export interface OrderDetail extends OrderRow {
   table_tier: number | null;
   composites_count: string | null;
   sponge_count: string | null;
+  referral_source: string | null;
+  referral_detail: string | null;
   include_delivery: boolean;
   upgrades: { description: string; price: number }[];
   base_price: number;

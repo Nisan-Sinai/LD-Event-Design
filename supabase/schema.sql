@@ -18,6 +18,8 @@ create table if not exists public.orders (
   -- פרטי האירוע
   event_date            date,
   event_location        text,
+  referral_source       text,
+  referral_detail       text,
 
   -- החבילה הנבחרת
   package_id            text,
@@ -78,3 +80,7 @@ create policy "allow anon upload signatures"
 -- קוד קופון והנחת ₪500 לשדרוג העיצוב
 alter table public.orders add column if not exists coupon_code     text;
 alter table public.orders add column if not exists coupon_discount numeric not null default 0;
+
+-- "איך הגעת אלינו" + שם האולם/הממליץ (סעיף הפניה)
+alter table public.orders add column if not exists referral_source text;
+alter table public.orders add column if not exists referral_detail text;

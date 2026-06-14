@@ -18,6 +18,8 @@ export interface OrderPayload {
   tableTier: number | null;
   compositesCount: string;
   spongeCount: string;
+  referralSource: string;
+  referralDetail: string;
   includeDelivery: boolean;
   upgrades: OrderUpgrade[];
   basePrice: number;
@@ -80,6 +82,8 @@ export async function submitOrder(
     table_tier: payload.tableTier,
     composites_count: payload.compositesCount || null,
     sponge_count: payload.spongeCount || null,
+    referral_source: payload.referralSource || null,
+    referral_detail: payload.referralDetail || null,
     include_delivery: payload.includeDelivery,
     upgrades: payload.upgrades,
     base_price: payload.basePrice,

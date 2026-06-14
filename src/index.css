@@ -195,6 +195,13 @@ body {
   }
 }
 
+/* ---------- מגירה נשלפת מלמטה (bottom sheet) ---------- */
+@keyframes sheetUp {
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-sheetUp { animation: sheetUp 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
 /* --- אפשרויות וידג'ט הנגישות --- */
 /* ניגודיות גבוהה */
 body.a11y-contrast {
@@ -239,9 +246,55 @@ textarea:focus-visible,
   outline-offset: 2px;
 }
 
-/* הסתרת בקרי ניווט בעת הדפסה */
+/* ============================================================
+   הדפסה / PDF — מסמך נקי וממותג של ההסכם בלבד
+   ============================================================ */
+
+/* תוכן שמוצג רק בהדפסה (כותרת ממותגת, חתימת תודה) */
+.print-only {
+  display: none;
+}
+
 @media print {
+  /* מסתירים את כל הקלט/ניווט; מותירים את ההסכם בלבד */
   .no-print {
     display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+
+  /* גיליון נקי: רקע לבן, צבעים מדויקים (גוונים ופאנלים בז') */
+  html,
+  body {
+    background: #ffffff !important;
+  }
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  @page {
+    margin: 12mm;
+  }
+
+  /* כרטיס ההסכם — ללא צל/מסגרת/ריווח כפול בהדפסה */
+  .print-contract {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* שמירה על בלוקים שלמים בעמוד (חתימות, סעיפי מדיניות) */
+  .print-avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* ביטול אנימציות בהדפסה */
+  * {
+    animation: none !important;
+    transition: none !important;
   }
 }

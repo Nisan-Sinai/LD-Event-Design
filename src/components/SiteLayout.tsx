@@ -4,6 +4,7 @@ import { Sparkles, Phone, LogOut, LogIn, UserPlus, User as UserIcon, X } from 'l
 import { useI18n } from '../i18n/i18n';
 import { useAuth } from '../auth/AuthProvider';
 import { AccessibilityWidget } from './AccessibilityWidget';
+import { WhatsAppButton } from './WhatsAppButton';
 
 type LegalKey = 'privacy' | 'terms' | 'accessibility';
 
@@ -165,6 +166,7 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
       )}
 
       <AccessibilityWidget onOpenStatement={() => setLegalModal('accessibility')} />
+      <WhatsAppButton />
     </div>
   );
 }

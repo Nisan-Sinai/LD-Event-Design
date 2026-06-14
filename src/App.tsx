@@ -3,6 +3,7 @@ import { isSupabaseConfigured } from './lib/supabase';
 import { submitOrder } from './lib/submitOrder';
 import { calcPricing } from './lib/pricing';
 import { AccessibilityWidget } from './components/AccessibilityWidget';
+import { WhatsAppButton } from './components/WhatsAppButton';
 import { AuthModal } from './components/AuthModal';
 import { Link } from 'react-router-dom';
 import { useI18n } from './i18n/i18n';
@@ -28,7 +29,10 @@ import {
   Users,
   X,
   Home,
-  LogOut
+  LogOut,
+  Building2,
+  RotateCcw,
+  Pencil
 } from 'lucide-react';
 
 // --- קטגוריות החבילות ---
@@ -125,6 +129,8 @@ interface ClientInfo {
   notes: string;
   compositesCount: string;
   spongeCount: string;
+  referralSource: string;
+  referralDetail: string;
 }
 
 interface Upgrade {
@@ -391,13 +397,56 @@ export const PACKAGES: Package[] = [
 // --- פלטת צבעים ואלמנטים משותפים לאיורים (קו-ארט בסגנון הפלאיירים) ---
 const ART = { gold: '#B29259', deep: '#8C6D3F', soft: '#D8C29A', cream: '#FAF7F2', sage: '#A7B58C' };
 
-// ורד יחיד — עיגול עם סלסול ספירלה פנימי
+// הגדרות משותפות לכל איור: גרדיאנטים לעומק + צל רך לרצפה.
+// המזהים זהים בכל מופע (אותה הגדרה) — url() נפתר לראשון, ולכן עקבי.
+function ArtDefs() {
+  return (
+    <defs>
+      <radialGradient id="ldRose" cx="38%" cy="30%" r="72%">
+        <stop offset="0%" stopColor="#F2E4C8" />
+        <stop offset="55%" stopColor={ART.gold} />
+        <stop offset="100%" stopColor={ART.deep} />
+      </radialGradient>
+      <radialGradient id="ldRoseSoft" cx="38%" cy="30%" r="72%">
+        <stop offset="0%" stopColor="#FBF4E6" />
+        <stop offset="60%" stopColor={ART.soft} />
+        <stop offset="100%" stopColor={ART.gold} />
+      </radialGradient>
+      <linearGradient id="ldPost" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stopColor={ART.deep} />
+        <stop offset="45%" stopColor="#C9A86B" />
+        <stop offset="100%" stopColor={ART.deep} />
+      </linearGradient>
+      <linearGradient id="ldFabric" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#F6EEDE" />
+        <stop offset="100%" stopColor={ART.soft} />
+      </linearGradient>
+      <radialGradient id="ldFlame" cx="50%" cy="30%" r="70%">
+        <stop offset="0%" stopColor="#FFF6DD" />
+        <stop offset="55%" stopColor="#F0C75E" />
+        <stop offset="100%" stopColor={ART.gold} />
+      </radialGradient>
+      <filter id="ldShadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="1.6" />
+      </filter>
+    </defs>
+  );
+}
+
+// צל רך לרצפה מתחת לאלמנט
+function GroundShadow({ cx, cy, rx, ry = 3 }: { cx: number; cy: number; rx: number; ry?: number }) {
+  return <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill={ART.deep} opacity="0.12" filter="url(#ldShadow)" />;
+}
+
+// ורד יחיד — עיגול עם סלסול ספירלה פנימי, גרדיאנט עומק ונקודת אור
 function Rose({ cx, cy, r, fill }: { cx: number; cy: number; r: number; fill: string }) {
+  const grad = fill === ART.gold ? 'url(#ldRose)' : 'url(#ldRoseSoft)';
   return (
     <g>
-      <circle cx={cx} cy={cy} r={r} fill={fill} />
-      <path d={`M${cx} ${cy} m ${-r * 0.45} 0 a ${r * 0.45} ${r * 0.45} 0 1 1 ${r * 0.9} 0`} fill="none" stroke={ART.deep} strokeWidth={Math.max(0.5, r * 0.18)} opacity="0.45" strokeLinecap="round" />
-      <path d={`M${cx} ${cy} q ${r * 0.4} ${-r * 0.3} 0 ${-r * 0.6}`} fill="none" stroke={ART.deep} strokeWidth={Math.max(0.5, r * 0.16)} opacity="0.4" strokeLinecap="round" />
+      <circle cx={cx} cy={cy} r={r} fill={grad} />
+      <path d={`M${cx} ${cy} m ${-r * 0.45} 0 a ${r * 0.45} ${r * 0.45} 0 1 1 ${r * 0.9} 0`} fill="none" stroke={ART.deep} strokeWidth={Math.max(0.5, r * 0.18)} opacity="0.4" strokeLinecap="round" />
+      <path d={`M${cx} ${cy} q ${r * 0.4} ${-r * 0.3} 0 ${-r * 0.6}`} fill="none" stroke={ART.deep} strokeWidth={Math.max(0.5, r * 0.16)} opacity="0.38" strokeLinecap="round" />
+      <circle cx={cx - r * 0.3} cy={cy - r * 0.32} r={Math.max(0.4, r * 0.22)} fill="#FFFFFF" opacity="0.5" />
     </g>
   );
 }
@@ -440,14 +489,17 @@ function Gyps({ cx, cy, s = 1 }: { cx: number; cy: number; s?: number }) {
   );
 }
 
-// נר עמוד עם להבה
+// נר עמוד עם להבה זוהרת
 function PillarCandle({ x, base, h, w = 7 }: { x: number; base: number; h: number; w?: number }) {
   return (
     <g>
       <rect x={x - w / 2} y={base - h} width={w} height={h} rx="2" fill={ART.cream} stroke={ART.soft} />
+      <rect x={x - w / 2} y={base - h} width={w * 0.32} height={h} rx="2" fill="#FFFFFF" opacity="0.4" />
       <ellipse cx={x} cy={base - h} rx={w / 2} ry="1.6" fill={ART.soft} opacity="0.6" />
       <line x1={x} y1={base - h} x2={x} y2={base - h - 3} stroke={ART.deep} strokeWidth="0.8" />
-      <path d={`M${x} ${base - h - 3} q 3 -3 0 -7 q -3 4 0 7`} fill={ART.gold} />
+      {/* הילת זוהר */}
+      <circle cx={x} cy={base - h - 6} r="6" fill="url(#ldFlame)" opacity="0.25" />
+      <path d={`M${x} ${base - h - 3} q 3 -3 0 -7 q -3 4 0 7`} fill="url(#ldFlame)" />
     </g>
   );
 }
@@ -459,9 +511,14 @@ export function renderPackageSVG(type: string) {
   // מסגרת חופה משותפת: עמודים, קורה עליונה ורצפה
   const chuppahFrame = (children: React.ReactNode) => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
-      <path d="M40 26 Q100 18 160 26" stroke={gold} strokeWidth="3.4" fill="none" strokeLinecap="round" />
-      <rect x="44" y="25" width="4.5" height="72" rx="2" fill={gold} />
-      <rect x="151.5" y="25" width="4.5" height="72" rx="2" fill={gold} />
+      <ArtDefs />
+      <GroundShadow cx={100} cy={99} rx={70} ry={3.5} />
+      <path d="M40 26 Q100 18 160 26" stroke="url(#ldPost)" strokeWidth="3.6" fill="none" strokeLinecap="round" />
+      <rect x="44" y="25" width="4.5" height="72" rx="2.25" fill="url(#ldPost)" />
+      <rect x="151.5" y="25" width="4.5" height="72" rx="2.25" fill="url(#ldPost)" />
+      {/* נצנוץ עדין על קצות הקורה */}
+      <circle cx="46.25" cy="25" r="2.4" fill={gold} />
+      <circle cx="153.75" cy="25" r="2.4" fill={gold} />
       {children}
       <line x1="22" y1="98" x2="178" y2="98" stroke={gold} strokeWidth="1.6" opacity="0.4" />
     </svg>
@@ -472,7 +529,7 @@ export function renderPackageSVG(type: string) {
     chuppahFrame(
       <>
         {withDrapes && (
-          <g opacity="0.6" fill={soft} stroke={gold} strokeOpacity="0.35" strokeWidth="0.6">
+          <g opacity="0.85" fill="url(#ldFabric)" stroke={gold} strokeOpacity="0.35" strokeWidth="0.6">
             {/* תליית בד מרכזית (swag) */}
             <path d="M50 28 Q100 60 150 28 Q138 44 100 50 Q62 44 50 28 Z" />
             {/* פאנל בד שמאל */}
@@ -490,7 +547,7 @@ export function renderPackageSVG(type: string) {
   const chuppahDrapes = () =>
     chuppahFrame(
       <>
-        <g opacity="0.6" fill={soft} stroke={gold} strokeOpacity="0.35" strokeWidth="0.6">
+        <g opacity="0.85" fill="url(#ldFabric)" stroke={gold} strokeOpacity="0.35" strokeWidth="0.6">
           {/* תליית בד רחבה */}
           <path d="M48 28 Q100 66 152 28 Q138 48 100 56 Q62 48 48 28 Z" />
           {/* 4 בדים נשפכים */}
@@ -507,6 +564,8 @@ export function renderPackageSVG(type: string) {
   // איור בר חינה מרוקאי: מגדל עוגיות תלת-קומתי + קומקום נחושת + כוסות + נרות
   const henna = () => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
+      <ArtDefs />
+      <GroundShadow cx={100} cy={92} rx={78} ry={4} />
       {/* מגדל עוגיות */}
       <ellipse cx="66" cy="84" rx="34" ry="7" fill={soft} stroke={gold} />
       {[44, 55, 66, 77, 88].map((cx, i) => <circle key={`c1${i}`} cx={cx} cy={81} r="3.4" fill={gold} opacity="0.85" />)}
@@ -538,21 +597,22 @@ export function renderPackageSVG(type: string) {
   const balloonArch = (cxBase: number, yBase: number, radiusX: number, radiusY: number, count: number, prefix: string) =>
     Array.from({ length: count }).map((_, i) => {
       const angle = Math.PI * (i / (count - 1)); // 0..PI => קשת מלאה
+      const bx = cxBase - Math.cos(angle) * radiusX;
+      const by = yBase - Math.sin(angle) * radiusY;
+      const r = 5 + (i % 3);
       return (
-        <circle
-          key={`${prefix}-${i}`}
-          cx={cxBase - Math.cos(angle) * radiusX}
-          cy={yBase - Math.sin(angle) * radiusY}
-          r={5 + (i % 3)}
-          fill={i % 2 ? gold : soft}
-          opacity="0.9"
-        />
+        <g key={`${prefix}-${i}`}>
+          <circle cx={bx} cy={by} r={r} fill={i % 2 ? gold : soft} opacity="0.92" />
+          <circle cx={bx - r * 0.3} cy={by - r * 0.35} r={r * 0.28} fill="#FFFFFF" opacity="0.55" />
+        </g>
       );
     });
 
   // איור "קלאסיק" לאירועים: 2 אגרטלים עם זרי ורדים + צילינדר נר צף במרכז
   const eventClassic = () => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
+      <ArtDefs />
+      <GroundShadow cx={100} cy={93} rx={74} ry={4} />
       {/* צילינדר נר צף מרכזי */}
       <rect x="93" y="52" width="15" height="38" rx="2" fill={cream} stroke={soft} />
       <ellipse cx="100.5" cy="52" rx="7.5" ry="2.4" fill="none" stroke={soft} />
@@ -572,6 +632,7 @@ export function renderPackageSVG(type: string) {
   // איור "בלון ארט": שער בלונים חגיגי
   const eventBalloon = () => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
+      <ArtDefs />
       {balloonArch(100, 92, 66, 64, 13, 'arch')}
       <line x1="34" y1="92" x2="166" y2="92" stroke={gold} strokeWidth="1.6" opacity="0.4" />
     </svg>
@@ -580,6 +641,7 @@ export function renderPackageSVG(type: string) {
   // איור "הצגה" (VIP): עמדת צילום — קיר רקע מוקף בקשת בלונים
   const eventVip = () => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
+      <ArtDefs />
       <rect x="72" y="34" width="56" height="50" rx="6" fill={cream} stroke={gold} strokeWidth="1.5" />
       <circle cx="100" cy="56" r="10" fill="none" stroke={soft} strokeWidth="1.5" />
       {balloonArch(100, 88, 72, 66, 11, 'vip')}
@@ -603,6 +665,7 @@ export function renderPackageSVG(type: string) {
   // איור עמדת בר מתוק: שולחן + 2 צנצנות ממתקים + מגדל קינוחים + זר משי
   const bar = () => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
+      <ArtDefs />
       {/* שולחן הבר */}
       <rect x="18" y="86" width="164" height="8" rx="2" fill={soft} stroke={gold} strokeWidth="0.6" />
       {/* 2 צנצנות ממתקים (אפותקרי) */}
@@ -730,7 +793,9 @@ export default function App() {
     eventLocation: '',
     notes: '',
     compositesCount: '',
-    spongeCount: ''
+    spongeCount: '',
+    referralSource: '',
+    referralDetail: ''
   });
 
   // מצב הזמנה: לקוח פרטי / מנהל (בעל העסק יוצר עבור לקוח)
@@ -744,6 +809,10 @@ export default function App() {
     manualDiscount: '',
     manualTotal: ''
   });
+
+  // עריכת שורות הזמנה בידי המנהל: לכל שורה (חבילה/תוספת) טקסט ו/או סכום חלופיים.
+  // מפתחות: `pkg:<id>` / `addon:<id>`. ריק = ערך ברירת המחדל.
+  const [lineEdits, setLineEdits] = useState<Record<string, { label?: string; amount?: number }>>({});
 
   // חבילות נבחרות (ניתן לבחור יותר מחבילה אחת, גם בין קטגוריות)
   const [selectedPackageIds, setSelectedPackageIds] = useState<string[]>(['classic-s']);
@@ -804,6 +873,42 @@ export default function App() {
       ? pkg.pricingTiers[selectedTableTier]
       : pkg.price;
 
+  // --- עריכת שורות בידי המנהל (טקסט + סכום) ---
+  const pkgKey = (id: string) => `pkg:${id}`;
+  const addonKey = (id: string) => `addon:${id}`;
+
+  // תווית/סכום אפקטיביים: דריסת המנהל אם קיימת, אחרת ברירת המחדל
+  const lineLabel = (key: string, fallback: string) => {
+    const e = lineEdits[key];
+    return isAdmin && e && e.label !== undefined ? e.label : fallback;
+  };
+  const lineAmount = (key: string, fallback: number) => {
+    const e = lineEdits[key];
+    return isAdmin && e && typeof e.amount === 'number' ? Math.max(0, e.amount) : fallback;
+  };
+
+  // תווית ברירת מחדל לחבילה (כולל מדרגת שולחנות) — לשימוש בעריכה ובהסכם
+  const defaultPkgLabel = (pkg: Package) =>
+    pkg.pricingTiers ? `${pkg.title} (${selectedTableTier} שולחנות)` : pkg.title;
+
+  // סכום אפקטיבי לחבילה / לשורת תוספת (לפי דריסת מנהל)
+  const effPackageAmount = (pkg: Package) => lineAmount(pkgKey(pkg.id), packagePrice(pkg));
+
+  // עדכון עריכות שורה
+  const setLineLabel = (key: string, label: string) =>
+    setLineEdits(prev => ({ ...prev, [key]: { ...prev[key], label } }));
+  const setLineAmount = (key: string, value: string) =>
+    setLineEdits(prev => ({
+      ...prev,
+      [key]: { ...prev[key], amount: value.trim() === '' ? undefined : Math.max(0, parseFloat(value) || 0) }
+    }));
+  const resetLine = (key: string) =>
+    setLineEdits(prev => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+
   // החלפת בחירת חבילה (הוספה/הסרה) — מאפשר ריבוי חבילות
   const togglePackage = (pkg: Package) => {
     setPackagesError(false);
@@ -825,7 +930,9 @@ export default function App() {
   const selectedAddons = activeAddons
     .map(a => ({ ...a, qty: addonQty[a.id] || 0 }))
     .filter(a => a.qty > 0);
-  const addonsTotal = selectedAddons.reduce((sum, a) => sum + a.price * a.qty, 0);
+  // סכום שורת תוספת אפקטיבי (כולל דריסת מנהל)
+  const effAddonAmount = (a: Addon & { qty: number }) => lineAmount(addonKey(a.id), a.price * a.qty);
+  const addonsTotal = selectedAddons.reduce((sum, a) => sum + effAddonAmount(a), 0);
 
   // פריטים שזכאים להטבת ה-₪500: נבחרו ואינם כוללים פרחים
   const giftEligibleAddons = selectedAddons.filter(a => !a.hasFlowers);
@@ -842,7 +949,7 @@ export default function App() {
 
   // חישוב מחירים
   const getPricing = () => {
-    const basePrice = selectedPackages.reduce((sum, p) => sum + packagePrice(p), 0);
+    const basePrice = selectedPackages.reduce((sum, p) => sum + effPackageAmount(p), 0);
     const upgradesTotal = customUpgrades.reduce((sum, item) => sum + (item.price || 0), 0);
     const adminDiscount = isAdmin ? parseFloat(adminInfo.manualDiscount) || 0 : 0;
     const manualTotal =
@@ -905,6 +1012,14 @@ export default function App() {
       : a.qty > 1
         ? `${name} × ${a.qty}`
         : name;
+  };
+
+  // טקסט "איך הגעת אלינו" לתצוגה ולשמירה (מקור + פירוט שם האולם/הממליץ)
+  const referralText = () => {
+    if (!clientInfo.referralSource) return '';
+    const base = t(`step1.referral_${clientInfo.referralSource}`);
+    const detail = clientInfo.referralDetail.trim();
+    return detail ? `${base} — ${detail}` : base;
   };
 
   // בדיקת תקינות טופס שלב 1 (עם 2 מספרי טלפון חובה)
@@ -993,14 +1108,16 @@ export default function App() {
           eventDate: clientInfo.eventDate,
           eventLocation: clientInfo.eventLocation,
           packageId: selectedPackageIds.join(','),
-          packageTitle: selectedPackages.map(p => p.title).join(' + '),
+          packageTitle: selectedPackages.map(p => lineLabel(pkgKey(p.id), p.title)).join(' + '),
           tableTier: selectedPackages.some(p => p.pricingTiers) ? selectedTableTier : null,
           compositesCount: clientInfo.compositesCount,
           spongeCount: clientInfo.spongeCount,
+          referralSource: clientInfo.referralSource,
+          referralDetail: clientInfo.referralDetail.trim(),
           includeDelivery,
           upgrades: [
             ...customUpgrades.map(u => ({ description: u.description, price: u.price })),
-            ...selectedAddons.map(a => ({ description: addonLineDescription(a), price: a.price * a.qty }))
+            ...selectedAddons.map(a => ({ description: lineLabel(addonKey(a.id), addonLineDescription(a)), price: effAddonAmount(a) }))
           ],
           basePrice: pricing.basePrice,
           upgradesTotal: pricing.upgradesTotal + pricing.addonsTotal,
@@ -1155,7 +1272,7 @@ export default function App() {
       </a>
 
       {/* --- לוגו וכותרת ראשית --- */}
-      <header className="bg-white border-b border-[#EAE3D2] shadow-sm sticky top-0 z-50">
+      <header className="bg-white border-b border-[#EAE3D2] shadow-sm sticky top-0 z-50 no-print">
         <div className="max-w-4xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <div className="bg-[#B29259] text-white p-2 rounded-full shadow-md">
@@ -1206,7 +1323,7 @@ export default function App() {
       </header>
 
       {/* --- מד התקדמות השלבים --- */}
-      <div className="max-w-4xl mx-auto px-4 pt-6">
+      <div className="max-w-4xl mx-auto px-4 pt-6 no-print">
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-[#EAE3D2] mb-6">
           <div className="flex justify-between items-center relative">
             <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-0.5 bg-gray-100 z-0"></div>
@@ -1431,6 +1548,37 @@ export default function App() {
                   />
                 </div>
                 {errors.email && <p className="text-[10px] text-red-500 mt-1">{errors.email}</p>}
+              </div>
+
+              {/* איך הגעת אלינו? — שדה לא חובה, גלוי בשני המצבים. אפשרות אולם/ממליץ פותחת תיבת שם */}
+              <div className="sm:col-span-2">
+                <label htmlFor="f-referral" className="block text-xs font-bold text-gray-700 mb-1.5">{t('step1.referral')}</label>
+                <div className="relative">
+                  <span className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <Building2 className="w-4 h-4" aria-hidden="true" />
+                  </span>
+                  <select
+                    id="f-referral"
+                    value={clientInfo.referralSource}
+                    onChange={(e) => setClientInfo({ ...clientInfo, referralSource: e.target.value, referralDetail: '' })}
+                    className="w-full ps-9 pe-3 py-2.5 bg-[#FAF7F2] border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all"
+                  >
+                    <option value="">{t('step1.referralPh')}</option>
+                    {['venue', 'recommendation', 'instagram', 'facebook', 'google', 'other'].map((s) => (
+                      <option key={s} value={s}>{t(`step1.referral_${s}`)}</option>
+                    ))}
+                  </select>
+                </div>
+                {(clientInfo.referralSource === 'venue' || clientInfo.referralSource === 'recommendation' || clientInfo.referralSource === 'other') && (
+                  <input
+                    type="text"
+                    value={clientInfo.referralDetail}
+                    onChange={(e) => setClientInfo({ ...clientInfo, referralDetail: e.target.value })}
+                    placeholder={clientInfo.referralSource === 'venue' ? t('step1.referralVenueNamePh') : t('step1.referralDetailNamePh')}
+                    aria-label={clientInfo.referralSource === 'venue' ? t('step1.referralVenueName') : t('step1.referralDetailName')}
+                    className="mt-2 w-full px-3 py-2.5 bg-[#FAF7F2] border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#B29259] text-sm text-gray-800 transition-all animate-fadeIn"
+                  />
+                )}
               </div>
 
             </div>
@@ -1733,8 +1881,8 @@ export default function App() {
         {currentStep === 3 && (
           <div className="space-y-6 animate-fadeIn">
 
-            {/* הובלה והרכבה */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EAE3D2] space-y-5">
+            {/* הובלה והרכבה — קלט (לא מודפס; ההובלה מופיעה בסיכום הכספי) */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EAE3D2] space-y-5 no-print">
               <div>
                 <h3 className="text-lg font-bold text-[#8C6D3F] flex items-center gap-1.5">
                   <Truck className="w-5 h-5 text-[#B29259]" aria-hidden="true" />
@@ -1855,9 +2003,9 @@ export default function App() {
               </div>
             </div>
 
-            {/* תוספות ושדרוגים לחבילות שנבחרו (קטלוג עם כמויות) */}
+            {/* תוספות ושדרוגים לחבילות שנבחרו (קטלוג עם כמויות) — קלט, לא מודפס */}
             {activeAddons.length > 0 && (
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EAE3D2] space-y-4">
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EAE3D2] space-y-4 no-print">
                 <div>
                   <h3 className="text-base font-bold text-[#8C6D3F] flex items-center gap-1.5">
                     <Plus className="w-4.5 h-4.5 text-[#B29259]" aria-hidden="true" />
@@ -1900,9 +2048,9 @@ export default function App() {
               </div>
             )}
 
-            {/* קוד קופון — ₪500 מתנה לפריט תוספת אחד (ללא פרחים) */}
+            {/* קוד קופון — ₪500 מתנה לפריט תוספת אחד (ללא פרחים) — קלט, לא מודפס */}
             {isCouponEligible && (
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EAE3D2] space-y-4">
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EAE3D2] space-y-4 no-print">
                 <div>
                   <h3 className="text-base font-bold text-[#8C6D3F] flex items-center gap-1.5">
                     <Gift className="w-4.5 h-4.5 text-[#B29259]" aria-hidden="true" />
@@ -1971,9 +2119,93 @@ export default function App() {
               </div>
             )}
 
+            {/* עריכת שורות ההזמנה — מנהל (טקסט + סכום לכל שורה). מוסתר בהדפסה */}
+            {isAdmin && (
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EAE3D2] space-y-4 no-print">
+                <div>
+                  <h3 className="text-base font-bold text-[#8C6D3F] flex items-center gap-1.5">
+                    <Pencil className="w-4.5 h-4.5 text-[#B29259]" aria-hidden="true" />
+                    {t('admin.editLinesTitle')}
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-1">{t('admin.editLinesSub')}</p>
+                </div>
+
+                {selectedPackages.length === 0 && selectedAddons.length === 0 ? (
+                  <p className="text-[11px] text-gray-400 italic">{t('admin.noEditableLines')}</p>
+                ) : (
+                  <div className="border border-gray-100 rounded-xl divide-y divide-gray-100">
+                    {[
+                      ...selectedPackages.map((p) => ({
+                        key: pkgKey(p.id),
+                        defaultLabel: defaultPkgLabel(p),
+                        defaultAmount: packagePrice(p),
+                        onRemove: () => togglePackage(p)
+                      })),
+                      ...selectedAddons.map((a) => ({
+                        key: addonKey(a.id),
+                        defaultLabel: addonLineDescription(a),
+                        defaultAmount: a.price * a.qty,
+                        onRemove: () => updateAddonQty(a.id, '0')
+                      }))
+                    ].map((row) => {
+                      const edited = !!lineEdits[row.key];
+                      return (
+                        <div key={row.key} className="flex flex-col sm:flex-row gap-2 sm:items-end p-3">
+                          <div className="flex-1 min-w-0">
+                            <label className="block text-[10px] font-bold text-gray-500 mb-1">{t('admin.lineLabelField')}</label>
+                            <input
+                              type="text"
+                              value={lineLabel(row.key, row.defaultLabel)}
+                              onChange={(e) => setLineLabel(row.key, e.target.value)}
+                              aria-label={`${t('admin.lineLabelField')} — ${row.defaultLabel}`}
+                              className="w-full px-3 py-2 bg-[#FAF7F2] border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#B29259]"
+                            />
+                          </div>
+                          <div className="sm:w-28">
+                            <label className="block text-[10px] font-bold text-gray-500 mb-1">{t('admin.linePriceField')}</label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={lineEdits[row.key]?.amount ?? ''}
+                              placeholder={row.defaultAmount.toLocaleString()}
+                              onChange={(e) => setLineAmount(row.key, e.target.value)}
+                              aria-label={`${t('admin.linePriceField')} — ${row.defaultLabel}`}
+                              className="w-full px-3 py-2 bg-[#FAF7F2] border border-gray-200 rounded-lg text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#B29259]"
+                            />
+                          </div>
+                          <div className="flex items-center gap-1 self-end">
+                            {edited && (
+                              <button
+                                type="button"
+                                onClick={() => resetLine(row.key)}
+                                title={t('admin.linePriceReset')}
+                                aria-label={t('admin.linePriceReset')}
+                                className="text-gray-400 hover:text-[#B29259] p-1.5 rounded-md transition-colors"
+                              >
+                                <RotateCcw className="w-4 h-4" />
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={row.onRemove}
+                              title={t('admin.removeLine')}
+                              aria-label={t('admin.removeLine')}
+                              className="text-red-500 hover:text-red-700 p-1.5 rounded-md transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* תמחור ידני — מנהל */}
             {isAdmin && (
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EAE3D2] space-y-4">
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EAE3D2] space-y-4 no-print">
                 <h3 className="text-base font-bold text-[#8C6D3F] flex items-center gap-1.5">
                   <Plus className="w-4.5 h-4.5 text-[#B29259]" aria-hidden="true" />
                   {t('admin.pricingTitle')}
@@ -2007,10 +2239,24 @@ export default function App() {
               </div>
             )}
 
-            {/* סיכום חוזה רשמי והזמנה לחתונה */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EAE3D2] space-y-6">
+            {/* סיכום חוזה רשמי והזמנה לחתונה — זהו המסמך המודפס (PDF) */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EAE3D2] space-y-6 print-contract">
+              {/* כותרת ממותגת — מוצגת בהדפסה בלבד */}
+              <div className="print-only mb-2 pb-4 border-b-2 border-[#B29259]">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="text-start">
+                    <p className="font-serif text-2xl font-bold text-[#8C6D3F] tracking-wide">LD Event Design</p>
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 font-semibold">{t('brand.tagline')}</p>
+                  </div>
+                  <div className="text-end text-[11px] text-gray-500 leading-relaxed">
+                    <p className="font-bold text-[#8C6D3F]" dir="ltr">{t('brand.phone')}</p>
+                    <p>{t('print.issued')}: {new Date().toLocaleDateString(lang === 'he' ? 'he-IL' : 'en-GB')}</p>
+                  </div>
+                </div>
+              </div>
+
               <div className="text-center pb-4 border-b border-gray-100">
-                <FileText className="w-6 h-6 text-[#B29259] mx-auto mb-1" aria-hidden="true" />
+                <FileText className="w-6 h-6 text-[#B29259] mx-auto mb-1 no-print" aria-hidden="true" />
                 <h3 className="text-lg font-bold text-gray-800">{t('step3.contractHeading')}</h3>
                 <p className="text-xs text-gray-400">{t('step3.contractSub')}</p>
               </div>
@@ -2053,26 +2299,33 @@ export default function App() {
                     <p className="font-bold text-gray-700 mt-0.5">{t('step3.tablesUnit', { n: clientInfo.spongeCount })}</p>
                   </div>
                 )}
+                {clientInfo.referralSource && (
+                  <div>
+                    <span className="text-gray-400 font-medium">{t('step3.infoReferral')}</span>
+                    <p className="font-bold text-gray-700 mt-0.5">{referralText()}</p>
+                  </div>
+                )}
+                {/* שדות מנהל — מוצגים על המסך בלבד, לא בהסכם המודפס ללקוח */}
                 {isAdmin && (
                   <>
-                    <div>
+                    <div className="no-print">
                       <span className="text-gray-400 font-medium">{t('admin.statusLabel')}</span>
                       <p className="font-bold text-gray-700 mt-0.5">{t(`admin.status_${adminInfo.status}`)}</p>
                     </div>
                     {adminInfo.source && (
-                      <div>
+                      <div className="no-print">
                         <span className="text-gray-400 font-medium">{t('admin.sourceLabel')}</span>
                         <p className="font-bold text-gray-700 mt-0.5">{t(`admin.source_${adminInfo.source}`)}</p>
                       </div>
                     )}
                     {adminInfo.receivedBy && (
-                      <div>
+                      <div className="no-print">
                         <span className="text-gray-400 font-medium">{t('admin.receivedLabel')}</span>
                         <p className="font-bold text-gray-700 mt-0.5">{t(`admin.received_${adminInfo.receivedBy}`)}</p>
                       </div>
                     )}
                     {adminInfo.internalNotes.trim() && (
-                      <div className="col-span-2">
+                      <div className="col-span-2 no-print">
                         <span className="text-gray-400 font-medium">{t('admin.notesLabel')}</span>
                         <p className="font-bold text-gray-700 mt-0.5 whitespace-pre-wrap">{adminInfo.internalNotes}</p>
                       </div>
@@ -2081,12 +2334,12 @@ export default function App() {
                 )}
               </div>
 
-              {/* פירוט כספי */}
+              {/* פירוט כספי (משקף עריכות מנהל אם בוצעו) */}
               <div className="space-y-3 text-xs">
                 {selectedPackages.map((p) => (
                   <div key={p.id} className="flex justify-between items-center text-gray-600">
-                    <span>{p.title}{p.pricingTiers ? ` (${selectedTableTier} שולחנות)` : ''}</span>
-                    <span className="font-bold text-gray-800">₪{packagePrice(p).toLocaleString()}</span>
+                    <span>{lineLabel(pkgKey(p.id), defaultPkgLabel(p))}</span>
+                    <span className="font-bold text-gray-800">₪{effPackageAmount(p).toLocaleString()}</span>
                   </div>
                 ))}
 
@@ -2099,8 +2352,8 @@ export default function App() {
 
                 {selectedAddons.map((a) => (
                   <div key={a.id} className="flex justify-between items-center text-gray-600">
-                    <span>{addonLineDescription(a)}</span>
-                    <span className="font-bold text-gray-800">₪{(a.price * a.qty).toLocaleString()}</span>
+                    <span>{lineLabel(addonKey(a.id), addonLineDescription(a))}</span>
+                    <span className="font-bold text-gray-800">₪{effAddonAmount(a).toLocaleString()}</span>
                   </div>
                 ))}
 
@@ -2132,7 +2385,7 @@ export default function App() {
               </div>
 
               {/* מדיניות ביטולים ושינויים המלאה והמדויקת לפי התמונה */}
-              <div className="bg-stone-50 rounded-xl p-4 border border-gray-200 text-right space-y-3">
+              <div className="bg-stone-50 rounded-xl p-4 border border-gray-200 text-right space-y-3 print-avoid-break">
                 <div className="text-[11px] text-gray-600 space-y-2.5 leading-relaxed">
 
                   <p className="font-bold text-[#8C6D3F] border-b border-gray-200 pb-1">{t('step3.policyTitle')}</p>
@@ -2160,7 +2413,7 @@ export default function App() {
               </div>
 
               {/* לוחות חתימה דיגיטליים כפולים (חתן וכלה) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print-avoid-break">
 
                 {/* חתימת בעל האירוע */}
                 <div className="border border-dashed border-[#B29259]/60 rounded-xl p-4 bg-stone-50">
@@ -2243,11 +2496,17 @@ export default function App() {
 
               {/* הודעת שגיאת חתימה */}
               {showSignatureError && (
-                <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-3 rounded-xl" role="alert">
+                <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-3 rounded-xl no-print" role="alert">
                   <AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
                   {t('errors.signatureRequired')}
                 </div>
               )}
+
+              {/* חתימת תודה ממותגת — בהדפסה בלבד */}
+              <div className="print-only pt-4 mt-2 border-t border-[#EAE3D2] text-center">
+                <p className="text-[11px] text-[#8C6D3F] font-bold">{t('print.thanks')}</p>
+                <p className="text-[10px] text-gray-400 mt-0.5" dir="ltr">LD Event Design · {t('brand.phone')}</p>
+              </div>
             </div>
 
             {/* אישור תקנון ומדיניות פרטיות (חובה) */}
@@ -2371,6 +2630,9 @@ export default function App() {
 
       {/* כפתור/וידג'ט נגישות צף */}
       <AccessibilityWidget onOpenStatement={() => setLegalModal('accessibility')} />
+
+      {/* כפתור וואטסאפ צף */}
+      <WhatsAppButton />
     </div>
   );
 }

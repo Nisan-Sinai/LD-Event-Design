@@ -32,7 +32,8 @@ import { submitOrder, type OrderPayload } from './submitOrder';
 const payload: OrderPayload = {
   groomName: 'א', brideName: 'ב', groomPhone: '1', bridePhone: '2', email: 'a@b.com',
   eventDate: '2026-09-01', eventLocation: 'חדרה', packageId: 'classic-s', packageTitle: 'S',
-  tableTier: null, compositesCount: '', spongeCount: '', includeDelivery: true,
+  tableTier: null, compositesCount: '', spongeCount: '',
+  referralSource: 'venue', referralDetail: 'אולמי היער', includeDelivery: true,
   upgrades: [{ description: 'x', price: 1 }], basePrice: 2900, upgradesTotal: 1,
   deliveryPrice: 500, couponCode: '', couponDiscount: 0, totalPrice: 3401,
   groomSignDate: '2026-01-01', brideSignDate: '2026-01-01'
@@ -56,10 +57,18 @@ describe('submitOrder', () => {
     expect(s.inserted?.groom_signature_path).toContain('groom.png');
   });
 
+  it('stores referral fields when provided', async () => {
+    await submitOrder(payload, sig, sig);
+    expect(s.inserted?.referral_source).toBe('venue');
+    expect(s.inserted?.referral_detail).toBe('אולמי היער');
+  });
+
   it('stores null for empty optional dates/fields', async () => {
-    await submitOrder({ ...payload, eventDate: '', compositesCount: '', spongeCount: '', couponCode: '', groomSignDate: '', brideSignDate: '' }, sig, sig);
+    await submitOrder({ ...payload, eventDate: '', compositesCount: '', spongeCount: '', referralSource: '', referralDetail: '', couponCode: '', groomSignDate: '', brideSignDate: '' }, sig, sig);
     expect(s.inserted?.event_date).toBeNull();
     expect(s.inserted?.composites_count).toBeNull();
+    expect(s.inserted?.referral_source).toBeNull();
+    expect(s.inserted?.referral_detail).toBeNull();
     expect(s.inserted?.coupon_code).toBeNull();
     expect(s.inserted?.groom_sign_date).toBeNull();
   });

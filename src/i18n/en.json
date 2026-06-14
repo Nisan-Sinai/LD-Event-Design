@@ -59,7 +59,15 @@
     "sourceLabel": "Order source:",
     "receivedLabel": "Received by:",
     "notesLabel": "Internal notes:",
-    "emailOptional": "Email address (optional)"
+    "emailOptional": "Email address (optional)",
+    "editLinesTitle": "Edit order lines",
+    "editLinesSub": "Edit the text and price of any line — changes appear on the printed agreement and the final total.",
+    "lineLabelField": "Line description",
+    "linePriceField": "Price (₪)",
+    "linePriceReset": "Reset original price",
+    "removeLine": "Remove line",
+    "noEditableLines": "Select a package or add-on to edit the order lines.",
+    "lineEdited": "Edited"
   },
   "step1": {
     "heading": "Order an event design package",
@@ -77,6 +85,18 @@
     "eventLocationPh": "e.g. HaYaar Halls, Hadera",
     "email": "Email address *",
     "emailPh": "name@example.com",
+    "referral": "How did you hear about us?",
+    "referralPh": "Choose an option",
+    "referral_venue": "Through the venue / event supplier",
+    "referral_recommendation": "Recommended by a friend or family",
+    "referral_instagram": "Instagram",
+    "referral_facebook": "Facebook",
+    "referral_google": "Google search",
+    "referral_other": "Other",
+    "referralVenueName": "Venue name",
+    "referralVenueNamePh": "e.g. HaYaar Halls, Hadera",
+    "referralDetailName": "Details / referrer name",
+    "referralDetailNamePh": "Who referred you to us?",
     "next": "Continue to package selection"
   },
   "errors": {
@@ -163,6 +183,7 @@
     "infoLocation": "Venue:",
     "infoComposites": "Flower & candle compositions:",
     "infoSponge": "Foam table arrangements:",
+    "infoReferral": "You found us via:",
     "tablesUnit": "{n} tables",
     "lineDelivery": "Delivery, setup & teardown at the end of the event",
     "lineCoupon": "Coupon perk — ₪500 gift on \"{name}\"",
@@ -345,9 +366,20 @@
     "viewSignature": "View signature",
     "signatureOnFile": "Signature on file",
     "delivery": "Delivery & setup",
+    "referral": "Found us via",
+    "referralDetail": "Venue / referrer name",
     "yes": "Yes",
     "no": "No",
     "none": "—"
+  },
+  "whatsapp": {
+    "float": "Chat with us on WhatsApp",
+    "prefill": "Hi! I came from the website and would love details about your design packages 🌸"
+  },
+  "print": {
+    "docTitle": "Agreement & Order",
+    "issued": "Issued on",
+    "thanks": "Thank you for choosing LD Event Design · let's make your event unforgettable"
   },
   "guard": {
     "loginRequired": "To complete an order, please log in or sign up.",

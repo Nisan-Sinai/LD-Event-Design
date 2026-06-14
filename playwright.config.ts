@@ -9,7 +9,10 @@ export default defineConfig({
   reporter: process.env.CI ? 'github' : 'list',
   use: {
     baseURL: 'http://localhost:5173',
-    trace: 'on-first-retry'
+    trace: 'on-first-retry',
+    // מרווח לקראת קומפילציה ראשונית של Vite בשרת קר (הרצה מקבילית מלאה)
+    navigationTimeout: 60000,
+    actionTimeout: 15000
   },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },

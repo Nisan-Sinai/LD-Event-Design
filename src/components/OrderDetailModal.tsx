@@ -136,6 +136,10 @@ export function OrderDetailModal({ orderId, onClose }: { orderId: string | null;
                 <Row label={t('orderDetail.tier')} value={order.table_tier ?? null} />
                 <Row label={t('orderDetail.composites')} value={order.composites_count} />
                 <Row label={t('orderDetail.sponge')} value={order.sponge_count} />
+                <Row
+                  label={t('orderDetail.referral')}
+                  value={order.referral_source ? t(`step1.referral_${order.referral_source}`) + (order.referral_detail ? ` — ${order.referral_detail}` : '') : null}
+                />
               </Section>
 
               <Section icon={<Package className="w-4 h-4" aria-hidden="true" />} title={t('orderDetail.sectionPackage')}>

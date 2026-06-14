@@ -265,6 +265,56 @@ describe('Order wizard — more flows', () => {
   });
 });
 
+describe('Order wizard — referral field', () => {
+  it('captures the referral source and venue name into the contract', () => {
+    renderApp();
+    fillStep1();
+    fireEvent.change(screen.getByLabelText('איך הגעת אלינו?'), { target: { value: 'venue' } });
+    fireEvent.change(screen.getByLabelText('שם האולם'), { target: { value: 'אולם הברקת' } });
+    next1();
+    next2();
+    expect(screen.getByText('הגעת אלינו דרך:')).toBeInTheDocument();
+    expect(screen.getByText('דרך האולם / ספק האירוע — אולם הברקת')).toBeInTheDocument();
+  });
+});
+
+describe('Order wizard — admin line editing', () => {
+  function reachAdminStep3() {
+    renderApp();
+    fireEvent.click(screen.getByRole('button', { name: /בעל העסק \/ מנהל/ }));
+    fillStep1({ email: '' });
+    next1();
+    next2();
+  }
+
+  it('edits a line price and text, then resets it', () => {
+    reachAdminStep3();
+
+    // עריכת מחיר חבילת ברירת המחדל (Classic S, ₪2,900) ל-2,000
+    fireEvent.change(screen.getByLabelText(/מחיר .* Classic S/), { target: { value: '2000' } });
+    expect(screen.getAllByText('₪2,000').length).toBeGreaterThan(0);
+
+    // עריכת טקסט השורה — מופיע בהסכם
+    fireEvent.change(screen.getByLabelText(/תיאור השורה — .*Classic S/), { target: { value: 'חבילה מותאמת אישית' } });
+    expect(screen.getByText('חבילה מותאמת אישית')).toBeInTheDocument();
+
+    // החזרת מחיר מקורי — חוזר ל-2,900 ולתווית המקורית
+    fireEvent.click(screen.getByRole('button', { name: 'החזרת מחיר מקורי' }));
+    expect(screen.getAllByText('₪2,900').length).toBeGreaterThan(0);
+    expect(screen.queryByText('חבילה מותאמת אישית')).not.toBeInTheDocument();
+  });
+
+  it('adds a catalog add-on line and removes it from the edit card', () => {
+    reachAdminStep3();
+    // בחירת התוספת הראשונה מהקטלוג (כמות 1)
+    fireEvent.change(screen.getAllByPlaceholderText('כמות')[0], { target: { value: '1' } });
+    const removeButtons = screen.getAllByRole('button', { name: 'הסרת שורה' });
+    expect(removeButtons.length).toBeGreaterThan(1);
+    // הסרת שורת התוספת (האחרונה)
+    fireEvent.click(removeButtons[removeButtons.length - 1]);
+  });
+});
+
 describe('Order wizard — guest auth gate (configured)', () => {
   it('opens the auth modal at confirm when no user is logged in', () => {
     env.configured = true;

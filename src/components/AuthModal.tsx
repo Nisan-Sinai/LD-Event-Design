@@ -65,13 +65,19 @@ export function AuthModal({ open, onClose, onSuccess }: { open: boolean; onClose
 
   return (
     <div
-      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4 no-print"
+      className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4 no-print"
       role="dialog"
       aria-modal="true"
       aria-labelledby="auth-modal-title"
       onClick={onClose}
     >
-      <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-xl animate-rise" onClick={(e) => e.stopPropagation()} dir={dir}>
+      <div
+        className="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full p-6 pb-8 sm:p-8 shadow-xl animate-sheetUp sm:animate-rise max-h-[92vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+        dir={dir}
+      >
+        {/* ידית גרירה (מובייל) */}
+        <div className="sm:hidden mx-auto mb-4 h-1.5 w-12 rounded-full bg-gray-200" aria-hidden="true" />
         <div className="flex items-start justify-between gap-3 mb-1">
           <h2 id="auth-modal-title" className="font-display text-xl font-bold text-[#8C6D3F]">
             {t('auth.gateTitle')}

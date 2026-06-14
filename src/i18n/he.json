@@ -59,7 +59,15 @@
     "sourceLabel": "מקור הזמנה:",
     "receivedLabel": "התקבל ע\"י:",
     "notesLabel": "הערות פנימיות:",
-    "emailOptional": "כתובת אימייל (אופציונלי)"
+    "emailOptional": "כתובת אימייל (אופציונלי)",
+    "editLinesTitle": "עריכת שורות ההזמנה",
+    "editLinesSub": "ערכו את הטקסט והמחיר של כל שורה — השינויים יופיעו בהסכם המודפס ובסכום הכולל לתשלום.",
+    "lineLabelField": "תיאור השורה",
+    "linePriceField": "מחיר (₪)",
+    "linePriceReset": "החזרת מחיר מקורי",
+    "removeLine": "הסרת שורה",
+    "noEditableLines": "בחרו חבילה או תוספת כדי לערוך את שורות ההזמנה.",
+    "lineEdited": "נערך"
   },
   "step1": {
     "heading": "הזמנת חבילת עיצוב לאירוע",
@@ -77,6 +85,18 @@
     "eventLocationPh": "לדוגמה: אולמי היער, חדרה",
     "email": "כתובת אימייל *",
     "emailPh": "name@example.com",
+    "referral": "איך הגעת אלינו?",
+    "referralPh": "בחרו אפשרות",
+    "referral_venue": "דרך האולם / ספק האירוע",
+    "referral_recommendation": "המלצה מחבר/ה או בן/בת משפחה",
+    "referral_instagram": "אינסטגרם",
+    "referral_facebook": "פייסבוק",
+    "referral_google": "חיפוש בגוגל",
+    "referral_other": "אחר",
+    "referralVenueName": "שם האולם",
+    "referralVenueNamePh": "לדוגמה: אולמי היער, חדרה",
+    "referralDetailName": "פרטים / שם הממליץ",
+    "referralDetailNamePh": "מי הפנה אתכם אלינו?",
     "next": "המשך לבחירת חבילת עיצוב"
   },
   "errors": {
@@ -163,6 +183,7 @@
     "infoLocation": "מיקום אולם:",
     "infoComposites": "קומפוזיציות פרחים ונרות:",
     "infoSponge": "סידורי ספוג לשולחן:",
+    "infoReferral": "הגעת אלינו דרך:",
     "tablesUnit": "{n} שולחנות",
     "lineDelivery": "הובלה, הרכבה ופירוק בסיום האירוע",
     "lineCoupon": "הטבת קופון — ₪500 מתנה על \"{name}\"",
@@ -345,9 +366,20 @@
     "viewSignature": "צפייה בחתימה",
     "signatureOnFile": "חתימה שמורה",
     "delivery": "הובלה והרכבה",
+    "referral": "הגעה דרך",
+    "referralDetail": "שם האולם / ממליץ",
     "yes": "כן",
     "no": "לא",
     "none": "—"
+  },
+  "whatsapp": {
+    "float": "דברו איתנו בוואטסאפ",
+    "prefill": "היי! הגעתי מהאתר ואשמח לקבל פרטים על חבילות העיצוב 🌸"
+  },
+  "print": {
+    "docTitle": "הסכם והזמנה",
+    "issued": "הופק בתאריך",
+    "thanks": "תודה שבחרתם ב-LD Event Design · נהפוך את האירוע שלכם לבלתי נשכח"
   },
   "guard": {
     "loginRequired": "כדי להשלים הזמנה יש להתחבר או להירשם.",
