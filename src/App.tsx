@@ -516,17 +516,33 @@ function Leaf({ cx, cy, rot, len = 9 }: { cx: number; cy: number; rot: number; l
   );
 }
 
-// זר / חבק פרחים עשיר: ורדים + עלים + עלווה נשפכת מטה
+// ענף אקליפטוס עדין — קו מתעקל
+function Sprig({ d }: { d: string }) {
+  return <path d={d} fill="none" stroke={ART.sage} strokeWidth="0.8" strokeLinecap="round" opacity="0.65" />;
+}
+
+// זר / חבק פרחים עשיר ומלא: ורדים מרובדים + עלים + ענפי אקליפטוס + נגיעות גיבסניות
 function Bouquet({ cx, cy, s = 1, accent = ART.gold }: { cx: number; cy: number; s?: number; accent?: string }) {
-  const leaves: [number, number, number][] = [[-9, -3, -35], [9, -4, 35], [-8, 7, -70], [8, 8, 70], [0, -10, 0], [-3, 9, -115], [4, 9, 115]];
-  const roses: [number, number, number, string][] = [[0, 0, 5, accent], [-6, -1, 3.6, ART.soft], [6, -2, 4, ART.soft], [-3, 5, 3.4, accent], [4, 5, 3.2, ART.soft], [0, -6, 3.4, accent], [-7, 4, 2.6, ART.soft], [7, 3, 2.8, accent]];
+  const leaves: [number, number, number][] = [[-9, -3, -35], [9, -4, 35], [-8, 7, -70], [8, 8, 70], [0, -10, 0], [-3, 9, -115], [4, 9, 115], [-11, 1, -50], [11, 0, 50]];
+  const roses: [number, number, number, string][] = [
+    [0, 0, 5.2, accent], [-6, -1, 3.9, ART.soft], [6, -2, 4.2, ART.soft], [-3, 5, 3.6, accent],
+    [4, 5, 3.4, ART.soft], [0, -6, 3.6, accent], [-7, 4, 2.8, ART.soft], [7, 3, 3, accent],
+    [-9, -4, 2.5, accent], [9, -3, 2.7, ART.soft], [2, -9, 2.6, ART.soft]
+  ];
+  const gyps: [number, number][] = [[-10, 3], [10, 2], [-5, -8], [8, -7], [0, 9], [-2, -3], [5, 0]];
   return (
     <g transform={`translate(${cx} ${cy}) scale(${s})`}>
+      {/* עלווה נשפכת מטה */}
       <path d="M-2 6 q-4 12 -7 22" fill="none" stroke={ART.sage} strokeWidth="1" opacity="0.6" />
       <path d="M3 6 q3 13 6 24" fill="none" stroke={ART.sage} strokeWidth="1" opacity="0.6" />
       <path d="M0 7 q0 14 0 26" fill="none" stroke={ART.sage} strokeWidth="0.9" opacity="0.5" />
+      {/* ענפי אקליפטוס בצדדים */}
+      <Sprig d="M-8 -2 q-8 -4 -13 -11" />
+      <Sprig d="M8 -2 q8 -4 13 -11" />
       {leaves.map(([lx, ly, r], i) => <Leaf key={`l${i}`} cx={lx} cy={ly} rot={r} />)}
       {roses.map(([rx, ry, rr, f], i) => <Rose key={`r${i}`} cx={rx} cy={ry} r={rr} fill={f} />)}
+      {/* נגיעות גיבסניות לבנות */}
+      {gyps.map(([gx, gy], i) => <circle key={`g${i}`} cx={gx} cy={gy} r="0.9" fill="#FFFFFF" opacity="0.85" />)}
     </g>
   );
 }
@@ -740,99 +756,147 @@ export function renderPackageSVG(type: string) {
       </>
     );
 
-  // איור עמדת בר מתוק: שולחן + 2 צנצנות ממתקים + מגדל קינוחים + זר משי
+  // איור בר חמצוצים: צנצנות אפותקרי עם מכסה-כיפה מלאות ממתקים + מגדל ממתקים + צנצנת מקלות
+  const candyColor = (k: number) => (k % 3 === 0 ? gold : k % 3 === 1 ? soft : ART.sage);
+  const apothecaryJar = (x: number, h: number, w: number) => {
+    const base = 87;
+    const top = base - h;
+    const dots: [number, number, number][] = [];
+    const rows = Math.floor((h - 6) / 4.6);
+    for (let r = 0; r < rows; r++) {
+      const yy = base - 4 - r * 4.6;
+      const cols = w > 15 ? 3 : 2;
+      const span = w - 8;
+      for (let c = 0; c < cols; c++) dots.push([x - span / 2 + (c * span) / (cols - 1), yy, dots.length]);
+    }
+    return (
+      <g key={`jar${x}`}>
+        <path d={`M${x - w / 2} ${top + 5} Q${x - w / 2 - 1.5} ${base} ${x} ${base} Q${x + w / 2 + 1.5} ${base} ${x + w / 2} ${top + 5} Z`} fill={cream} stroke={gold} strokeWidth="0.7" opacity="0.96" />
+        {dots.map(([dx, dy, k]) => <circle key={k} cx={dx} cy={dy} r="1.9" fill={candyColor(k)} opacity="0.9" />)}
+        <rect x={x - w * 0.3} y={top} width={w * 0.6} height="3.4" rx="0.8" fill={cream} stroke={gold} strokeWidth="0.5" />
+        <path d={`M${x - w * 0.37} ${top} Q${x} ${top - w * 0.6} ${x + w * 0.37} ${top} Z`} fill={soft} stroke={gold} strokeWidth="0.6" />
+        <circle cx={x} cy={top - w * 0.48} r="1.7" fill={gold} />
+      </g>
+    );
+  };
   const bar = () => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
       <SceneBackdrop />
-      {/* שולחן הבר */}
-      <rect x="18" y="86" width="164" height="8" rx="2" fill={soft} stroke={gold} strokeWidth="0.6" />
-      {/* 2 צנצנות ממתקים (אפותקרי) */}
-      {[40, 62].map((x, i) => (
-        <g key={`jar${i}`}>
-          <path d={`M${x - 9} 60 Q${x - 10} 85 ${x} 85 Q${x + 10} 85 ${x + 9} 60 Z`} fill={cream} stroke={gold} strokeWidth="0.8" />
-          <ellipse cx={x} cy={60} rx="9" ry="2.6" fill={soft} stroke={gold} strokeWidth="0.6" />
-          <circle cx={x} cy={55} r="2.4" fill={gold} />
-          {[[-4, 73], [3, 71], [-1, 78], [5, 78], [-5, 68], [2, 65]].map(([dx, dy], k) => (
-            <circle key={k} cx={x + dx} cy={dy} r="2.3" fill={k % 2 ? gold : soft} opacity="0.9" />
-          ))}
-        </g>
-      ))}
-      {/* מגדל קינוחים דו-קומתי */}
-      <ellipse cx="108" cy="85" rx="22" ry="4" fill={soft} stroke={gold} strokeWidth="0.6" />
-      {[97, 105, 113, 119].map((cx, k) => <circle key={`d1${k}`} cx={cx} cy={81} r="2.6" fill={k % 2 ? gold : soft} />)}
-      <rect x="106" y="64" width="4" height="19" fill={gold} />
-      <ellipse cx="108" cy="64" rx="14" ry="3.4" fill={soft} stroke={gold} strokeWidth="0.6" />
-      {[101, 108, 115].map((cx, k) => <circle key={`d2${k}`} cx={cx} cy={60.5} r="2.6" fill={k % 2 ? gold : soft} />)}
+      <GroundShadow cx={100} cy={92} rx={80} ry={3.6} />
+      <rect x="14" y="87" width="172" height="7" rx="2" fill={soft} stroke={gold} strokeWidth="0.6" />
+      {apothecaryJar(38, 42, 19)}
+      {apothecaryJar(63, 33, 15)}
+      {/* מגדל ממתקים דו-קומתי */}
+      <g>
+        <rect x="105" y="58" width="3" height="29" fill={gold} />
+        <ellipse cx="106.5" cy="86" rx="20" ry="3.6" fill={cream} stroke={gold} strokeWidth="0.6" />
+        {[92, 99, 106, 113, 121].map((cx, k) => <circle key={`t1${k}`} cx={cx} cy={82} r="2.5" fill={candyColor(k)} />)}
+        <ellipse cx="106.5" cy="58" rx="12" ry="3" fill={cream} stroke={gold} strokeWidth="0.6" />
+        {[99, 106, 113].map((cx, k) => <circle key={`t2${k}`} cx={cx} cy={54.5} r="2.5" fill={candyColor(k + 1)} />)}
+      </g>
+      {/* צנצנת מקלות (breadsticks/לוליפופ) */}
+      <g>
+        <rect x="142" y="60" width="13" height="27" rx="1.5" fill={cream} stroke={gold} strokeWidth="0.6" opacity="0.95" />
+        {[145, 148.5, 152].map((sx, k) => <line key={k} x1={sx} y1="62" x2={sx + (k - 1) * 1.5} y2="40" stroke={k % 2 ? gold : soft} strokeWidth="1.4" strokeLinecap="round" />)}
+        {[145, 148.5, 152].map((sx, k) => <circle key={`b${k}`} cx={sx + (k - 1) * 1.5} cy="40" r="2" fill={candyColor(k)} />)}
+      </g>
       {/* זר משי לעיצוב הבר */}
-      <Bouquet cx={160} cy={64} s={0.8} />
-      <path d="M154 78 Q153 85 156 86 L164 86 Q167 85 166 78 Z" fill={cream} stroke={soft} />
+      <Bouquet cx={173} cy={66} s={0.7} />
+      <path d="M168 78 Q167 86 170 87 L176 87 Q179 86 178 78 Z" fill={cream} stroke={soft} strokeWidth="0.5" />
     </svg>
   );
 
-  // איור בר ממותג: שלט שם + קופסאות מתנה ממותגות עם פפיון + עמודי בלונים
+  // קופסת מתנה ממותגת עם סרט ופפיון
+  const giftBox = (x: number, y: number, w: number, h: number, c: string, key: string) => (
+    <g key={key}>
+      <rect x={x} y={y} width={w} height={h} rx="1.5" fill={c} opacity="0.92" stroke={gold} strokeWidth="0.5" />
+      <rect x={x + w / 2 - 1.3} y={y} width="2.6" height={h} fill={cream} opacity="0.85" />
+      <path d={`M${x + w / 2} ${y} q -5 -4 -6.5 0 q 4 1 6.5 0 q 2.5 1 6.5 0 q -1.5 -4 -6.5 0`} fill={cream} stroke={gold} strokeWidth="0.4" />
+    </g>
+  );
+  // איור בר ממותג: מדליון מונוגרמה מרכזי + קופסאות מתנה ממותגות + בקבוקים ממותגים
   const barBranded = () => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
       <SceneBackdrop />
-      <rect x="18" y="86" width="164" height="8" rx="2" fill={soft} stroke={gold} strokeWidth="0.6" />
-      {/* שלט קפה ממותג עם שם */}
-      <rect x="78" y="28" width="44" height="30" rx="3" fill={cream} stroke={gold} strokeWidth="1.3" />
-      {[38, 44, 50].map((y, i) => (
-        <line key={i} x1="86" y1={y} x2={i === 1 ? 108 : 114} y2={y} stroke={soft} strokeWidth="2.2" strokeLinecap="round" />
-      ))}
-      <rect x="98.5" y="58" width="3" height="26" fill={gold} />
-      {/* קופסאות מתנה ממותגות מוערמות */}
-      {[
-        { x: 40, y: 64, w: 26, h: 20, c: gold },
-        { x: 46, y: 50, w: 16, h: 14, c: soft },
-        { x: 132, y: 66, w: 28, h: 18, c: soft },
-        { x: 138, y: 52, w: 16, h: 14, c: gold }
-      ].map((b, i) => (
-        <g key={`gb${i}`}>
-          <rect x={b.x} y={b.y} width={b.w} height={b.h} rx="2" fill={b.c} opacity="0.92" stroke={gold} strokeWidth="0.5" />
-          <rect x={b.x + b.w / 2 - 1.4} y={b.y} width="2.8" height={b.h} fill={cream} opacity="0.85" />
-          <path d={`M${b.x + b.w / 2} ${b.y} q -5 -4 -6.5 0 q 4 1 6.5 0 q 2.5 1 6.5 0 q -1.5 -4 -6.5 0`} fill={cream} stroke={gold} strokeWidth="0.4" />
-        </g>
-      ))}
-      {/* עמודי בלונים בצדדים */}
-      {[24, 176].map((x, c) => (
-        <g key={`bc${c}`}>
-          {[80, 70, 60, 51].map((y, i) => (
-            <circle key={i} cx={x + (i % 2 ? 3 : -3)} cy={y} r={5 - i * 0.3} fill={i % 2 ? gold : soft} opacity="0.9" />
-          ))}
+      <GroundShadow cx={100} cy={92} rx={80} ry={3.6} />
+      <rect x="14" y="87" width="172" height="7" rx="2" fill={soft} stroke={gold} strokeWidth="0.6" />
+
+      {/* מדליון מונוגרמה מרכזי על מעמד, מוקף זר עלים */}
+      <rect x="98.5" y="55" width="3" height="32" fill="url(#ldPost)" />
+      <circle cx="100" cy="40" r="15" fill={cream} stroke={gold} strokeWidth="1.3" />
+      <circle cx="100" cy="40" r="11.5" fill="none" stroke={soft} strokeWidth="0.7" />
+      {/* זר עלים סביב המדליון */}
+      {Array.from({ length: 14 }).map((_, i) => {
+        const a = (i / 14) * Math.PI * 2;
+        return <Leaf key={`w${i}`} cx={100 + Math.cos(a) * 15} cy={40 + Math.sin(a) * 15} rot={(a * 180) / Math.PI + 90} len={4.5} />;
+      })}
+      {/* פלוריש מונוגרמה מסוגנן */}
+      <path d="M96 45 q4 -12 0 -12 q-4 6 4 6 q4 0 0 6" fill="none" stroke={gold} strokeWidth="1.1" strokeLinecap="round" />
+      <path d="M104 45 q-4 -12 0 -12 q4 6 -4 6 q-4 0 0 6" fill="none" stroke={gold} strokeWidth="1.1" strokeLinecap="round" opacity="0.8" />
+      {/* פרחים בבסיס המדליון */}
+      <Rose cx={90} cy={64} r={3.4} fill={gold} />
+      <Rose cx={110} cy={64} r={3.4} fill={soft} />
+      <Rose cx={100} cy={66} r={2.8} fill={soft} />
+
+      {/* קופסאות מתנה מוערמות משמאל */}
+      {giftBox(34, 67, 26, 20, gold, 'gb1')}
+      {giftBox(40, 53, 16, 14, soft, 'gb2')}
+
+      {/* בקבוקים ממותגים מימין */}
+      {[150, 164].map((x, i) => (
+        <g key={`btl${i}`}>
+          <path d={`M${x - 3.5} 87 L${x - 3.5} 64 Q${x - 3.5} 60 ${x - 1.5} 58 L${x - 1.5} 51 L${x + 1.5} 51 L${x + 1.5} 58 Q${x + 3.5} 60 ${x + 3.5} 64 L${x + 3.5} 87 Z`} fill={i ? soft : cream} stroke={gold} strokeWidth="0.6" opacity="0.95" />
+          <rect x={x - 3.5} y="70" width="7" height="9" fill={cream} stroke={gold} strokeWidth="0.4" opacity="0.9" />
+          <line x1={x - 2} y1="74" x2={x + 2} y2="74" stroke={gold} strokeWidth="0.5" />
         </g>
       ))}
     </svg>
   );
 
-  // איור בר בוטיק: מעמד קינוחים תלת-קומתי אלגנטי + כיפת זכוכית + זר משי
+  // מעמד קינוחים מדורג (מקרונים) — עמוד + מגשים יורדים
+  const dessertStand = (x: number, tiers: { dy: number; rx: number }[], key: string) => {
+    const base = 87;
+    const topDy = tiers[tiers.length - 1].dy;
+    return (
+      <g key={key}>
+        <rect x={x - 1.5} y={base - topDy} width="3" height={topDy} fill="url(#ldPost)" />
+        <ellipse cx={x} cy={base} rx={tiers[0].rx * 0.55} ry="1.6" fill={soft} stroke={gold} strokeWidth="0.5" />
+        {tiers.map((t, i) => (
+          <g key={i}>
+            <ellipse cx={x} cy={base - t.dy} rx={t.rx} ry="2.6" fill={cream} stroke={gold} strokeWidth="0.6" />
+            {Array.from({ length: Math.max(2, Math.round(t.rx / 3.4)) }).map((_, k, arr) => {
+              const span = t.rx * 2 - 5;
+              const dx = -span / 2 + (k * span) / (arr.length - 1 || 1);
+              return <circle key={k} cx={x + dx} cy={base - t.dy - 2.6} r="2.1" fill={k % 3 === 0 ? gold : k % 3 === 1 ? soft : ART.deep} opacity="0.9" />;
+            })}
+          </g>
+        ))}
+        <circle cx={x} cy={base - topDy - 1.5} r="2" fill={gold} />
+      </g>
+    );
+  };
+  // גביע שמפניה — גביע צר, רגל ובסיס + בועות
+  const flute = (x: number, key: string) => (
+    <g key={key}>
+      <path d={`M${x - 2.8} 56 Q${x} 70 ${x} 70 Q${x} 70 ${x + 2.8} 56 Z`} fill="url(#ldFabric)" stroke={gold} strokeWidth="0.6" opacity="0.85" />
+      <line x1={x} y1="70" x2={x} y2="84" stroke={gold} strokeWidth="0.8" />
+      <ellipse cx={x} cy="85" rx="3" ry="0.9" fill={soft} stroke={gold} strokeWidth="0.4" />
+      {[60, 63.5, 66].map((by, k) => <circle key={k} cx={x + (k % 2 ? 0.8 : -0.8)} cy={by} r="0.6" fill={gold} opacity="0.7" />)}
+    </g>
+  );
+  // איור בר בוטיק: 2 מעמדי קינוחים מדורגים + גביעי שמפניה + זר גבוה
   const barBoutique = () => (
     <svg width="100%" height="104" viewBox="0 0 200 108" aria-hidden="true" focusable="false">
       <SceneBackdrop />
-      <rect x="18" y="86" width="164" height="8" rx="2" fill={soft} stroke={gold} strokeWidth="0.6" />
-      {/* מעמד קינוחים תלת-קומתי */}
-      <rect x="84" y="40" width="3" height="46" fill={gold} />
-      {[
-        { cy: 84, rx: 26 },
-        { cy: 64, rx: 19 },
-        { cy: 46, rx: 12 }
-      ].map((p, i) => (
-        <g key={`tier${i}`}>
-          <ellipse cx="85.5" cy={p.cy} rx={p.rx} ry="3.4" fill={cream} stroke={gold} strokeWidth="0.7" />
-          {Array.from({ length: Math.max(2, Math.round(p.rx / 4)) }).map((_, k) => {
-            const dx = -p.rx + 5 + k * 7;
-            return <circle key={k} cx={85.5 + dx} cy={p.cy - 3} r="2.5" fill={k % 2 ? gold : soft} opacity="0.92" />;
-          })}
-        </g>
-      ))}
-      <circle cx="85.5" cy="41" r="3" fill={gold} />
-      {/* כיפת זכוכית (cloche) עם עוגה */}
-      <path d="M134 84 A18 22 0 0 1 170 84 Z" fill="url(#ldFabric)" opacity="0.4" stroke={soft} strokeWidth="0.8" />
-      <rect x="142" y="74" width="20" height="10" rx="1.5" fill={cream} stroke={gold} strokeWidth="0.6" />
-      <circle cx="152" cy="60" r="2.6" fill={gold} />
-      <ellipse cx="152" cy="85" rx="20" ry="3" fill={soft} stroke={gold} strokeWidth="0.5" />
-      {/* זר משי */}
-      <Bouquet cx={36} cy={64} s={0.85} />
-      <path d="M30 78 Q29 85 32 86 L40 86 Q43 85 42 78 Z" fill={cream} stroke={soft} />
+      <GroundShadow cx={100} cy={92} rx={80} ry={3.6} />
+      <rect x="14" y="87" width="172" height="7" rx="2" fill={soft} stroke={gold} strokeWidth="0.6" />
+      {dessertStand(48, [{ dy: 6, rx: 18 }, { dy: 24, rx: 13 }, { dy: 40, rx: 8 }], 'st1')}
+      {dessertStand(104, [{ dy: 6, rx: 14 }, { dy: 22, rx: 9 }], 'st2')}
+      {flute(138, 'fl1')}
+      {flute(147, 'fl2')}
+      {/* זר גבוה באגרטל */}
+      <path d="M168 87 Q166 70 169 66 L177 66 Q180 70 178 87 Z" fill={cream} stroke={gold} strokeWidth="0.6" />
+      <Bouquet cx={173} cy={56} s={0.78} />
     </svg>
   );
 
