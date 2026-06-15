@@ -100,10 +100,10 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
               <span className="font-display font-bold text-lg text-white">LD Event Design</span>
             </div>
             <p className="text-xs text-[#EAE3D2]/60 mt-3 leading-relaxed max-w-xs">{t('home.heroSub')}</p>
-            <p className="flex items-center gap-1.5 text-sm font-bold mt-4 text-[#D8C29A]">
+            <a href="tel:+972545740423" className="inline-flex items-center gap-1.5 text-sm font-bold mt-4 text-[#D8C29A] hover:text-white transition-colors">
               <Phone className="w-3.5 h-3.5" aria-hidden="true" />
               <span dir="ltr">{t('brand.phone')}</span>
-            </p>
+            </a>
           </div>
 
           {/* ניווט */}
@@ -139,7 +139,16 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
         </div>
         <div className="border-t border-white/10">
           <p className="max-w-5xl mx-auto px-4 py-4 text-[11px] text-[#EAE3D2]/50 text-center">
-            {t('footer.rights', { year: new Date().getFullYear() })}
+            <bdi dir="ltr">© {new Date().getFullYear()} LD EVENT DESIGN.</bdi> {t('footer.rights')}
+            <br />
+            <a
+              href={`https://wa.me/972587170978?text=${encodeURIComponent('היי ניסן, ראיתי אתר שעיצבת ואשמח לפרטים על בניית אתר 🙂')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#EAE3D2]/70 hover:text-white underline-offset-2 hover:underline transition-colors"
+            >
+              {t('footer.credit')}
+            </a>
           </p>
         </div>
       </footer>

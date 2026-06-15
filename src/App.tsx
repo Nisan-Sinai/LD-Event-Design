@@ -604,14 +604,18 @@ export function renderPackageSVG(type: string) {
   // איור חופה קלאסית מותאם לדרגה: S פשוט · M עשיר יותר · L יוקרתי ומלא
   // ככל שעולים בדרגה — מתווספים כתר פרחים על הקורה ונרות לאורך השביל.
   const chuppahCurtains = (level: 's' | 'm' | 'l') => {
-    const bouqScale = level === 'l' ? 1.35 : level === 'm' ? 1.22 : 1.12;
+    const bouqScale = level === 'l' ? 1.75 : level === 'm' ? 1.6 : 1.45;
     return chuppahFrame(
       <>
-        <g opacity="0.85" fill="url(#ldFabric)" stroke={gold} strokeOpacity="0.35" strokeWidth="0.6">
-          {/* תליית בד מרכזית (swag) */}
-          <path d="M50 28 Q100 60 150 28 Q138 44 100 50 Q62 44 50 28 Z" />
-          <path d="M52 28 Q44 64 54 95 Q60 70 60 30 Z" />
-          <path d="M148 28 Q156 64 146 95 Q140 70 140 30 Z" />
+        {/* בד שקוף ונשפך: swag מרכזי + 2 פאנלים זורמים עם קווי קיפול עדינים */}
+        <g>
+          <path d="M50 27 Q100 58 150 27 Q140 46 100 52 Q60 46 50 27 Z" fill="url(#ldFabric)" opacity="0.6" stroke={gold} strokeOpacity="0.3" strokeWidth="0.5" />
+          <path d="M62 33 Q100 53 138 33" fill="none" stroke={gold} strokeOpacity="0.25" strokeWidth="0.4" />
+          <path d="M72 38 Q100 51 128 38" fill="none" stroke={gold} strokeOpacity="0.2" strokeWidth="0.4" />
+          <path d="M52 27 Q41 60 50 96 Q58 70 60 30 Z" fill="url(#ldFabric)" opacity="0.5" stroke={gold} strokeOpacity="0.28" strokeWidth="0.5" />
+          <path d="M54 31 Q47 62 51 92" fill="none" stroke={gold} strokeOpacity="0.22" strokeWidth="0.4" />
+          <path d="M148 27 Q159 60 150 96 Q142 70 140 30 Z" fill="url(#ldFabric)" opacity="0.5" stroke={gold} strokeOpacity="0.28" strokeWidth="0.5" />
+          <path d="M146 31 Q153 62 149 92" fill="none" stroke={gold} strokeOpacity="0.22" strokeWidth="0.4" />
         </g>
 
         {/* M — אשכול פרחים מרכזי על הקורה */}
@@ -650,8 +654,8 @@ export function renderPackageSVG(type: string) {
           <path d="M126 30 Q130 64 122 95 Q116 70 118 32 Z" />
           <path d="M148 28 Q156 66 146 95 Q140 72 140 30 Z" />
         </g>
-        <Bouquet cx={52} cy={34} s={1.3} />
-        <Bouquet cx={148} cy={34} s={1.3} />
+        <Bouquet cx={52} cy={34} s={1.65} />
+        <Bouquet cx={148} cy={34} s={1.65} />
       </>
     );
 
@@ -1285,8 +1289,13 @@ export default function App() {
       const brideNameTrimmed = clientInfo.brideName.trim();
       if (!brideNameTrimmed) tempErrors.brideName = t('errors.brideNameRequired');
       else if (brideNameTrimmed.split(/\s+/).length < 2) tempErrors.brideName = t('errors.brideNameFull');
-      // טלפון: חובה + בדיקת פורמט בסיסית (לפחות 9 ספרות)
-      const isPhoneValid = (p: string) => p.replace(/\D/g, '').length >= 9;
+      // טלפון: חובה + ולידציה של מספר ישראלי תקין
+      //   נייד 05X-XXXXXXX (10 ספרות) או קווי 0X-XXXXXXX (9 ספרות), כולל +972
+      const isPhoneValid = (p: string) => {
+        let d = p.replace(/\D/g, '');
+        if (d.startsWith('972')) d = '0' + d.slice(3);
+        return /^0\d{8,9}$/.test(d);
+      };
       if (!clientInfo.groomPhone.trim()) tempErrors.groomPhone = t('errors.groomPhoneRequired');
       else if (!isPhoneValid(clientInfo.groomPhone)) tempErrors.groomPhone = t('errors.phoneInvalid');
       if (!clientInfo.bridePhone.trim()) tempErrors.bridePhone = t('errors.bridePhoneRequired');
@@ -1580,10 +1589,10 @@ export default function App() {
                 EN
               </button>
             </div>
-            <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600 bg-[#FAF7F2] py-1.5 px-3 rounded-full border border-[#EAE3D2]">
+            <a href="tel:+972545740423" className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600 hover:text-[#B29259] bg-[#FAF7F2] py-1.5 px-3 rounded-full border border-[#EAE3D2] hover:border-[#B29259] transition-colors">
               <Phone className="w-4 h-4 text-[#B29259]" aria-hidden="true" />
               <span className="font-bold" dir="ltr">{t('brand.phone')}</span>
-            </div>
+            </a>
           </div>
         </div>
       </header>
@@ -2865,7 +2874,17 @@ export default function App() {
             <span aria-hidden="true">·</span>
             <button type="button" onClick={() => setLegalModal('accessibility')} className="hover:text-[#B29259] underline">{t('legal.accessibility')}</button>
           </nav>
-          <p className="mt-1">{t('footer.rights', { year: new Date().getFullYear() })}</p>
+          <p className="mt-1"><bdi dir="ltr">© {new Date().getFullYear()} LD EVENT DESIGN.</bdi> {t('footer.rights')}</p>
+          <p className="mt-1">
+            <a
+              href={`https://wa.me/972587170978?text=${encodeURIComponent('היי ניסן, ראיתי אתר שעיצבת ואשמח לפרטים על בניית אתר 🙂')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-[#B29259] underline-offset-2 hover:underline transition-colors"
+            >
+              {t('footer.credit')}
+            </a>
+          </p>
         </div>
       </footer>
 

@@ -110,6 +110,14 @@ describe('Order wizard — step 1', () => {
     next1();
     expect(screen.getByText('מספר טלפון אינו תקין')).toBeInTheDocument();
   });
+
+  it('accepts an international +972 phone number', () => {
+    renderApp();
+    fillStep1();
+    fireEvent.change(screen.getByLabelText(/טלפון בעל האירוע/), { target: { value: '+972-50-123-4567' } });
+    next1();
+    expect(screen.getAllByText('מה כלול בחבילה?').length).toBeGreaterThan(0);
+  });
 });
 
 describe('Order wizard — admin mode', () => {
