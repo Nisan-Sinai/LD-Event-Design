@@ -7,11 +7,16 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        // פיצול ספריות צד-שלישי לצ'אנקים נפרדים (טעינה ו-caching טובים יותר)
-        manualChunks: {
-          react: ['react', 'react-dom', 'react-router-dom'],
-          supabase: ['@supabase/supabase-js'],
-          icons: ['lucide-react']
+        // פיצול ספריות צד-שלישי לצ'אנקים נפרדים (טעינה ו-caching טובים יותר).
+        // צורת-פונקציה (נדרשת מ-Vite 8 / Rollup 4): סדר הבדיקות חשוב —
+        // lucide-react מכיל "react" ולכן חייב להיבדק לפניו.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+          if (id.includes('lucide-react')) return 'icons';
+          if (id.includes('@supabase')) return 'supabase';
+          if (id.includes('react') || id.includes('react-dom') || id.includes('react-router') || id.includes('scheduler')) {
+            return 'react';
+          }
         }
       }
     }
