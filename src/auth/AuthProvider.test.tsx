@@ -7,7 +7,9 @@ const mock = vi.hoisted(() => ({
   session: null as unknown,
   signUp: vi.fn(async () => ({ error: null as { message: string } | null })),
   signIn: vi.fn(async () => ({ error: null as { message: string } | null })),
+  googleOAuth: vi.fn(async () => ({ error: null as { message: string } | null })),
   signOut: vi.fn(async () => ({})),
+  rpc: vi.fn(async () => ({ data: 0, error: null })),
   authCb: null as null | ((e: string, s: unknown) => void)
 }));
 
@@ -16,6 +18,7 @@ vi.mock('../lib/supabase', () => ({
     return mock.configured;
   },
   supabase: {
+    rpc: mock.rpc,
     auth: {
       getSession: async () => ({ data: { session: mock.session } }),
       onAuthStateChange: (cb: (e: string, s: unknown) => void) => {
@@ -24,13 +27,14 @@ vi.mock('../lib/supabase', () => ({
       },
       signUp: mock.signUp,
       signInWithPassword: mock.signIn,
+      signInWithOAuth: mock.googleOAuth,
       signOut: mock.signOut
     }
   }
 }));
 
 function Probe() {
-  const { user, role, loading, configured, signUp, signIn, signOut } = useAuth();
+  const { user, role, loading, configured, signUp, signIn, signInWithGoogle, signOut } = useAuth();
   return (
     <div>
       <span data-testid="loading">{String(loading)}</span>
@@ -39,6 +43,7 @@ function Probe() {
       <span data-testid="configured">{String(configured)}</span>
       <button onClick={() => void signUp('a@b.com', 'pw')}>signup</button>
       <button onClick={() => void signIn('a@b.com', 'pw')}>signin</button>
+      <button onClick={() => void signInWithGoogle()}>google</button>
       <button onClick={() => void signOut()}>signout</button>
     </div>
   );
@@ -51,7 +56,9 @@ beforeEach(() => {
   mock.session = null;
   mock.signUp.mockClear().mockResolvedValue({ error: null });
   mock.signIn.mockClear().mockResolvedValue({ error: null });
+  mock.googleOAuth.mockClear().mockResolvedValue({ error: null });
   mock.signOut.mockClear();
+  mock.rpc.mockClear().mockResolvedValue({ data: 0, error: null });
   mock.authCb = null;
 });
 
@@ -85,11 +92,32 @@ describe('AuthProvider — configured', () => {
     await waitFor(() => expect(screen.getByTestId('role').textContent).toBe('customer'));
   });
 
-  it('reacts to auth state changes', async () => {
+  it('reacts to auth state changes and claims guest orders on sign-in', async () => {
     renderAuth();
     await waitFor(() => expect(screen.getByTestId('role').textContent).toBe('guest'));
     act(() => mock.authCb?.('SIGNED_IN', { user: { id: '9', email: 'other@x.com' } }));
     await waitFor(() => expect(screen.getByTestId('role').textContent).toBe('customer'));
+    expect(mock.rpc).toHaveBeenCalledWith('claim_my_orders');
+  });
+
+  it('does not claim orders on non-sign-in events', async () => {
+    renderAuth();
+    await waitFor(() => expect(screen.getByTestId('loading').textContent).toBe('false'));
+    act(() => mock.authCb?.('SIGNED_OUT', null));
+    expect(mock.rpc).not.toHaveBeenCalled();
+  });
+
+  it('signs in with Google (and short-circuits when not configured)', async () => {
+    mock.configured = false;
+    const { unmount } = renderAuth();
+    await waitFor(() => expect(screen.getByTestId('loading').textContent).toBe('false'));
+    await act(async () => screen.getByText('google').click());
+    expect(mock.googleOAuth).not.toHaveBeenCalled();
+    unmount();
+    mock.configured = true;
+    renderAuth();
+    await act(async () => screen.getByText('google').click());
+    expect(mock.googleOAuth).toHaveBeenCalledWith(expect.objectContaining({ provider: 'google' }));
   });
 
   it('forwards signUp / signIn / signOut to supabase', async () => {

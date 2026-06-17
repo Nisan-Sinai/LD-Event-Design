@@ -76,6 +76,23 @@ create policy "orders select own or admin" on public.orders
   for select to authenticated
   using (user_id = auth.uid() or public.is_admin());
 
+-- שיוך הזמנות-אורח לחשבון חדש לפי האימייל המאומת (guest checkout → "צור חשבון לעקוב").
+-- מאובטח: משייך רק הזמנות עם האימייל המאומת של המשתמש המחובר (email_confirmed_at לא ריק).
+create or replace function public.claim_my_orders()
+returns integer language plpgsql security definer set search_path = public as $$
+declare claimed integer; my_email text;
+begin
+  select lower(email) into my_email
+    from auth.users where id = auth.uid() and email_confirmed_at is not null;
+  if my_email is null or my_email = '' then return 0; end if;
+  update public.orders set user_id = auth.uid()
+    where user_id is null and lower(email) = my_email;
+  get diagnostics claimed = row_count;
+  return claimed;
+end; $$;
+revoke all on function public.claim_my_orders() from public, anon;
+grant execute on function public.claim_my_orders() to authenticated;
+
 -- 4) Storage — חתימות (bucket "signatures"):
 --    אורח ומשתמש מחובר מעלים; מנהל יכול לקרוא (לתצוגת חתימה בדף הניהול).
 drop policy if exists "allow auth upload signatures" on storage.objects;

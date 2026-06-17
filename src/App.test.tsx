@@ -341,8 +341,8 @@ describe('Order wizard — admin line editing', () => {
   });
 });
 
-describe('Order wizard — guest auth gate (configured)', () => {
-  it('opens the auth modal at confirm when no user is logged in', () => {
+describe('Order wizard — guest checkout (configured)', () => {
+  it('submits as a guest (no account) and shows the success + optional account CTA', async () => {
     env.configured = true;
     env.user = null;
     renderApp();
@@ -354,7 +354,10 @@ describe('Order wizard — guest auth gate (configured)', () => {
     fireEvent.click(screen.getByRole('checkbox'));
     sign();
     fireEvent.click(screen.getByRole('button', { name: /אישור והדפסת ההזמנה/ }));
-    expect(screen.getByText('רגע אחד — נשאר רק להתחבר')).toBeInTheDocument();
+    await waitFor(() => expect(env.submit).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByText(/ההזמנה נשלחה בהצלחה/)).toBeInTheDocument());
+    // אורח לא-מחובר מקבל הצעה אופציונלית ליצור חשבון
+    expect(screen.getByRole('button', { name: /צרו חשבון/ })).toBeInTheDocument();
   });
 });
 

@@ -209,7 +209,11 @@
     "signDate": "Signature date:",
     "back": "Back to packages",
     "submitIdle": "Confirm & print the order",
-    "submitting": "Saving & sending..."
+    "submitting": "Saving & sending...",
+    "submittedTitle": "Your order was sent! 🎉",
+    "submittedSub": "We've emailed you a confirmation with the order summary. We're here for any question.",
+    "printAgain": "Print the order",
+    "createAccountCta": "Want to track your order? Create an account"
   },
   "a11y": {
     "skip": "Skip to main content",
@@ -310,10 +314,12 @@
     "registerSuccess": "Registration successful! You can now log in. If email verification is enabled — check your inbox.",
     "invalidEmail": "Invalid email address",
     "shortPassword": "Password must be at least 6 characters",
-    "gateTitle": "One moment — just log in",
-    "gateSub": "Confirming and saving the order requires an account. Don't worry — the order you built stays exactly as it is, and we'll continue from the same point.",
+    "gateTitle": "Track your order",
+    "gateSub": "Your order is already saved ✓ — create an account or log in to track it in your area.",
     "tabLogin": "Log in",
-    "tabRegister": "Quick sign-up"
+    "tabRegister": "Quick sign-up",
+    "google": "Continue with Google",
+    "or": "or"
   },
   "account": {
     "title": "My orders",
