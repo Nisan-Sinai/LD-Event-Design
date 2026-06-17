@@ -1097,9 +1097,9 @@ export default function App() {
   const [showTermsError, setShowTermsError] = useState(false);
   const [legalModal, setLegalModal] = useState<null | 'privacy' | 'terms' | 'accessibility'>(null);
 
-  // שער הזדהות באישור: אורח ממלא הכול, ורק באישור נדרש חשבון
+  // הזמנה נשלחה (guest checkout) — מציגים מסך הצלחה עם הצעה אופציונלית ליצור חשבון
+  const [orderSubmitted, setOrderSubmitted] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [pendingConfirm, setPendingConfirm] = useState(false);
 
   // מצב שליחה/שמירה
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -1343,18 +1343,14 @@ export default function App() {
       window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
       return;
     }
-    // אורח שמילא הכול — נדרש להתחבר/להירשם רק עכשיו, בלי לאבד את ההזמנה
-    if (isSupabaseConfigured && !user) {
-      setPendingConfirm(true);
-      setAuthModalOpen(true);
-      return;
-    }
     setShowSignatureError(false);
     setSubmitError(null);
 
-    // אם Supabase לא הוגדר עדיין — מדפיסים בלי לשמור (כדי שהאפליקציה תעבוד בינתיים)
+    // Guest checkout — אין צורך בחשבון. אם הלקוח לא מחובר, ההזמנה נשמרת כאורח (RLS מתיר),
+    // והוא יכול לבחור אחר כך ליצור חשבון כדי לעקוב (ההזמנה תשויך לפי האימייל המאומת).
     if (!isSupabaseConfigured) {
       window.print();
+      setOrderSubmitted(true);
       return;
     }
 
@@ -1402,6 +1398,7 @@ export default function App() {
         brideSignatureDataUrl
       );
       window.print();
+      setOrderSubmitted(true);
     } catch (err) {
       console.error('שמירת ההזמנה נכשלה:', err);
       setSubmitError(t('errors.saveFailed'));
@@ -1409,16 +1406,6 @@ export default function App() {
       setIsSubmitting(false);
     }
   };
-
-  // המשך אוטומטי של אישור ההזמנה מיד אחרי התחברות מוצלחת מהמודאל
-  useEffect(() => {
-    if (pendingConfirm && user) {
-      setPendingConfirm(false);
-      setAuthModalOpen(false);
-      void handleConfirm();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, pendingConfirm]);
 
   // אתחול קנבסים לחתימה דיגיטלית (חתן וכלה)
   useEffect(() => {
@@ -2836,26 +2823,56 @@ export default function App() {
               </div>
             )}
 
-            {/* בקרי ניווט שלב 3 */}
-            <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-[#EAE3D2] shadow-sm no-print">
-              <button
-                onClick={handleBack}
-                disabled={isSubmitting}
-                className="text-gray-600 hover:text-[#B29259] text-xs font-bold flex items-center gap-1 px-3 py-1.5 disabled:opacity-50"
-              >
-                {lang === 'he' ? <ArrowRight className="w-4 h-4" aria-hidden="true" /> : <ArrowLeft className="w-4 h-4" aria-hidden="true" />}
-                {t('step3.back')}
-              </button>
+            {/* מסך הצלחה (לאחר שליחה) — guest checkout + הצעה אופציונלית ליצור חשבון */}
+            {orderSubmitted ? (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-center no-print">
+                <div className="w-12 h-12 mx-auto rounded-full bg-emerald-500 text-white flex items-center justify-center mb-2">
+                  <Check className="w-6 h-6" aria-hidden="true" />
+                </div>
+                <h3 className="text-lg font-bold text-emerald-800">{t('step3.submittedTitle')}</h3>
+                <p className="text-xs text-emerald-700 mt-1">{t('step3.submittedSub')}</p>
+                <div className="flex flex-wrap justify-center gap-2 mt-4">
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="flex items-center gap-1.5 border border-emerald-300 text-emerald-800 hover:bg-emerald-100 px-4 py-2 rounded-xl text-xs font-bold transition-colors"
+                  >
+                    <Printer className="w-4 h-4" aria-hidden="true" />
+                    {t('step3.printAgain')}
+                  </button>
+                  {isSupabaseConfigured && !user && (
+                    <button
+                      type="button"
+                      onClick={() => setAuthModalOpen(true)}
+                      className="sheen bg-[#B29259] hover:bg-[#8C6D3F] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition-colors"
+                    >
+                      {t('step3.createAccountCta')}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* בקרי ניווט שלב 3 */
+              <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-[#EAE3D2] shadow-sm no-print">
+                <button
+                  onClick={handleBack}
+                  disabled={isSubmitting}
+                  className="text-gray-600 hover:text-[#B29259] text-xs font-bold flex items-center gap-1 px-3 py-1.5 disabled:opacity-50"
+                >
+                  {lang === 'he' ? <ArrowRight className="w-4 h-4" aria-hidden="true" /> : <ArrowLeft className="w-4 h-4" aria-hidden="true" />}
+                  {t('step3.back')}
+                </button>
 
-              <button
-                onClick={handleConfirm}
-                disabled={isSubmitting}
-                className="sheen bg-[#B29259] hover:bg-[#8C6D3F] text-white px-6 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shadow-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                <Printer className="w-4 h-4" aria-hidden="true" />
-                {isSubmitting ? t('step3.submitting') : t('step3.submitIdle')}
-              </button>
-            </div>
+                <button
+                  onClick={handleConfirm}
+                  disabled={isSubmitting}
+                  className="sheen bg-[#B29259] hover:bg-[#8C6D3F] text-white px-6 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shadow-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <Printer className="w-4 h-4" aria-hidden="true" />
+                  {isSubmitting ? t('step3.submitting') : t('step3.submitIdle')}
+                </button>
+              </div>
+            )}
 
           </div>
         )}
@@ -2922,13 +2939,10 @@ export default function App() {
         </div>
       )}
 
-      {/* שער הזדהות באישור הזמנה (אורח) */}
+      {/* הצעה אופציונלית ליצור חשבון לאחר שליחת ההזמנה (guest checkout) */}
       <AuthModal
         open={authModalOpen}
-        onClose={() => {
-          setAuthModalOpen(false);
-          setPendingConfirm(false);
-        }}
+        onClose={() => setAuthModalOpen(false)}
         onSuccess={() => setAuthModalOpen(false)}
       />
 

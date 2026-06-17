@@ -6,10 +6,11 @@ import { AuthModal } from './AuthModal';
 const a = vi.hoisted(() => ({
   configured: true,
   signUp: vi.fn(async () => ({ error: null as string | null })),
-  signIn: vi.fn(async () => ({ error: null as string | null }))
+  signIn: vi.fn(async () => ({ error: null as string | null })),
+  google: vi.fn(async () => ({ error: null as string | null }))
 }));
 vi.mock('../auth/AuthProvider', () => ({
-  useAuth: () => ({ signUp: a.signUp, signIn: a.signIn, configured: a.configured })
+  useAuth: () => ({ signUp: a.signUp, signIn: a.signIn, signInWithGoogle: a.google, configured: a.configured })
 }));
 
 function renderModal(props: Partial<{ open: boolean; onClose: () => void; onSuccess: () => void }> = {}) {
@@ -32,9 +33,22 @@ beforeEach(() => {
   a.configured = true;
   a.signUp.mockClear().mockResolvedValue({ error: null });
   a.signIn.mockClear().mockResolvedValue({ error: null });
+  a.google.mockClear().mockResolvedValue({ error: null });
 });
 
 describe('AuthModal', () => {
+  it('continues with Google (and blocks when not configured)', async () => {
+    const { rerender } = render(
+      <I18nProvider><AuthModal open onClose={vi.fn()} onSuccess={vi.fn()} /></I18nProvider>
+    );
+    fireEvent.click(screen.getByRole('button', { name: /המשך עם Google/ }));
+    await waitFor(() => expect(a.google).toHaveBeenCalled());
+    a.google.mockClear();
+    a.configured = false;
+    rerender(<I18nProvider><AuthModal open onClose={vi.fn()} onSuccess={vi.fn()} /></I18nProvider>);
+    fireEvent.click(screen.getByRole('button', { name: /המשך עם Google/ }));
+    expect(a.google).not.toHaveBeenCalled();
+  });
   it('renders nothing when closed', () => {
     renderModal({ open: false });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();

@@ -21,6 +21,7 @@ interface AuthValue {
   configured: boolean;
   signUp: (email: string, password: string) => Promise<AuthResult>;
   signIn: (email: string, password: string) => Promise<AuthResult>;
+  signInWithGoogle: () => Promise<AuthResult>;
   signOut: () => Promise<void>;
 }
 
@@ -46,7 +47,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => setSession(s));
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
+      setSession(s);
+      // בהתחברות — משייכים הזמנות-אורח עם האימייל המאומת לחשבון (guest checkout)
+      if (event === 'SIGNED_IN' && s?.user) void supabase.rpc('claim_my_orders');
+    });
     return () => {
       active = false;
       sub.subscription.unsubscribe();
@@ -68,12 +73,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: error?.message ?? null };
   }, []);
 
+  const signInWithGoogle = useCallback(async (): Promise<AuthResult> => {
+    if (!isSupabaseConfigured) return { error: 'NOT_CONFIGURED' };
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin }
+    });
+    return { error: error?.message ?? null };
+  }, []);
+
   const signOut = useCallback(async () => {
     if (isSupabaseConfigured) await supabase.auth.signOut();
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, role, loading, configured: isSupabaseConfigured, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, role, loading, configured: isSupabaseConfigured, signUp, signIn, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   );
