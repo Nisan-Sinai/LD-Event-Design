@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { UserPlus, Mail, Lock, AlertCircle, Check } from 'lucide-react';
 import { useI18n } from '../i18n/i18n';
 import { useAuth } from '../auth/AuthProvider';
+import { GoogleButton, OrDivider } from '../components/GoogleButton';
 
 export function RegisterPage() {
   const { t } = useI18n();
@@ -70,7 +71,10 @@ export function RegisterPage() {
             {t('auth.registerSuccess')}
           </div>
         ) : (
-          <form onSubmit={submit} className="space-y-4">
+          <>
+            <GoogleButton onError={setError} />
+            <OrDivider />
+            <form onSubmit={submit} className="space-y-4">
             <div>
               <label htmlFor="reg-email" className="block text-xs font-bold text-gray-700 mb-1.5">{t('auth.email')}</label>
               <div className="relative">
@@ -97,7 +101,8 @@ export function RegisterPage() {
             <button type="submit" disabled={busy} className="w-full bg-[#B29259] hover:bg-[#8C6D3F] text-white py-2.5 rounded-xl font-bold text-sm shadow-sm transition-colors disabled:opacity-60">
               {busy ? t('auth.working') : t('auth.registerBtn')}
             </button>
-          </form>
+            </form>
+          </>
         )}
 
         <p className="text-xs text-gray-500 text-center mt-4">
