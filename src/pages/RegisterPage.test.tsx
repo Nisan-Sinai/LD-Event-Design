@@ -7,10 +7,11 @@ import { RegisterPage } from './RegisterPage';
 const a = vi.hoisted(() => ({
   configured: true,
   signUp: vi.fn(async () => ({ error: null as string | null })),
-  signIn: vi.fn(async () => ({ error: null as string | null }))
+  signIn: vi.fn(async () => ({ error: null as string | null })),
+  google: vi.fn(async () => ({ error: null as string | null }))
 }));
 vi.mock('../auth/AuthProvider', () => ({
-  useAuth: () => ({ signUp: a.signUp, signIn: a.signIn, configured: a.configured })
+  useAuth: () => ({ signUp: a.signUp, signIn: a.signIn, signInWithGoogle: a.google, configured: a.configured })
 }));
 
 function renderReg() {
@@ -36,9 +37,16 @@ beforeEach(() => {
   a.configured = true;
   a.signUp.mockClear().mockResolvedValue({ error: null });
   a.signIn.mockClear().mockResolvedValue({ error: null });
+  a.google.mockClear().mockResolvedValue({ error: null });
 });
 
 describe('RegisterPage', () => {
+  it('offers Google sign-up', async () => {
+    renderReg();
+    fireEvent.click(screen.getByRole('button', { name: /Google/ }));
+    await waitFor(() => expect(a.google).toHaveBeenCalled());
+  });
+
   it('blocks submit and shows a notice when not configured', () => {
     a.configured = false;
     renderReg();

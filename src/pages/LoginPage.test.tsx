@@ -6,9 +6,12 @@ import { LoginPage } from './LoginPage';
 
 const a = vi.hoisted(() => ({
   configured: true,
-  signIn: vi.fn(async () => ({ error: null as string | null }))
+  signIn: vi.fn(async () => ({ error: null as string | null })),
+  google: vi.fn(async () => ({ error: null as string | null }))
 }));
-vi.mock('../auth/AuthProvider', () => ({ useAuth: () => ({ signIn: a.signIn, configured: a.configured }) }));
+vi.mock('../auth/AuthProvider', () => ({
+  useAuth: () => ({ signIn: a.signIn, signInWithGoogle: a.google, configured: a.configured })
+}));
 
 function renderLogin(initial = '/login') {
   return render(
@@ -26,6 +29,7 @@ function renderLogin(initial = '/login') {
 beforeEach(() => {
   a.configured = true;
   a.signIn.mockClear().mockResolvedValue({ error: null });
+  a.google.mockClear().mockResolvedValue({ error: null });
 });
 
 describe('LoginPage', () => {
@@ -33,6 +37,12 @@ describe('LoginPage', () => {
     renderLogin();
     expect(screen.getByLabelText('אימייל')).toBeInTheDocument();
     expect(screen.getByLabelText('סיסמה')).toBeInTheDocument();
+  });
+
+  it('offers Google sign-in', async () => {
+    renderLogin();
+    fireEvent.click(screen.getByRole('button', { name: /Google/ }));
+    await waitFor(() => expect(a.google).toHaveBeenCalled());
   });
 
   it('shows a not-configured notice and blocks submit', async () => {

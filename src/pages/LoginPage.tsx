@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react';
 import { useI18n } from '../i18n/i18n';
 import { useAuth } from '../auth/AuthProvider';
+import { GoogleButton, OrDivider } from '../components/GoogleButton';
 
 export function LoginPage() {
   const { t } = useI18n();
@@ -49,6 +50,9 @@ export function LoginPage() {
             {t('auth.notConfigured')}
           </div>
         )}
+
+        <GoogleButton onError={setError} />
+        <OrDivider />
 
         <form onSubmit={submit} className="space-y-4">
           <div>
