@@ -9,7 +9,7 @@ function Probe() {
       <span data-testid="lang">{lang}</span>
       <span data-testid="dir">{dir}</span>
       <span data-testid="home">{t('nav.home')}</span>
-      <span data-testid="vars">{t('footer.rights', { year: 2026 })}</span>
+      <span data-testid="vars">{t('a11y.step', { n: 2026 })}</span>
       <span data-testid="missing">{t('no.such.key')}</span>
       <span data-testid="deep">{t('meta.title.deeper')}</span>
       <span data-testid="list-len">{tList('home.marquee').length}</span>

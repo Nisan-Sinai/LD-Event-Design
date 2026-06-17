@@ -34,8 +34,8 @@ export default defineConfig({
         'src/auth/guards.tsx': FULL,
         'src/pages/LoginPage.tsx': FULL,
         'src/pages/RegisterPage.tsx': FULL,
-        // ספים ל-UI עם מרווח לשונות סביבה (node 20 vs 24); הענפים הנותרים הגנתיים
-        'src/App.tsx': { lines: 88, functions: 60, branches: 80, statements: 88 }
+        // ספים ל-UI שננעלו אחרי הרחבת הבדיקות (מרווח קטן לשונות סביבה); הענפים הנותרים הגנתיים
+        'src/App.tsx': { lines: 92, functions: 72, branches: 83, statements: 92 }
       }
     }
   }
