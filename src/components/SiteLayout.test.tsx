@@ -60,19 +60,39 @@ describe('SiteLayout', () => {
     expect(signOut).toHaveBeenCalled();
   });
 
-  it('switches language via the toggle', () => {
+  it('switches language via the toggle (both directions)', () => {
     renderLayout();
     const header = within(screen.getByRole('banner'));
     fireEvent.click(header.getByRole('button', { name: 'EN' }));
     expect(header.getByRole('link', { name: /Log in/ })).toBeInTheDocument();
+    // חזרה לעברית
+    fireEvent.click(header.getByRole('button', { name: 'עברית' }));
+    expect(header.getByRole('link', { name: /התחברות/ })).toBeInTheDocument();
   });
 
-  it('opens and closes a legal modal from the footer', () => {
+  it('opens the accessibility statement from the accessibility widget', () => {
+    renderLayout();
+    fireEvent.click(screen.getByRole('button', { name: 'פתיחת תפריט נגישות' }));
+    const widget = screen.getByRole('dialog', { name: 'נגישות' });
+    fireEvent.click(within(widget).getByRole('button', { name: /הצהרת נגישות/ }));
+    expect(screen.getByRole('dialog', { name: 'הצהרת נגישות' })).toBeInTheDocument();
+  });
+
+  it('opens and closes a legal modal from the footer (Escape only)', () => {
     renderLayout();
     fireEvent.click(screen.getByRole('button', { name: 'מדיניות פרטיות' }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
+    // מקש שאינו Escape אינו סוגר
+    fireEvent.keyDown(window, { key: 'a' });
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('renders a logged-in user without an email address safely', () => {
+    a.value = { user: {}, role: 'customer', signOut: vi.fn() };
+    renderLayout();
+    expect(screen.getByRole('button', { name: /התנתקות/ })).toBeInTheDocument();
   });
 
   it('closes the legal modal with the close button', () => {
@@ -84,5 +104,32 @@ describe('SiteLayout', () => {
     // בתוך המודאל יש כפתור X וכפתור "סגירה" — שניהם בשם הנגיש "סגירה"
     fireEvent.click(within(dialog).getAllByRole('button', { name: 'סגירה' })[0]);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('closes the legal modal with the bottom "close" action button', () => {
+    renderLayout();
+    fireEvent.click(within(screen.getByRole('contentinfo')).getByRole('button', { name: 'הצהרת נגישות' }));
+    const dialog = screen.getByRole('dialog');
+    // הכפתור התחתון הוא האחרון מבין הכפתורים בשם "סגירה"
+    const closeButtons = within(dialog).getAllByRole('button', { name: 'סגירה' });
+    fireEvent.click(closeButtons[closeButtons.length - 1]);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('closes the legal modal when clicking the backdrop, but not the panel', () => {
+    renderLayout();
+    fireEvent.click(within(screen.getByRole('contentinfo')).getByRole('button', { name: 'מדיניות פרטיות' }));
+    const dialog = screen.getByRole('dialog');
+    // קליק על גוף המודאל אינו סוגר (stopPropagation)
+    fireEvent.click(within(dialog).getByRole('heading', { name: 'מדיניות פרטיות' }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    // קליק על הרקע (ה-dialog עצמו) סוגר
+    fireEvent.click(dialog);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('marks the English toggle with lang="en" for correct pronunciation by screen readers', () => {
+    renderLayout();
+    expect(within(screen.getByRole('banner')).getByRole('button', { name: 'EN' })).toHaveAttribute('lang', 'en');
   });
 });

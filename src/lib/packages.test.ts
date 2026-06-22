@@ -121,6 +121,22 @@ describe('buildCatalog', () => {
     expect(out).toHaveLength(PACKAGES.length - 1);
   });
 
+  it('maps a custom package with all-null optional fields to safe defaults', () => {
+    const out = buildCatalog(PACKAGES, {
+      'custom-empty': ov({ package_id: 'custom-empty', is_custom: true })
+    });
+    const c = out.find((x) => x.id === 'custom-empty')!;
+    expect(c.title).toBe('');
+    expect(c.subtitle).toBe('');
+    expect(c.description).toBe('');
+    expect(c.benefits).toBe('');
+    expect(c.price).toBe(0);
+    expect(c.category).toBe('');
+    expect(c.svgType).toBe('default');
+    expect(c.image).toBeUndefined();
+    expect(c.pricingTiers).toBeUndefined();
+  });
+
   it('appends custom packages (sorted), and skips hidden customs', () => {
     const out = buildCatalog(PACKAGES, {
       'custom-b': ov({ package_id: 'custom-b', is_custom: true, title: 'שני', category: 'חתונה', price: 2, sort_order: 2 }),

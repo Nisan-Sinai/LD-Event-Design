@@ -39,14 +39,17 @@ describe('AdminPage', () => {
     await waitFor(() => expect(screen.getByText('אין הזמנות עדיין.')).toBeInTheDocument());
   });
 
-  it('renders all orders in a table', async () => {
+  it('renders all orders in a table (including rows without an event date)', async () => {
     fetchOrders.mockResolvedValue([
-      { id: 'o1', created_at: '2026-06-02T10:00:00Z', groom_name: 'דנה', bride_name: 'יוסי', event_date: '2026-09-01', package_title: 'בר מתוק', total_price: 2500 }
+      { id: 'o1', created_at: '2026-06-02T10:00:00Z', groom_name: 'דנה', bride_name: 'יוסי', event_date: '2026-09-01', package_title: 'בר מתוק', total_price: 2500 },
+      { id: 'o2', created_at: '2026-06-03T10:00:00Z', groom_name: 'רון', bride_name: 'מיה', event_date: null, package_title: 'חופה', total_price: 5000 }
     ]);
     renderAdmin();
     await waitFor(() => expect(screen.getByText(/דנה/)).toBeInTheDocument());
     expect(screen.getByText('בר מתוק')).toBeInTheDocument();
     expect(screen.getByText('₪2,500')).toBeInTheDocument();
+    // שורה ללא תאריך אירוע מציגה "—"
+    expect(screen.getByText('—')).toBeInTheDocument();
     expect(fetchOrders).toHaveBeenCalledWith();
   });
 
@@ -84,5 +87,35 @@ describe('AdminPage', () => {
     expect(fetchOrderById).toHaveBeenCalledWith('o1');
     expect(screen.getByText('a@b.com')).toBeInTheDocument();
     expect(screen.getByText('תוספת')).toBeInTheDocument();
+    // סגירת המודאל (covers the onClose handler)
+    fireEvent.click(screen.getByRole('button', { name: 'סגירה' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('opens the order detail modal with the keyboard (Enter / Space) on a row', async () => {
+    fetchOrders.mockResolvedValue([
+      { id: 'o1', created_at: '2026-06-02T10:00:00Z', groom_name: 'דנה', bride_name: 'יוסי', event_date: '2026-09-01', package_title: 'בר מתוק', total_price: 2500 }
+    ]);
+    fetchOrderById.mockResolvedValue({
+      id: 'o1', created_at: '2026-06-02T10:00:00Z', groom_name: 'דנה', bride_name: 'יוסי', groom_phone: '050', bride_phone: '052',
+      email: 'a@b.com', event_date: '2026-09-01', event_location: 'חדרה', package_id: 'bar-candy', package_title: 'בר מתוק',
+      table_tier: null, composites_count: null, sponge_count: null, referral_source: null, referral_detail: null,
+      include_delivery: false, upgrades: [], base_price: 2500, upgrades_total: 0, delivery_price: 0, coupon_code: null,
+      coupon_discount: 0, order_source: null, received_by: null, internal_notes: null, admin_discount: 0,
+      total_price: 2500, status: 'paid', groom_sign_date: null, bride_sign_date: null,
+      groom_signature_path: null, bride_signature_path: null
+    });
+    renderAdmin();
+    await waitFor(() => expect(screen.getByText('בר מתוק')).toBeInTheDocument());
+    const row = screen.getByRole('button', { name: /צפייה בהזמנה/ });
+
+    // a non-activating key is ignored (covers the guard branch)
+    fireEvent.keyDown(row, { key: 'Tab' });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    // Space activates
+    fireEvent.keyDown(row, { key: ' ' });
+    await waitFor(() => expect(screen.getByRole('dialog', { name: 'פרטי הזמנה מלאים' })).toBeInTheDocument());
+    expect(fetchOrderById).toHaveBeenCalledWith('o1');
   });
 });

@@ -55,7 +55,7 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-2">
             <div className="flex items-center bg-[#FAF7F2] rounded-full border border-[#EAE3D2] p-0.5" role="group" aria-label={t('lang.switch')}>
               <button type="button" onClick={() => setLang('he')} aria-pressed={lang === 'he'} className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-colors ${lang === 'he' ? 'bg-[#B29259] text-white' : 'text-gray-500 hover:text-[#B29259]'}`}>עברית</button>
-              <button type="button" onClick={() => setLang('en')} aria-pressed={lang === 'en'} className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-colors ${lang === 'en' ? 'bg-[#B29259] text-white' : 'text-gray-500 hover:text-[#B29259]'}`}>EN</button>
+              <button type="button" onClick={() => setLang('en')} aria-pressed={lang === 'en'} lang="en" className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-colors ${lang === 'en' ? 'bg-[#B29259] text-white' : 'text-gray-500 hover:text-[#B29259]'}`}>EN</button>
             </div>
 
             {user ? (

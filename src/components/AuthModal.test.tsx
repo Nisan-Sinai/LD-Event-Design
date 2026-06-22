@@ -88,6 +88,14 @@ describe('AuthModal', () => {
     expect(a.signIn).toHaveBeenCalled();
   });
 
+  it('switches back to the register tab', () => {
+    renderModal();
+    fireEvent.click(screen.getByRole('tab', { name: /התחברות/ }));
+    expect(screen.getByRole('tab', { name: /התחברות/ })).toHaveAttribute('aria-selected', 'true');
+    fireEvent.click(screen.getByRole('tab', { name: /הרשמה מהירה/ }));
+    expect(screen.getByRole('tab', { name: /הרשמה מהירה/ })).toHaveAttribute('aria-selected', 'true');
+  });
+
   it('login tab only signs in', async () => {
     const { onSuccess } = renderModal();
     fireEvent.click(screen.getByRole('tab', { name: /התחברות/ }));
@@ -110,6 +118,9 @@ describe('AuthModal', () => {
 
   it('closes on Escape, backdrop click, and the X button', () => {
     const { onClose } = renderModal();
+    // מקש שאינו Escape אינו סוגר (ענף השמירה במאזין)
+    fireEvent.keyDown(window, { key: 'a' });
+    expect(onClose).not.toHaveBeenCalled();
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(onClose).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole('dialog'));
