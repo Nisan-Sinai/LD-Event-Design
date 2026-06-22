@@ -81,15 +81,29 @@ describe('PackageManager', () => {
     await waitFor(() => expect(p.removeOverride).toHaveBeenCalledWith('classic-s'));
   });
 
-  it('creates a new custom package', async () => {
+  it('creates a new custom package (all fields)', async () => {
     renderPM();
     fireEvent.click(screen.getByRole('button', { name: 'הוספת חבילה חדשה' }));
     fireEvent.change(screen.getByLabelText('קטגוריה — חבילה חדשה'), { target: { value: 'חתונה' } });
     fireEvent.change(screen.getByLabelText('כותרת — חבילה חדשה'), { target: { value: 'חבילה מיוחדת' } });
     fireEvent.change(screen.getByLabelText('מחיר (₪) — חבילה חדשה'), { target: { value: '1234' } });
+    fireEvent.change(screen.getByLabelText('תת-כותרת — חבילה חדשה'), { target: { value: 'תת מיוחדת' } });
+    fireEvent.change(screen.getByLabelText('הטבה / כיתוב — חבילה חדשה'), { target: { value: 'הטבה מיוחדת' } });
+    fireEvent.change(screen.getByLabelText('תיאור — חבילה חדשה'), { target: { value: 'תיאור מיוחד' } });
     fireEvent.click(screen.getByRole('button', { name: 'יצירת חבילה' }));
     await waitFor(() => expect(p.saveOverride).toHaveBeenCalled());
-    expect(p.saveOverride.mock.calls[0][0]).toMatchObject({ is_custom: true, category: 'חתונה', title: 'חבילה מיוחדת', price: 1234 });
+    expect(p.saveOverride.mock.calls[0][0]).toMatchObject({
+      is_custom: true, category: 'חתונה', title: 'חבילה מיוחדת', price: 1234,
+      subtitle: 'תת מיוחדת', benefits: 'הטבה מיוחדת', description: 'תיאור מיוחד'
+    });
+  });
+
+  it('cancels the add-package form', () => {
+    renderPM();
+    fireEvent.click(screen.getByRole('button', { name: 'הוספת חבילה חדשה' }));
+    expect(screen.getByLabelText('כותרת — חבילה חדשה')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'ביטול' }));
+    expect(screen.queryByLabelText('כותרת — חבילה חדשה')).not.toBeInTheDocument();
   });
 
   it('blocks creating a package without category/title/price', () => {
@@ -113,5 +127,62 @@ describe('PackageManager', () => {
     renderPM();
     fireEvent.click(within(rowFor('מותאם')).getByRole('button', { name: 'מחיקת חבילה' }));
     await waitFor(() => expect(p.removeOverride).toHaveBeenCalledWith('custom-1'));
+  });
+
+  it('edits the text fields (title / subtitle / description / benefits) and saves them', async () => {
+    renderPM();
+    const row = rowFor(CLASSIC_S);
+    fireEvent.change(within(row).getByLabelText(`כותרת — ${CLASSIC_S}`), { target: { value: 'כותרת חדשה' } });
+    fireEvent.change(within(row).getByLabelText(`תת-כותרת — ${CLASSIC_S}`), { target: { value: 'תת חדשה' } });
+    fireEvent.change(within(row).getByLabelText(`תיאור — ${CLASSIC_S}`), { target: { value: 'תיאור חדש' } });
+    fireEvent.change(within(row).getByLabelText(`הטבה / כיתוב — ${CLASSIC_S}`), { target: { value: 'הטבה חדשה' } });
+    fireEvent.click(within(row).getByRole('button', { name: 'שמירה' }));
+    await waitFor(() => expect(p.saveOverride).toHaveBeenCalled());
+    expect(p.saveOverride.mock.calls[0][0]).toMatchObject({
+      title: 'כותרת חדשה', subtitle: 'תת חדשה', description: 'תיאור חדש', benefits: 'הטבה חדשה'
+    });
+  });
+
+  it('shows an error message when saving fails', async () => {
+    p.saveOverride.mockRejectedValueOnce(new Error('rls'));
+    renderPM();
+    const row = rowFor(CLASSIC_S);
+    fireEvent.change(within(row).getByLabelText(`מחיר (₪) — ${CLASSIC_S}`), { target: { value: '999' } });
+    fireEvent.click(within(row).getByRole('button', { name: 'שמירה' }));
+    await waitFor(() => expect(within(row).getByText(/השמירה נכשלה/)).toBeInTheDocument());
+  });
+
+  it('shows the package on the site again (un-hide)', async () => {
+    p.overrides = { 'classic-s': ov({ package_id: 'classic-s', hidden: true }) };
+    renderPM();
+    fireEvent.click(within(rowFor(CLASSIC_S)).getByRole('button', { name: 'הצגה באתר' }));
+    await waitFor(() => expect(p.saveOverride).toHaveBeenCalled());
+    expect(p.saveOverride.mock.calls[0][0]).toMatchObject({ hidden: false });
+  });
+
+  it('removes an attached image preview', async () => {
+    p.overrides = { 'classic-s': ov({ package_id: 'classic-s', image_url: 'https://cdn.example/old.png' }) };
+    renderPM();
+    const row = rowFor(CLASSIC_S);
+    expect(row.querySelector('img')).toBeTruthy();
+    fireEvent.click(within(row).getByRole('button', { name: 'הסרת תמונה' }));
+    expect(row.querySelector('img')).toBeFalsy();
+  });
+
+  it('ignores an image change with no file selected', () => {
+    renderPM();
+    const row = rowFor(CLASSIC_S);
+    const fileInput = row.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [] } });
+    expect(p.upload).not.toHaveBeenCalled();
+  });
+
+  it('shows an error when an image upload fails', async () => {
+    p.upload.mockRejectedValueOnce(new Error('storage'));
+    renderPM();
+    const row = rowFor(CLASSIC_S);
+    const fileInput = row.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [new File(['x'], 'p.png', { type: 'image/png' })] } });
+    await waitFor(() => expect(within(row).getByText(/השמירה נכשלה/)).toBeInTheDocument());
   });
 });

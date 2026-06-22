@@ -66,9 +66,16 @@ describe('PackagesProvider', () => {
     expect(result.current.overrides).toEqual({});
   });
 
-  it('default context (no provider) is a safe no-op', () => {
+  it('default context (no provider) is a safe no-op', async () => {
     const { result } = renderHook(() => usePackages());
     expect(result.current.overrides).toEqual({});
     expect(result.current.loading).toBe(false);
+    // הפונקציות בברירת המחדל הן no-op בטוחות (לא זורקות, מחזירות Promise)
+    await act(async () => {
+      await result.current.refresh();
+      await result.current.saveOverride(ov({ package_id: 'noop' }));
+      await result.current.removeOverride('noop');
+    });
+    expect(result.current.overrides).toEqual({});
   });
 });

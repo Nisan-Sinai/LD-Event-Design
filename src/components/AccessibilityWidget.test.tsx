@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { I18nProvider } from '../i18n/i18n';
 import { AccessibilityWidget } from './AccessibilityWidget';
 
@@ -65,10 +65,20 @@ describe('AccessibilityWidget', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('closes on Escape', () => {
+  it('closes on Escape but ignores other keys', () => {
     renderWidget();
     openPanel();
+    fireEvent.keyDown(window, { key: 'a' });
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
     fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('closes the panel with the X button', () => {
+    renderWidget();
+    openPanel();
+    const dialog = screen.getByRole('dialog', { name: 'נגישות' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'סגירה' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
