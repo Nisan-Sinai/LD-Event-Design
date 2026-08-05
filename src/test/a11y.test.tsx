@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import axe from 'axe-core';
 import { I18nProvider } from '../i18n/i18n';
 
