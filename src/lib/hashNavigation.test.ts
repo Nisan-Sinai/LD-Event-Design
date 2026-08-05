@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initHashNavigation, scrollToHashTarget } from './hashNavigation';
 
 describe('hashNavigation', () => {
+  let stopNavigation: (() => void) | undefined;
+
   beforeEach(() => {
     document.body.innerHTML = '';
     window.history.replaceState(null, '', '/');
@@ -9,16 +11,24 @@ describe('hashNavigation', () => {
       configurable: true,
       value: vi.fn()
     });
-    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
-      callback(0);
-      return 1;
+    Object.defineProperty(window, 'requestAnimationFrame', {
+      configurable: true,
+      value: vi.fn((callback: FrameRequestCallback) => {
+        callback(0);
+        return 1;
+      })
     });
-    vi.stubGlobal('cancelAnimationFrame', vi.fn());
+    Object.defineProperty(window, 'cancelAnimationFrame', {
+      configurable: true,
+      value: vi.fn()
+    });
   });
 
   afterEach(() => {
+    stopNavigation?.();
+    stopNavigation = undefined;
     vi.useRealTimers();
-    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it('scrolls to an existing decoded hash target', () => {
@@ -39,18 +49,17 @@ describe('hashNavigation', () => {
     vi.useFakeTimers();
     window.history.replaceState(null, '', '/#packages');
 
-    const cleanup = initHashNavigation(3, 10);
+    stopNavigation = initHashNavigation(3, 10);
     const target = document.createElement('section');
     target.id = 'packages';
     document.body.appendChild(target);
 
     vi.advanceTimersByTime(10);
     expect(target.scrollIntoView).toHaveBeenCalledTimes(1);
-    cleanup();
   });
 
   it('handles hash changes after the initial page load', () => {
-    const cleanup = initHashNavigation();
+    stopNavigation = initHashNavigation();
     const target = document.createElement('section');
     target.id = 'cat-1';
     document.body.appendChild(target);
@@ -59,6 +68,5 @@ describe('hashNavigation', () => {
     window.dispatchEvent(new HashChangeEvent('hashchange'));
 
     expect(target.scrollIntoView).toHaveBeenCalledTimes(1);
-    cleanup();
   });
 });
