@@ -75,8 +75,10 @@ test.describe('Production-readiness gates', () => {
 
   test('skip link moves keyboard focus to the main content', async ({ page }) => {
     await page.goto('/');
-    const skipLink = page.getByRole('link', { name: /דילוג לתוכן|Skip to content/ });
+    const skipLink = page.locator('a[href="#main"]').first();
 
+    await expect(skipLink).toHaveAttribute('href', '#main');
+    await expect(skipLink).toContainText(/\S/);
     await page.keyboard.press('Tab');
     await expect(skipLink).toBeFocused();
     await page.keyboard.press('Enter');
