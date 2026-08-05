@@ -5,9 +5,16 @@ on:
     branches: [main, redesign, dev]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   unit:
-    name: Type-check · Unit tests · Build
+    name: Audit · Type-check · Unit tests · Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,6 +23,7 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - run: npm run audit:prod
       - run: npm run type-check
       - run: npm run test:coverage
       - run: npm run build
@@ -32,3 +40,11 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+          if-no-files-found: ignore
+          retention-days: 14
