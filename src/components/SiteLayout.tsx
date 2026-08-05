@@ -46,8 +46,7 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
       }
 
       if (e.key !== 'Tab') return;
-      const panel = legalPanelRef.current;
-      if (!panel) return;
+      const panel = legalPanelRef.current!;
 
       const focusable = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
       if (focusable.length === 0) {
