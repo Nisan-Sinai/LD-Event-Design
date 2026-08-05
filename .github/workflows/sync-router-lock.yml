@@ -1,4 +1,4 @@
-name: Prepare React Router lockfile
+name: Migrate React Router 8
 
 on:
   pull_request:
@@ -6,27 +6,58 @@ on:
       - main
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  prepare-lockfile:
+  migrate-and-verify:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
+      - name: Migrate imports to react-router
+        run: |
+          files=$(grep -RIl --include='*.ts' --include='*.tsx' 'react-router-dom' src e2e 2>/dev/null || true)
+          if [ -n "$files" ]; then
+            echo "$files"
+            echo "$files" | xargs sed -i 's/react-router-dom/react-router/g'
+          fi
+          if grep -RIn --include='*.ts' --include='*.tsx' 'react-router-dom' src e2e 2>/dev/null; then
+            echo 'react-router-dom imports remain' >&2
+            exit 1
+          fi
       - name: Generate updated lockfile
         run: npm install --package-lock-only --ignore-scripts
-      - name: Verify patched dependency versions
+      - name: Verify secure dependency versions
         run: |
-          node --input-type=module -e "import lock from './package-lock.json' with { type: 'json' }; const rr = lock.packages['node_modules/react-router']?.version; const rrd = lock.packages['node_modules/react-router-dom']?.version; const react = lock.packages['node_modules/react']?.version; const reactDom = lock.packages['node_modules/react-dom']?.version; console.log({ reactRouter: rr, reactRouterDom: rrd, react, reactDom }); if (rr !== '8.3.0' || rrd !== '8.3.0' || !react?.startsWith('19.2.') || !reactDom?.startsWith('19.2.')) process.exit(1);"
-      - name: Audit production dependencies
-        run: npm audit --omit=dev --audit-level=moderate
+          node --input-type=module -e "import lock from './package-lock.json' with { type: 'json' }; const rr = lock.packages['node_modules/react-router']?.version; const rrd = lock.packages['node_modules/react-router-dom']; const react = lock.packages['node_modules/react']?.version; const reactDom = lock.packages['node_modules/react-dom']?.version; console.log({ reactRouter: rr, reactRouterDomPresent: Boolean(rrd), react, reactDom }); if (rr !== '8.3.0' || rrd || !react?.startsWith('19.2.') || !reactDom?.startsWith('19.2.')) process.exit(1);"
+          npm audit --omit=dev --audit-level=moderate
+      - name: Install and validate migration
+        run: |
+          npm ci
+          npm run type-check
+          npm run test:coverage
+          npm run build
+      - name: Commit generated migration
+        run: |
+          git add package-lock.json src e2e
+          if git diff --cached --quiet; then
+            echo 'Migration files are already current'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'security: complete React Router 8 migration [skip migration-bot]'
+          git push origin HEAD:${{ github.head_ref }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: react-router-lockfile
-          path: package-lock.json
+          name: react-router-migration
+          path: |
+            package-lock.json
+            coverage/coverage-summary.json
           retention-days: 1
