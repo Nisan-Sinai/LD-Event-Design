@@ -49,7 +49,7 @@ describe('hashNavigation', () => {
   it('retries until a React-rendered deep-link target exists', () => {
     let retry: (() => void) | undefined;
     vi.spyOn(window, 'setTimeout').mockImplementation(((handler: TimerHandler) => {
-      if (typeof handler === 'function') retry = handler;
+      if (typeof handler === 'function') retry = () => handler();
       return 1;
     }) as typeof window.setTimeout);
 
