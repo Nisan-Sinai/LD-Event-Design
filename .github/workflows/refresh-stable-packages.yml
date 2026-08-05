@@ -33,7 +33,7 @@ jobs:
           node-version: 24
           cache: npm
 
-      - name: Apply stable migration changes
+      - name: Apply Tailwind 4 migration
         shell: bash
         run: |
           set -euo pipefail
@@ -49,19 +49,6 @@ jobs:
           elif new_header not in css:
               raise SystemExit('Unexpected Tailwind CSS header; refusing an unsafe migration.')
           css_path.write_text(css, encoding='utf-8')
-
-          ci_path = Path('.github/workflows/ci.yml')
-          ci = ci_path.read_text(encoding='utf-8')
-          ci = ci.replace('uses: actions/upload-artifact@v4', 'uses: actions/upload-artifact@v7')
-          ci_path.write_text(ci, encoding='utf-8')
-
-          auto_path = Path('.github/workflows/dependabot-automerge.yml')
-          auto = auto_path.read_text(encoding='utf-8')
-          auto = auto.replace(
-              'dependabot/fetch-metadata@d7267f607e9d3fb96fc2fbe83e0af444713e90b7 # v2',
-              'dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0',
-          )
-          auto_path.write_text(auto, encoding='utf-8')
           PY
 
       - name: Install every direct dependency from the stable latest tag
@@ -102,12 +89,8 @@ jobs:
             const latestRaw = execFileSync('npm', ['view', name, 'dist-tags.latest', '--json'], { encoding: 'utf8' }).trim();
             const latest = JSON.parse(latestRaw);
 
-            if (installed.includes('-')) {
-              failures.push(`${name}: prerelease installed (${installed})`);
-            }
-            if (installed !== latest) {
-              failures.push(`${name}: installed ${installed}, npm latest is ${latest}`);
-            }
+            if (installed.includes('-')) failures.push(`${name}: prerelease installed (${installed})`);
+            if (installed !== latest) failures.push(`${name}: installed ${installed}, npm latest is ${latest}`);
           }
 
           if (failures.length > 0) {
@@ -136,19 +119,16 @@ jobs:
       - name: Playwright E2E
         run: npm run test:e2e
 
-      - name: Remove this one-time workflow
-        run: rm .github/workflows/refresh-stable-packages.yml
-
-      - name: Commit the verified stable upgrades
+      - name: Commit the verified package files
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
+          git add package.json package-lock.json src/index.css
 
           if git diff --cached --quiet; then
-            echo 'No dependency changes were required.'
+            echo 'No package changes were required.'
             exit 0
           fi
 
