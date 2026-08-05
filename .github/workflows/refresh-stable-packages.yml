@@ -43,7 +43,7 @@ jobs:
           css_path = Path('src/index.css')
           css = css_path.read_text(encoding='utf-8')
           old_header = '@tailwind base;\n@tailwind components;\n@tailwind utilities;'
-          new_header = '@config "../tailwind.config.js";\n@import "tailwindcss";'
+          new_header = '@import "tailwindcss";\n@config "../tailwind.config.js";'
           if old_header in css:
               css = css.replace(old_header, new_header, 1)
           elif new_header not in css:
