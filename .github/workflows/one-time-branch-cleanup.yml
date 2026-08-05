@@ -1,3 +1,4 @@
+# One-time execution trigger. This workflow removes itself after completion.
 name: One-Time Branch Cleanup
 
 on:
