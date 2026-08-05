@@ -21,7 +21,7 @@ jobs:
         run: npm install --package-lock-only --ignore-scripts
       - name: Verify patched dependency versions
         run: |
-          node --input-type=module -e "import lock from './package-lock.json' with { type: 'json' }; const rr = lock.packages['node_modules/react-router']?.version; const rrd = lock.packages['node_modules/react-router-dom']?.version; console.log({ reactRouter: rr, reactRouterDom: rrd }); if (!rr?.startsWith('7.18.') || !rrd?.startsWith('7.18.')) process.exit(1);"
+          node --input-type=module -e "import lock from './package-lock.json' with { type: 'json' }; const rr = lock.packages['node_modules/react-router']?.version; const rrd = lock.packages['node_modules/react-router-dom']?.version; const react = lock.packages['node_modules/react']?.version; const reactDom = lock.packages['node_modules/react-dom']?.version; console.log({ reactRouter: rr, reactRouterDom: rrd, react, reactDom }); if (rr !== '8.3.0' || rrd !== '8.3.0' || !react?.startsWith('19.2.') || !reactDom?.startsWith('19.2.')) process.exit(1);"
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=moderate
       - uses: actions/upload-artifact@v4
