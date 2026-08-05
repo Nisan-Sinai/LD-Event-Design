@@ -13,6 +13,7 @@ describe('hashNavigation', () => {
     });
     Object.defineProperty(window, 'requestAnimationFrame', {
       configurable: true,
+      writable: true,
       value: vi.fn((callback: FrameRequestCallback) => {
         callback(0);
         return 1;
@@ -20,6 +21,7 @@ describe('hashNavigation', () => {
     });
     Object.defineProperty(window, 'cancelAnimationFrame', {
       configurable: true,
+      writable: true,
       value: vi.fn()
     });
   });
@@ -27,7 +29,6 @@ describe('hashNavigation', () => {
   afterEach(() => {
     stopNavigation?.();
     stopNavigation = undefined;
-    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -46,15 +47,20 @@ describe('hashNavigation', () => {
   });
 
   it('retries until a React-rendered deep-link target exists', () => {
-    vi.useFakeTimers();
-    window.history.replaceState(null, '', '/#packages');
+    let retry: (() => void) | undefined;
+    vi.spyOn(window, 'setTimeout').mockImplementation(((handler: TimerHandler) => {
+      if (typeof handler === 'function') retry = handler;
+      return 1;
+    }) as typeof window.setTimeout);
 
+    window.history.replaceState(null, '', '/#packages');
     stopNavigation = initHashNavigation(3, 10);
+
     const target = document.createElement('section');
     target.id = 'packages';
     document.body.appendChild(target);
+    retry?.();
 
-    vi.advanceTimersByTime(10);
     expect(target.scrollIntoView).toHaveBeenCalledTimes(1);
   });
 
