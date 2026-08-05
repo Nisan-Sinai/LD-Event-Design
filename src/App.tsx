@@ -5,7 +5,7 @@ import { calcPricing } from './lib/pricing';
 import { AccessibilityWidget } from './components/AccessibilityWidget';
 import { WhatsAppButton } from './components/WhatsAppButton';
 import { AuthModal } from './components/AuthModal';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { useI18n } from './i18n/i18n';
 import { useAuth } from './auth/AuthProvider';
 import { usePackages } from './packages/PackagesProvider';

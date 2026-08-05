@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { ArrowLeft, ArrowRight, MessageCircle, Sparkles, Gift } from 'lucide-react';
 import { useI18n } from '../i18n/i18n';
 import { PACKAGES, CATEGORIES, renderPackageSVG, ArtDefsHost, type Package } from '../App';
