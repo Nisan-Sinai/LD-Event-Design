@@ -1,0 +1,138 @@
+name: Dependabot Auto-Merge
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  actions: read
+  checks: read
+  contents: write
+  pull-requests: write
+  statuses: read
+
+concurrency:
+  group: dependabot-automerge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  automerge:
+    name: Dependabot auto-merge gate
+    if: >-
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Read Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@d7267f607e9d3fb96fc2fbe83e0af444713e90b7 # v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Allow only patch and minor updates
+        id: eligibility
+        shell: bash
+        env:
+          UPDATE_TYPE: ${{ steps.metadata.outputs.update-type }}
+        run: |
+          case "$UPDATE_TYPE" in
+            version-update:semver-patch|version-update:semver-minor)
+              echo "eligible=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "eligible=false" >> "$GITHUB_OUTPUT"
+              echo "Major or unknown update type: $UPDATE_TYPE. Manual review required."
+              ;;
+          esac
+
+      - name: Wait for every check and Vercel, then squash merge
+        if: steps.eligibility.outputs.eligible == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          for attempt in $(seq 1 80); do
+            pr_payload=$(gh api "repos/$REPOSITORY/pulls/$PR_NUMBER")
+            pr_state=$(jq -r '.state' <<< "$pr_payload")
+            current_sha=$(jq -r '.head.sha' <<< "$pr_payload")
+            is_draft=$(jq -r '.draft' <<< "$pr_payload")
+
+            if [[ "$pr_state" != "open" ]]; then
+              echo "PR is no longer open; nothing to merge."
+              exit 0
+            fi
+
+            if [[ "$current_sha" != "$HEAD_SHA" ]]; then
+              echo "PR head changed; the synchronize event will start a fresh gate."
+              exit 0
+            fi
+
+            if [[ "$is_draft" == "true" ]]; then
+              echo "PR became a draft; manual review required."
+              exit 0
+            fi
+
+            checks_payload=$(gh api "repos/$REPOSITORY/commits/$HEAD_SHA/check-runs?per_page=100")
+            latest_checks=$(jq -c '
+              [.check_runs[] | select(.name != "Dependabot auto-merge gate")]
+              | sort_by(.name, (.started_at // .created_at // ""))
+              | group_by(.name)
+              | map(last)
+            ' <<< "$checks_payload")
+
+            pending_checks=$(jq '[.[] | select(.status != "completed")] | length' <<< "$latest_checks")
+            failed_checks=$(jq '[.[] | select(.status == "completed" and (.conclusion != "success" and .conclusion != "neutral" and .conclusion != "skipped"))] | length' <<< "$latest_checks")
+            unit_result=$(jq -r '[.[] | select(.name == "Audit · Type-check · Unit tests · Build")] | last | .conclusion // ""' <<< "$latest_checks")
+            e2e_result=$(jq -r '[.[] | select(.name == "Playwright E2E")] | last | .conclusion // ""' <<< "$latest_checks")
+
+            statuses_payload=$(gh api "repos/$REPOSITORY/commits/$HEAD_SHA/status")
+            latest_statuses=$(jq -c '
+              [.statuses[]]
+              | sort_by(.context, (.created_at // ""))
+              | group_by(.context)
+              | map(last)
+            ' <<< "$statuses_payload")
+
+            pending_statuses=$(jq '[.[] | select(.state == "pending")] | length' <<< "$latest_statuses")
+            failed_statuses=$(jq '[.[] | select(.state == "failure" or .state == "error")] | length' <<< "$latest_statuses")
+            vercel_state=$(jq -r '[.[] | select(.context == "Vercel")] | last | .state // ""' <<< "$latest_statuses")
+
+            echo "Attempt $attempt/80: unit=$unit_result, e2e=$e2e_result, Vercel=$vercel_state, pending-checks=$pending_checks, pending-statuses=$pending_statuses"
+
+            if (( failed_checks > 0 || failed_statuses > 0 )); then
+              echo "At least one check or deployment failed. The PR will remain open."
+              exit 1
+            fi
+
+            if [[ "$unit_result" == "success" &&
+                  "$e2e_result" == "success" &&
+                  "$vercel_state" == "success" &&
+                  "$pending_checks" -eq 0 &&
+                  "$pending_statuses" -eq 0 ]]; then
+              merge_payload=$(gh api \
+                --method PUT \
+                "repos/$REPOSITORY/pulls/$PR_NUMBER/merge" \
+                -f merge_method=squash \
+                -f sha="$HEAD_SHA")
+
+              if [[ "$(jq -r '.merged' <<< "$merge_payload")" != "true" ]]; then
+                echo "GitHub refused the merge: $(jq -r '.message // "unknown reason"' <<< "$merge_payload")"
+                exit 1
+              fi
+
+              echo "Dependabot PR #$PR_NUMBER was squash-merged after every check passed."
+              exit 0
+            fi
+
+            sleep 15
+          done
+
+          echo "Timed out while waiting for CI or Vercel. The PR will remain open."
+          exit 1
