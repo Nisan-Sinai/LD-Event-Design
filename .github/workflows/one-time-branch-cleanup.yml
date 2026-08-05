@@ -1,0 +1,79 @@
+name: One-Time Branch Cleanup
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/one-time-branch-cleanup.yml
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    name: Delete all branches except main
+    if: contains(github.event.head_commit.message, 'chore: one-time branch cleanup')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Delete non-main branches
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mapfile -t branches < <(
+            gh api --paginate "repos/${GITHUB_REPOSITORY}/branches?per_page=100" \
+              --jq '.[].name'
+          )
+
+          deleted=0
+          failed=0
+
+          for branch in "${branches[@]}"; do
+            if [[ "$branch" == "main" ]]; then
+              continue
+            fi
+
+            echo "Deleting branch: $branch"
+            if gh api --method DELETE \
+              "repos/${GITHUB_REPOSITORY}/git/refs/heads/${branch}"; then
+              deleted=$((deleted + 1))
+            else
+              echo "::error::Failed to delete branch: $branch"
+              failed=$((failed + 1))
+            fi
+          done
+
+          echo "Deleted branches: $deleted"
+          echo "Failed deletions: $failed"
+
+          if (( failed > 0 )); then
+            exit 1
+          fi
+
+      - name: Remove this one-time workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          workflow_path='.github/workflows/one-time-branch-cleanup.yml'
+          workflow_sha="$(
+            gh api "repos/${GITHUB_REPOSITORY}/contents/${workflow_path}?ref=main" \
+              --jq '.sha'
+          )"
+
+          if gh api --method DELETE \
+            "repos/${GITHUB_REPOSITORY}/contents/${workflow_path}" \
+            -f message='chore: remove completed one-time cleanup workflow' \
+            -f sha="$workflow_sha" \
+            -f branch='main'; then
+            echo 'One-time workflow removed from main.'
+          else
+            echo '::warning::Branches were cleaned, but the one-time workflow could not remove itself.'
+          fi
