@@ -5,7 +5,7 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-      day: "monday"
+      day: "tuesday"
       time: "06:00"
       timezone: "Asia/Jerusalem"
     open-pull-requests-limit: 5
@@ -28,8 +28,8 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-      day: "monday"
-      time: "06:15"
+      day: "tuesday"
+      time: "06:30"
       timezone: "Asia/Jerusalem"
     open-pull-requests-limit: 2
     rebase-strategy: "auto"
