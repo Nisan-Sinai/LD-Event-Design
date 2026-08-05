@@ -36,6 +36,9 @@ updates:
     commit-message:
       prefix: "chore(actions)"
     groups:
-      github-actions:
+      github-actions-minor-patch:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
