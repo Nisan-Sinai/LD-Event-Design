@@ -1,4 +1,4 @@
-// Tailwind CSS v4 official PostCSS plugin.
+// Official Tailwind CSS v4 PostCSS integration.
 export default {
   plugins: {
     '@tailwindcss/postcss': {},
