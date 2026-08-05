@@ -145,6 +145,51 @@ describe('SiteLayout', () => {
     expect(document.body.style.overflow).toBe('');
   });
 
+  it('keeps keyboard focus inside the legal dialog for every Tab edge case', async () => {
+    renderLayout();
+    const trigger = within(screen.getByRole('contentinfo')).getByRole('button', { name: 'מדיניות פרטיות' });
+    fireEvent.click(trigger);
+
+    const dialog = screen.getByRole('dialog');
+    await waitFor(() => expect(dialog).toHaveFocus());
+    const closeButtons = within(dialog).getAllByRole('button', { name: 'סגירה' });
+    const first = closeButtons[0];
+    const last = closeButtons[closeButtons.length - 1];
+
+    last.focus();
+    fireEvent.keyDown(window, { key: 'Tab' });
+    expect(first).toHaveFocus();
+
+    trigger.focus();
+    fireEvent.keyDown(window, { key: 'Tab' });
+    expect(first).toHaveFocus();
+
+    dialog.focus();
+    fireEvent.keyDown(window, { key: 'Tab', shiftKey: true });
+    expect(last).toHaveFocus();
+
+    closeButtons.forEach((button) => {
+      button.setAttribute('disabled', '');
+    });
+    dialog.focus();
+    fireEvent.keyDown(window, { key: 'Tab' });
+    expect(dialog).toHaveFocus();
+  });
+
+  it('closes safely when the element that had focus is no longer connected', () => {
+    renderLayout();
+    const detachedTrigger = document.createElement('button');
+    document.body.appendChild(detachedTrigger);
+    detachedTrigger.focus();
+
+    const legalTrigger = within(screen.getByRole('contentinfo')).getByRole('button', { name: 'מדיניות פרטיות' });
+    fireEvent.click(legalTrigger);
+    detachedTrigger.remove();
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
   it('marks the English toggle with lang="en" for correct pronunciation by screen readers', () => {
     renderLayout();
     expect(within(screen.getByRole('banner')).getByRole('button', { name: 'EN' })).toHaveAttribute('lang', 'en');
