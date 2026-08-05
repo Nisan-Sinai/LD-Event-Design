@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { I18nProvider } from '../i18n/i18n';
 import { SiteLayout } from './SiteLayout';
@@ -18,6 +18,7 @@ const renderLayout = () =>
 
 beforeEach(() => {
   a.value = { user: null, role: 'guest', signOut: vi.fn() };
+  document.body.style.overflow = '';
 });
 
 describe('SiteLayout', () => {
@@ -65,7 +66,6 @@ describe('SiteLayout', () => {
     const header = within(screen.getByRole('banner'));
     fireEvent.click(header.getByRole('button', { name: 'EN' }));
     expect(header.getByRole('link', { name: /Log in/ })).toBeInTheDocument();
-    // חזרה לעברית
     fireEvent.click(header.getByRole('button', { name: 'עברית' }));
     expect(header.getByRole('link', { name: /התחברות/ })).toBeInTheDocument();
   });
@@ -82,7 +82,6 @@ describe('SiteLayout', () => {
     renderLayout();
     fireEvent.click(screen.getByRole('button', { name: 'מדיניות פרטיות' }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    // מקש שאינו Escape אינו סוגר
     fireEvent.keyDown(window, { key: 'a' });
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     fireEvent.keyDown(window, { key: 'Escape' });
@@ -97,11 +96,9 @@ describe('SiteLayout', () => {
 
   it('closes the legal modal with the close button', () => {
     renderLayout();
-    // קישור "תנאי שימוש" קיים גם ב-footer וגם ב-aria-label של ה-nav — נבחר את הכפתור בפוטר
     fireEvent.click(within(screen.getByRole('contentinfo')).getByRole('button', { name: 'תנאי שימוש' }));
     const dialog = screen.getByRole('dialog');
     expect(dialog).toBeInTheDocument();
-    // בתוך המודאל יש כפתור X וכפתור "סגירה" — שניהם בשם הנגיש "סגירה"
     fireEvent.click(within(dialog).getAllByRole('button', { name: 'סגירה' })[0]);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
@@ -110,7 +107,6 @@ describe('SiteLayout', () => {
     renderLayout();
     fireEvent.click(within(screen.getByRole('contentinfo')).getByRole('button', { name: 'הצהרת נגישות' }));
     const dialog = screen.getByRole('dialog');
-    // הכפתור התחתון הוא האחרון מבין הכפתורים בשם "סגירה"
     const closeButtons = within(dialog).getAllByRole('button', { name: 'סגירה' });
     fireEvent.click(closeButtons[closeButtons.length - 1]);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -120,11 +116,77 @@ describe('SiteLayout', () => {
     renderLayout();
     fireEvent.click(within(screen.getByRole('contentinfo')).getByRole('button', { name: 'מדיניות פרטיות' }));
     const dialog = screen.getByRole('dialog');
-    // קליק על גוף המודאל אינו סוגר (stopPropagation)
     fireEvent.click(within(dialog).getByRole('heading', { name: 'מדיניות פרטיות' }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    // קליק על הרקע (ה-dialog עצמו) סוגר
     fireEvent.click(dialog);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    fireEvent.click(dialog.parentElement!);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('moves focus into the legal dialog, traps it, locks scroll and restores the trigger', async () => {
+    renderLayout();
+    const trigger = within(screen.getByRole('contentinfo')).getByRole('button', { name: 'מדיניות פרטיות' });
+    trigger.focus();
+    fireEvent.click(trigger);
+
+    const dialog = screen.getByRole('dialog');
+    await waitFor(() => expect(dialog).toHaveFocus());
+    expect(document.body).toHaveStyle({ overflow: 'hidden' });
+
+    const closeButtons = within(dialog).getAllByRole('button', { name: 'סגירה' });
+    closeButtons[0].focus();
+    fireEvent.keyDown(window, { key: 'Tab', shiftKey: true });
+    expect(closeButtons[closeButtons.length - 1]).toHaveFocus();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+    expect(document.body.style.overflow).toBe('');
+  });
+
+  it('keeps keyboard focus inside the legal dialog for every Tab edge case', async () => {
+    renderLayout();
+    const trigger = within(screen.getByRole('contentinfo')).getByRole('button', { name: 'מדיניות פרטיות' });
+    fireEvent.click(trigger);
+
+    const dialog = screen.getByRole('dialog');
+    await waitFor(() => expect(dialog).toHaveFocus());
+    const closeButtons = within(dialog).getAllByRole('button', { name: 'סגירה' });
+    const first = closeButtons[0];
+    const last = closeButtons[closeButtons.length - 1];
+
+    last.focus();
+    fireEvent.keyDown(window, { key: 'Tab' });
+    expect(first).toHaveFocus();
+
+    trigger.focus();
+    fireEvent.keyDown(window, { key: 'Tab' });
+    expect(first).toHaveFocus();
+
+    dialog.focus();
+    fireEvent.keyDown(window, { key: 'Tab', shiftKey: true });
+    expect(last).toHaveFocus();
+
+    closeButtons.forEach((button) => {
+      button.setAttribute('disabled', '');
+    });
+    dialog.focus();
+    fireEvent.keyDown(window, { key: 'Tab' });
+    expect(dialog).toHaveFocus();
+  });
+
+  it('closes safely when the element that had focus is no longer connected', () => {
+    renderLayout();
+    const detachedTrigger = document.createElement('button');
+    document.body.appendChild(detachedTrigger);
+    detachedTrigger.focus();
+
+    const legalTrigger = within(screen.getByRole('contentinfo')).getByRole('button', { name: 'מדיניות פרטיות' });
+    fireEvent.click(legalTrigger);
+    detachedTrigger.remove();
+    fireEvent.keyDown(window, { key: 'Escape' });
+
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 

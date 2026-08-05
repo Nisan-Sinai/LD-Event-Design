@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Sparkles, Phone, LogOut, LogIn, UserPlus, User as UserIcon, X } from 'lucide-react';
 import { useI18n } from '../i18n/i18n';
@@ -8,18 +8,77 @@ import { WhatsAppButton } from './WhatsAppButton';
 
 type LegalKey = 'privacy' | 'terms' | 'accessibility';
 
+const FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])'
+].join(',');
+
 export function SiteLayout({ children }: { children: React.ReactNode }) {
   const { t, tList, lang, dir, setLang } = useI18n();
   const { user, role, signOut } = useAuth();
   const [legalModal, setLegalModal] = useState<LegalKey | null>(null);
+  const legalPanelRef = useRef<HTMLDivElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+
+  const openLegalModal = (key: LegalKey) => {
+    returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setLegalModal(key);
+  };
+
+  const closeLegalModal = () => setLegalModal(null);
 
   useEffect(() => {
     if (!legalModal) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const focusTimer = window.setTimeout(() => legalPanelRef.current?.focus(), 0);
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setLegalModal(null);
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeLegalModal();
+        return;
+      }
+
+      if (e.key !== 'Tab') return;
+      const panel = legalPanelRef.current!;
+
+      const focusable = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+      if (focusable.length === 0) {
+        e.preventDefault();
+        panel.focus();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+
+      if (e.shiftKey && (active === first || active === panel)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      } else if (!panel.contains(active)) {
+        e.preventDefault();
+        first.focus();
+      }
     };
+
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onKey);
+      const returnTo = returnFocusRef.current;
+      if (returnTo?.isConnected) returnTo.focus();
+    };
   }, [legalModal]);
 
   const navLink = 'text-xs font-bold text-gray-600 hover:text-[#B29259] transition-colors px-2 py-1';
@@ -91,7 +150,6 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
 
       <footer className="mt-16 bg-[#2c241a] text-[#EAE3D2]">
         <div className="max-w-5xl mx-auto px-4 py-12 grid grid-cols-1 sm:grid-cols-3 gap-10">
-          {/* מותג */}
           <div>
             <div className="flex items-center gap-2.5">
               <div className="bg-gradient-to-br from-[#B29259] to-[#8C6D3F] text-white p-2 rounded-2xl">
@@ -106,7 +164,6 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
             </a>
           </div>
 
-          {/* ניווט */}
           <nav aria-label={t('nav.menu')}>
             <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#B29259] mb-4">{t('nav.menu')}</p>
             <ul className="space-y-2.5 text-sm">
@@ -127,13 +184,12 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
             </ul>
           </nav>
 
-          {/* משפטי */}
           <nav aria-label={t('legal.terms')}>
             <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#B29259] mb-4">{t('legal.terms')}</p>
             <ul className="space-y-2.5 text-sm">
-              <li><button type="button" onClick={() => setLegalModal('privacy')} className="link-underline hover:text-white transition-colors">{t('legal.privacy')}</button></li>
-              <li><button type="button" onClick={() => setLegalModal('terms')} className="link-underline hover:text-white transition-colors">{t('legal.terms')}</button></li>
-              <li><button type="button" onClick={() => setLegalModal('accessibility')} className="link-underline hover:text-white transition-colors">{t('legal.accessibility')}</button></li>
+              <li><button type="button" onClick={() => openLegalModal('privacy')} className="link-underline hover:text-white transition-colors">{t('legal.privacy')}</button></li>
+              <li><button type="button" onClick={() => openLegalModal('terms')} className="link-underline hover:text-white transition-colors">{t('legal.terms')}</button></li>
+              <li><button type="button" onClick={() => openLegalModal('accessibility')} className="link-underline hover:text-white transition-colors">{t('legal.accessibility')}</button></li>
             </ul>
           </nav>
         </div>
@@ -156,29 +212,36 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
       {legalModal && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="site-legal-title"
-          onClick={() => setLegalModal(null)}
+          onClick={closeLegalModal}
         >
-          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[80vh] overflow-auto p-6 shadow-xl" onClick={(e) => e.stopPropagation()} dir={dir}>
+          <div
+            ref={legalPanelRef}
+            tabIndex={-1}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="site-legal-title"
+            aria-describedby="site-legal-body"
+            className="bg-white rounded-2xl max-w-lg w-full max-h-[80vh] overflow-auto p-6 shadow-xl outline-none"
+            onClick={(e) => e.stopPropagation()}
+            dir={dir}
+          >
             <div className="flex items-center justify-between mb-3">
               <h2 id="site-legal-title" className="text-lg font-bold text-[#8C6D3F]">{t(`legal.${legalModal}`)}</h2>
-              <button type="button" onClick={() => setLegalModal(null)} aria-label={t('legal.close')} className="text-gray-400 hover:text-gray-700">
+              <button type="button" onClick={closeLegalModal} aria-label={t('legal.close')} className="text-gray-400 hover:text-gray-700">
                 <X className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
-            <div className="space-y-2.5 text-sm text-gray-600 leading-relaxed">
+            <div id="site-legal-body" className="space-y-2.5 text-sm text-gray-600 leading-relaxed">
               {tList(`legal.${legalModal}Body`).map((p, i) => <p key={i}>{p}</p>)}
             </div>
-            <button type="button" onClick={() => setLegalModal(null)} className="mt-5 w-full bg-[#B29259] hover:bg-[#8C6D3F] text-white py-2.5 rounded-xl text-sm font-bold">
+            <button type="button" onClick={closeLegalModal} className="mt-5 w-full bg-[#B29259] hover:bg-[#8C6D3F] text-white py-2.5 rounded-xl text-sm font-bold">
               {t('legal.close')}
             </button>
           </div>
         </div>
       )}
 
-      <AccessibilityWidget onOpenStatement={() => setLegalModal('accessibility')} />
+      <AccessibilityWidget onOpenStatement={() => openLegalModal('accessibility')} />
       <WhatsAppButton />
     </div>
   );
