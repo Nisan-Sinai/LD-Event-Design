@@ -1,12 +1,9 @@
-# One-time execution trigger. This workflow removes itself after completion.
 name: One-Time Branch Cleanup
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - .github/workflows/one-time-branch-cleanup.yml
+  pull_request:
+    types:
+      - closed
 
 permissions:
   contents: write
@@ -14,7 +11,10 @@ permissions:
 jobs:
   cleanup:
     name: Delete all branches except main
-    if: contains(github.event.head_commit.message, 'chore: one-time branch cleanup')
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.head.ref == 'chore/one-time-branch-cleanup-final'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -56,7 +56,7 @@ jobs:
             exit 1
           fi
 
-      - name: Remove this one-time workflow
+      - name: Remove this completed one-time workflow
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -69,12 +69,10 @@ jobs:
               --jq '.sha'
           )"
 
-          if gh api --method DELETE \
+          gh api --method DELETE \
             "repos/${GITHUB_REPOSITORY}/contents/${workflow_path}" \
-            -f message='chore: remove completed one-time cleanup workflow' \
+            -f message='chore: remove completed one-time branch cleanup' \
             -f sha="$workflow_sha" \
-            -f branch='main'; then
-            echo 'One-time workflow removed from main.'
-          else
-            echo '::warning::Branches were cleaned, but the one-time workflow could not remove itself.'
-          fi
+            -f branch='main'
+
+          echo 'One-time cleanup workflow removed from main.'
