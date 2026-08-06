@@ -84,8 +84,8 @@ function customToPackage(o: PackageOverride): Package {
 }
 
 /**
- * בונה את הקטלוג האפקטיבי: חבילות הבסיס לאחר דריסות (מחיר/טקסט/תמונה/הסתרה),
- * בתוספת חבילות חדשות שנוצרו בניהול. פונקציה טהורה (ניתנת לבדיקה).
+ * בונה את קטלוג החבילות האפקטיבי: חבילות הבסיס לאחר דריסות,
+ * בתוספת חבילות חדשות שנוצרו בניהול. מוצרים קטנים נשארים בקטלוג המוצרים בלבד.
  */
 export function buildCatalog(packages: Package[], overrides: OverrideMap): Package[] {
   const base = packages
@@ -106,7 +106,7 @@ export function buildCatalog(packages: Package[], overrides: OverrideMap): Packa
     });
 
   const customs = Object.values(overrides)
-    .filter((o) => o.is_custom && !o.hidden)
+    .filter((o) => o.is_custom && !o.package_id.startsWith('product-') && !o.hidden)
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
     .map(customToPackage);
 
