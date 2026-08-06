@@ -68,7 +68,7 @@ describe('CartPage', () => {
     expect(screen.getByRole('button', { name: 'המשך לשליחת הצעת מחיר' })).toBeDisabled();
   });
 
-  it('accepts only the gift coupon and persists it', () => {
+  it('accepts only the gift coupon, persists it and can clear it', () => {
     renderCart([item]);
     const input = screen.getByLabelText('קוד קופון');
 
@@ -80,6 +80,10 @@ describe('CartPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'הפעלת קופון' }));
     expect(screen.getByRole('status')).toHaveTextContent(/מתנה מפתיעה/);
     expect(JSON.parse(window.localStorage.getItem(CART_DESIGN_STORAGE_KEY) ?? '{}')).toMatchObject({ couponApplied: true, couponCode: 'מתנה' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'ביטול' }));
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(input).toHaveValue('');
   });
 
   it('renders English quote cart content', () => {
