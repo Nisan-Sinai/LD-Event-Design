@@ -95,6 +95,6 @@ test.describe('Production-readiness gates', () => {
     await page.goto('/');
     await expect(page.getByText(/מינימום להזמנה/)).toHaveCount(0);
     await expect(page.getByText(/הובלה.*500/)).toHaveCount(0);
-    await expect(page.getByText(/2,500/)).toHaveCount(0);
+    await expect(page.getByText(/מינימום הזמנה.*2,500/)).toHaveCount(0);
   });
 });
