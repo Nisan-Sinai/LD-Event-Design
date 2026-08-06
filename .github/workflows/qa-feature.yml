@@ -1,0 +1,98 @@
+name: Storefront exhaustive QA
+
+on:
+  push:
+    branches:
+      - feat/storefront-ordering-flow
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: storefront-exhaustive-qa
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Audit · TypeScript · Unit · Coverage · Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run audit:prod
+      - run: npm run type-check
+      - run: npm run test:coverage
+      - run: npm run build
+
+  e2e:
+    name: Playwright desktop and mobile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: storefront-playwright-report
+          path: playwright-report
+          if-no-files-found: ignore
+          retention-days: 14
+
+  report:
+    name: Publish QA result
+    if: always()
+    needs: [quality, e2e]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const quality = '${{ needs.quality.result }}';
+            const e2e = '${{ needs.e2e.result }}';
+            const ok = quality === 'success' && e2e === 'success';
+            const body = [
+              '<!-- storefront-exhaustive-qa -->',
+              `## ${ok ? '✅' : '❌'} Storefront exhaustive QA`,
+              '',
+              `- Audit · TypeScript · Unit · Coverage · Build: **${quality}**`,
+              `- Playwright desktop and mobile: **${e2e}**`,
+              `- Commit: \`${context.sha}\``,
+              '',
+              ok ? 'הבראנץ׳ עבר את כל שערי האיכות.' : 'יש כשל שדורש תיקון לפני מיזוג.'
+            ].join('\n');
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: 32,
+              per_page: 100
+            });
+            const previous = comments.find(comment => comment.body?.includes('<!-- storefront-exhaustive-qa -->'));
+            if (previous) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: previous.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: 32,
+                body
+              });
+            }
