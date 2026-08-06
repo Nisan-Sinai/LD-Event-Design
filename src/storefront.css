@@ -1,5 +1,7 @@
 /* Mobile storefront alignment safeguards. */
 .hero-glow .translate-y-5 {
+  --tw-translate-y: 0px !important;
+  translate: 0 0 !important;
   transform: none !important;
 }
 
