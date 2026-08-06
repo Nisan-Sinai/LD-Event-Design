@@ -20,18 +20,37 @@ test.describe('Home shop (guest)', () => {
 
   test('guest can view products and packages without logging in', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'קומפוזיציית פרחים ונרות לשולחן' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'חבילת עיצוב חתונה - Classic S' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 5, name: 'קומפוזיציית פרחים ונרות לשולחן' })).toBeVisible();
+    await expect(page.getByText('חבילת עיצוב חתונה - Classic S')).toBeVisible();
     await expect(page.getByText('אין צורך בהרשמה כדי להזמין')).toBeVisible();
   });
 
   for (const width of [360, 390, 430]) {
-    test(`keeps the two-column product grid straight at ${width}px`, async ({ page }) => {
+    test(`keeps the hero and product grids straight at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.goto('/');
-      await page.locator('#products').scrollIntoViewIfNeeded();
 
-      const layout = await page.evaluate(() => {
+      const heroLayout = await page.evaluate(() => {
+        const cards = Array.from(document.querySelectorAll<HTMLElement>('.hero-glow .grid.grid-cols-2 > div')).slice(0, 4);
+        const rects = cards.map((card) => card.getBoundingClientRect());
+        return {
+          overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+          widths: rects.map((rect) => rect.width),
+          tops: rects.map((rect) => rect.top),
+          lefts: rects.map((rect) => rect.left)
+        };
+      });
+
+      expect(heroLayout.overflow).toBeLessThanOrEqual(1);
+      expect(heroLayout.widths).toHaveLength(4);
+      expect(Math.abs(heroLayout.widths[0] - heroLayout.widths[1])).toBeLessThanOrEqual(1);
+      expect(Math.abs(heroLayout.widths[2] - heroLayout.widths[3])).toBeLessThanOrEqual(1);
+      expect(Math.abs(heroLayout.tops[0] - heroLayout.tops[1])).toBeLessThanOrEqual(1);
+      expect(Math.abs(heroLayout.tops[2] - heroLayout.tops[3])).toBeLessThanOrEqual(1);
+      expect(heroLayout.lefts[0]).not.toBe(heroLayout.lefts[1]);
+
+      await page.locator('#products').scrollIntoViewIfNeeded();
+      const productLayout = await page.evaluate(() => {
         const cards = Array.from(document.querySelectorAll<HTMLElement>('#products article')).slice(0, 4);
         const rects = cards.map((card) => card.getBoundingClientRect());
         return {
@@ -42,13 +61,13 @@ test.describe('Home shop (guest)', () => {
         };
       });
 
-      expect(layout.overflow).toBeLessThanOrEqual(1);
-      expect(layout.widths).toHaveLength(4);
-      expect(Math.abs(layout.widths[0] - layout.widths[1])).toBeLessThanOrEqual(1);
-      expect(Math.abs(layout.widths[2] - layout.widths[3])).toBeLessThanOrEqual(1);
-      expect(Math.abs(layout.tops[0] - layout.tops[1])).toBeLessThanOrEqual(1);
-      expect(Math.abs(layout.tops[2] - layout.tops[3])).toBeLessThanOrEqual(1);
-      expect(layout.lefts[0]).not.toBe(layout.lefts[1]);
+      expect(productLayout.overflow).toBeLessThanOrEqual(1);
+      expect(productLayout.widths).toHaveLength(4);
+      expect(Math.abs(productLayout.widths[0] - productLayout.widths[1])).toBeLessThanOrEqual(1);
+      expect(Math.abs(productLayout.widths[2] - productLayout.widths[3])).toBeLessThanOrEqual(1);
+      expect(Math.abs(productLayout.tops[0] - productLayout.tops[1])).toBeLessThanOrEqual(1);
+      expect(Math.abs(productLayout.tops[2] - productLayout.tops[3])).toBeLessThanOrEqual(1);
+      expect(productLayout.lefts[0]).not.toBe(productLayout.lefts[1]);
     });
   }
 
