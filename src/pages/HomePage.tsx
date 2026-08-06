@@ -7,7 +7,6 @@ import {
   Heart,
   Instagram,
   MessageCircle,
-  PackageOpen,
   Palette,
   Play,
   ShoppingBag,
