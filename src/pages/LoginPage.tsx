@@ -1,16 +1,28 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { AlertCircle, ArrowRight, KeyRound, Lock, LogIn, Mail } from 'lucide-react';
 import { useI18n } from '../i18n/i18n';
 import { useAuth } from '../auth/AuthProvider';
 import { GoogleButton, OrDivider } from '../components/GoogleButton';
 
+const AUTH_RETURN_KEY = 'ld-event-design-auth-return';
+
+function safeReturnPath(value: string | null | undefined): string {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) return '/admin';
+  return value;
+}
+
 export function LoginPage() {
   const { t, lang } = useI18n();
-  const { signIn, resetPassword, configured } = useAuth();
+  const { user, role, signIn, resetPassword, configured } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as { from?: string } | null)?.from ?? '/order';
+  const from = useMemo(() => {
+    const stateFrom = (location.state as { from?: string } | null)?.from;
+    const queryFrom = new URLSearchParams(location.search).get('from');
+    const storedFrom = window.sessionStorage.getItem(AUTH_RETURN_KEY);
+    return safeReturnPath(stateFrom ?? queryFrom ?? storedFrom);
+  }, [location.search, location.state]);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,6 +30,16 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    window.sessionStorage.setItem(AUTH_RETURN_KEY, from);
+  }, [from]);
+
+  useEffect(() => {
+    if (!user || role !== 'admin') return;
+    window.sessionStorage.removeItem(AUTH_RETURN_KEY);
+    navigate(from, { replace: true });
+  }, [from, navigate, role, user]);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -34,6 +56,7 @@ export function LoginPage() {
       setError(result.error);
       return;
     }
+    window.sessionStorage.removeItem(AUTH_RETURN_KEY);
     navigate(from, { replace: true });
   };
 
@@ -87,8 +110,8 @@ export function LoginPage() {
               ? 'הזינו את כתובת המייל של המנהלת ונשלח אליה קישור מאובטח להגדרת סיסמה חדשה.'
               : 'Enter the manager email and we will send a secure link for choosing a new password.'
             : lang === 'he'
-              ? 'התחברו לאזור הניהול כדי לעדכן חבילות, מחירים ותמונות.'
-              : 'Sign in to manage packages, prices and images.'}
+              ? 'התחברו לאזור הניהול כדי לעדכן תמונות, חבילות, מוצרים, מחירים ותוכן.'
+              : 'Sign in to manage images, packages, products, pricing and content.'}
         </p>
 
         {!configured && (
