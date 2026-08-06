@@ -43,12 +43,14 @@ for (const route of PUBLIC_ROUTES) {
 }
 
 test.describe('Production-readiness gates', () => {
-  test('direct #packages deep link scrolls the catalog into view', async ({ page }) => {
+  test('direct #packages deep link scrolls the catalog heading into view', async ({ page }) => {
     await page.goto('/#packages', { waitUntil: 'networkidle' });
     const packages = page.locator('#packages');
+    const heading = packages.getByRole('heading', { name: 'חבילות', exact: true });
 
     await expect(packages).toBeVisible();
-    await expect(packages).toBeInViewport({ ratio: 0.1 });
+    await expect(heading).toBeVisible();
+    await expect(heading).toBeInViewport();
     await expect(page).toHaveURL(/\/#packages$/);
   });
 
