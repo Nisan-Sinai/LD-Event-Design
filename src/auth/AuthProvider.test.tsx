@@ -70,6 +70,7 @@ function Probe() {
 const renderAuth = () => render(<AuthProvider><Probe /></AuthProvider>);
 
 beforeEach(() => {
+  window.sessionStorage.clear();
   mock.configured = true;
   mock.session = null;
   mock.signUp.mockClear().mockResolvedValue({ error: null });
@@ -105,11 +106,11 @@ describe('AuthProvider — not configured', () => {
 });
 
 describe('AuthProvider — configured', () => {
-  it('loads an admin session and derives the admin role', async () => {
-    mock.session = { user: { id: '1', email: 'luroni704@gmail.com' } };
+  it('loads either permanent administrator session as admin', async () => {
+    mock.session = { user: { id: '1', email: 'nisan.sinai5@gmail.com' } };
     renderAuth();
     await waitFor(() => expect(screen.getByTestId('role').textContent).toBe('admin'));
-    expect(screen.getByTestId('email').textContent).toBe('luroni704@gmail.com');
+    expect(screen.getByTestId('email').textContent).toBe('nisan.sinai5@gmail.com');
   });
 
   it('a non-admin email becomes a customer', async () => {
@@ -133,29 +134,33 @@ describe('AuthProvider — configured', () => {
     expect(mock.rpc).not.toHaveBeenCalled();
   });
 
-  it('uses the current origin and requested route for Google OAuth', async () => {
+  it('uses the current deployment origin and a login callback for Google OAuth', async () => {
     renderAuth();
     await waitFor(() => expect(screen.getByTestId('loading').textContent).toBe('false'));
     await act(async () => screen.getByText('google').click());
     expect(mock.googleOAuth).toHaveBeenCalledWith({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/admin`,
+        redirectTo: `${window.location.origin}/login?from=%2Fadmin`,
         queryParams: { access_type: 'offline', prompt: 'select_account' }
       }
     });
+    expect(window.sessionStorage.getItem('ld-event-design-auth-return')).toBe('/admin');
   });
 
-  it('rejects external OAuth return paths and falls back to the app root', async () => {
+  it('rejects external OAuth return paths and falls back to admin', async () => {
     renderAuth();
     await waitFor(() => expect(screen.getByTestId('loading').textContent).toBe('false'));
     await act(async () => screen.getByText('unsafe-google').click());
     expect(mock.googleOAuth).toHaveBeenCalledWith(expect.objectContaining({
-      options: expect.objectContaining({ redirectTo: `${window.location.origin}/` })
+      options: expect.objectContaining({
+        redirectTo: `${window.location.origin}/login?from=%2Fadmin`
+      })
     }));
   });
 
   it('forwards signUp, signIn, signOut, reset and update actions to Supabase', async () => {
+    window.sessionStorage.setItem('ld-event-design-auth-return', '/admin');
     renderAuth();
     await waitFor(() => expect(screen.getByTestId('loading').textContent).toBe('false'));
     await act(async () => screen.getByText('signup').click());
@@ -170,6 +175,7 @@ describe('AuthProvider — configured', () => {
     });
     expect(mock.updateUser).toHaveBeenCalledWith({ password: 'new-password' });
     expect(mock.signOut).toHaveBeenCalled();
+    expect(window.sessionStorage.getItem('ld-event-design-auth-return')).toBeNull();
   });
 
   it('surfaces provider error messages', async () => {
