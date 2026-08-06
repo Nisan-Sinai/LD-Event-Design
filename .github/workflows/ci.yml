@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, redesign, dev, hotfix/permanent-admin-nisan]
+    branches: [main, redesign, dev]
   pull_request:
 
 permissions:
