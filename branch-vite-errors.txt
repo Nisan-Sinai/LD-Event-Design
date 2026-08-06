@@ -1,0 +1,13 @@
+[36mvite v8.2.0 [32mbuilding client environment for production...[36m[39m
+[2Ktransforming...✓ 1927 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                             2.20 kB │ gzip:  0.87 kB
+dist/assets/index-BVEwxLCp.css             73.01 kB │ gzip: 13.21 kB
+dist/assets/rolldown-runtime-CbXtAM7H.js    0.58 kB │ gzip:  0.36 kB
+dist/assets/icons-BLAczadw.js              20.96 kB │ gzip:  7.79 kB
+dist/assets/supabase-CV0_D-zB.js          207.02 kB │ gzip: 53.40 kB
+dist/assets/react-ccFagwa3.js             218.49 kB │ gzip: 69.99 kB
+dist/assets/index-jHp2i_Ha.js             282.77 kB │ gzip: 70.21 kB
+
+[32m✓ built in 902ms[39m
