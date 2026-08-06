@@ -20,8 +20,8 @@ test.describe('Home shop (guest)', () => {
 
   test('guest can view products and packages without logging in', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByText('קומפוזיציית פרחים ונרות לשולחן')).toBeVisible();
-    await expect(page.getByText('חבילת עיצוב חתונה - Classic S')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'קומפוזיציית פרחים ונרות לשולחן' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'חבילת עיצוב חתונה - Classic S' })).toBeVisible();
     await expect(page.getByText('אין צורך בהרשמה כדי להזמין')).toBeVisible();
   });
 
