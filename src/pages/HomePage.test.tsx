@@ -82,7 +82,7 @@ describe('HomePage', () => {
 
     expect(screen.getByText('Tailor it to your event.')).toBeInTheDocument();
     expect(screen.getByText('Wedding Design Package — Classic S')).toBeInTheDocument();
-    expect(screen.getAllByText('From ').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('From').length).toBeGreaterThan(0);
   });
 });
 
