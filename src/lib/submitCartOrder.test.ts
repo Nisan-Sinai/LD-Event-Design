@@ -23,9 +23,16 @@ const input: CartOrderInput = {
     { id: 'classic-s', title: 'Classic S', price: 2900, quantity: 1 },
     { id: 'bar', title: 'Bar', price: 2500, quantity: 2 }
   ],
+  preferences: {
+    palette: 'לבן וזהב',
+    customColors: 'שמנת וזהב מט',
+    customRequest: 'פרחים עדינים',
+    couponCode: 'מתנה',
+    couponApplied: true
+  },
   subtotal: 7900,
-  deliveryPrice: 500,
-  totalPrice: 8400
+  deliveryPrice: 0,
+  totalPrice: 7900
 };
 
 beforeEach(() => {
@@ -34,7 +41,7 @@ beforeEach(() => {
 });
 
 describe('submitCartOrder', () => {
-  it('inserts a guest cart order with normalized fields', async () => {
+  it('inserts a quote request with normalized fields and design preferences', async () => {
     s.insert.mockResolvedValue({ error: null });
 
     await expect(submitCartOrder(input)).resolves.toEqual({ id: '00000000-0000-4000-8000-000000000001' });
@@ -47,28 +54,39 @@ describe('submitCartOrder', () => {
       package_id: 'classic-s,bar',
       package_title: 'Classic S | Bar × 2',
       base_price: 7900,
-      delivery_price: 500,
-      total_price: 8400,
-      include_delivery: true,
-      order_source: 'website-cart'
+      delivery_price: 0,
+      total_price: 7900,
+      include_delivery: false,
+      coupon_code: 'מתנה',
+      order_source: 'website-quote-builder'
     }));
+
+    const payload = s.insert.mock.calls[0][0] as { referral_detail: string; internal_notes: string };
+    expect(JSON.parse(payload.referral_detail)).toMatchObject({
+      palette: 'לבן וזהב',
+      customColors: 'שמנת וזהב מט',
+      customRequest: 'פרחים עדינים',
+      quoteOnly: true,
+      noPaymentCollected: true
+    });
+    expect(JSON.parse(payload.internal_notes)).toMatchObject({ policyVersion: '2026-08-07' });
   });
 
-  it('keeps optional names and notes and supports no delivery', async () => {
+  it('keeps optional names and customer notes without a coupon', async () => {
     s.insert.mockResolvedValue({ error: null });
     await submitCartOrder({
       ...input,
-      customer: { ...input.customer, additionalName: ' שרה ', notes: ' בקשה מיוחדת ' },
-      deliveryPrice: 0,
-      totalPrice: input.subtotal
+      customer: { ...input.customer, additionalName: ' שרה ', notes: ' בקשה נוספת ' },
+      preferences: { ...input.preferences, couponCode: '', couponApplied: false }
     });
 
     expect(s.insert).toHaveBeenCalledWith(expect.objectContaining({
       bride_name: 'שרה',
-      referral_detail: 'בקשה מיוחדת',
-      internal_notes: 'בקשה מיוחדת',
+      coupon_code: null,
       include_delivery: false
     }));
+    const payload = s.insert.mock.calls[0][0] as { referral_detail: string };
+    expect(JSON.parse(payload.referral_detail)).toMatchObject({ customerNotes: ' בקשה נוספת ' });
   });
 
   it('throws a Supabase insert error', async () => {
