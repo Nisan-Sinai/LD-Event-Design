@@ -188,7 +188,7 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
               {role === 'customer' && <li><Link to="/account" className="hover:text-white">{t('nav.account')}</Link></li>}
               {!user && (
                 <li>
-                  <Link to="/login" state={{ from: '/admin' }} className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/60 px-4 py-2 font-bold text-[#E8C5B8] transition hover:bg-[#D4AF37] hover:text-[#24211F]">
+                  <Link to="/login?from=%2Fadmin" state={{ from: '/admin' }} className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/60 px-4 py-2 font-bold text-[#E8C5B8] transition hover:bg-[#D4AF37] hover:text-[#24211F]">
                     <UserIcon className="h-4 w-4" aria-hidden="true" />
                     {lang === 'he' ? 'כניסת מנהלת' : 'Manager login'}
                   </Link>
