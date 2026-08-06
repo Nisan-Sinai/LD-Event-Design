@@ -38,7 +38,6 @@ import { ProductManager } from './ProductManager';
 
 function override(input: Partial<PackageOverride> & { package_id: string }): PackageOverride {
   return {
-    package_id: input.package_id,
     price: null,
     title: null,
     subtitle: null,
@@ -133,23 +132,21 @@ describe('ProductManager', () => {
     expect(card.querySelector('img')).not.toBeInTheDocument();
   });
 
-  it('hides and shows a product in the public shop', async () => {
+  it('hides a product in the public shop', async () => {
     renderManager();
     fireEvent.click(within(productCard()).getByRole('button', { name: 'הסתרה מהחנות' }));
     await waitFor(() => expect(state.saveOverride).toHaveBeenCalled());
     expect(state.saveOverride.mock.calls[0][0]).toMatchObject({ hidden: true });
+  });
 
-    state.saveOverride.mockClear();
+  it('shows a previously hidden product in the public shop', async () => {
     state.overrides = {
       [firstProduct.id]: override({ package_id: firstProduct.id, hidden: true })
     };
-    const secondRender = renderManager();
-    const cards = screen.getAllByDisplayValue(firstProduct.title);
-    const hiddenCard = cards[cards.length - 1].closest('article') as HTMLElement;
-    fireEvent.click(within(hiddenCard).getByRole('button', { name: 'הצגה בחנות' }));
+    renderManager();
+    fireEvent.click(within(productCard()).getByRole('button', { name: 'הצגה בחנות' }));
     await waitFor(() => expect(state.saveOverride).toHaveBeenCalled());
     expect(state.saveOverride.mock.calls[0][0]).toMatchObject({ hidden: false });
-    secondRender.unmount();
   });
 
   it('restores a changed base product to its default values', async () => {
@@ -214,14 +211,18 @@ describe('ProductManager', () => {
     await waitFor(() => expect(state.removeOverride).toHaveBeenCalledWith('product-custom-one'));
   });
 
-  it('shows recoverable errors for failed saves and image uploads', async () => {
+  it('shows a recoverable error when saving fails', async () => {
     state.saveOverride.mockRejectedValueOnce(new Error('rls'));
     renderManager();
     const card = productCard();
     fireEvent.click(within(card).getByRole('button', { name: 'שמירה' }));
     await waitFor(() => expect(within(card).getByRole('alert')).toHaveTextContent('השמירה נכשלה'));
+  });
 
+  it('shows a recoverable error when image upload fails', async () => {
     state.upload.mockRejectedValueOnce(new Error('storage'));
+    renderManager();
+    const card = productCard();
     const fileInput = card.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(fileInput, { target: { files: [new File(['image'], 'bad.png', { type: 'image/png' })] } });
     await waitFor(() => expect(within(card).getByRole('alert')).toHaveTextContent('השמירה נכשלה'));
