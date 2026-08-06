@@ -1,9 +1,18 @@
+import { fileURLToPath, URL } from 'node:url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: [
+      {
+        find: /^lucide-react$/,
+        replacement: fileURLToPath(new URL('./src/lucide-react-runtime.tsx', import.meta.url))
+      }
+    ]
+  },
   build: {
     rollupOptions: {
       output: {
