@@ -1,11 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import type { Package } from '../App';
 
-/**
- * דריסה/תוספת קטלוג (נשמרת ב-DB, חלה על כל הלקוחות).
- * עבור חבילה קיימת — שדה null פירושו "ערך ברירת המחדל".
- * עבור חבילה חדשה (is_custom) — השדות מגדירים את החבילה במלואה.
- */
 export interface PackageOverride {
   package_id: string;
   price: number | null;
@@ -27,7 +22,22 @@ export type OverrideMap = Record<string, PackageOverride>;
 const COLS =
   'package_id,price,title,subtitle,description,benefits,image_url,category,svg_type,pricing_tiers,hidden,is_custom,sort_order';
 
-/** שולף את כל דריסות/תוספות הקטלוג מ-Supabase (קריאה ציבורית). */
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const IMAGE_EXTENSIONS: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/avif': 'avif'
+};
+
+export function validatePackageImage(file: File): string {
+  if (file.size <= 0) throw new Error('Image file is empty');
+  if (file.size > MAX_IMAGE_BYTES) throw new Error('Image file is larger than 8 MB');
+  const extension = IMAGE_EXTENSIONS[file.type];
+  if (!extension) throw new Error('Unsupported image format');
+  return extension;
+}
+
 export async function fetchPackageOverrides(): Promise<OverrideMap> {
   if (!isSupabaseConfigured) return {};
   const { data, error } = await supabase.from('package_overrides').select(COLS);
@@ -37,7 +47,6 @@ export async function fetchPackageOverrides(): Promise<OverrideMap> {
   return map;
 }
 
-/** שומר/מעדכן דריסה או חבילה חדשה (מנהל בלבד — נאכף ב-RLS). */
 export async function savePackageOverride(o: PackageOverride): Promise<void> {
   if (!isSupabaseConfigured) return;
   const { error } = await supabase
@@ -46,27 +55,27 @@ export async function savePackageOverride(o: PackageOverride): Promise<void> {
   if (error) throw error;
 }
 
-/** מוחק דריסה/חבילה (החזרה לברירת מחדל לקיימת, מחיקה מלאה לחדשה). */
 export async function deletePackageOverride(packageId: string): Promise<void> {
   if (!isSupabaseConfigured) return;
   const { error } = await supabase.from('package_overrides').delete().eq('package_id', packageId);
   if (error) throw error;
 }
 
-/** מעלה תמונת חבילה ל-Storage ומחזיר כתובת ציבורית. */
 export async function uploadPackageImage(file: File): Promise<string> {
   if (!isSupabaseConfigured) throw new Error('Supabase not configured');
-  const parts = file.name.split('.');
-  const ext = parts.length > 1 ? parts.pop()!.toLowerCase() : 'jpg';
-  const path = `${crypto.randomUUID()}.${ext}`;
+  const extension = validatePackageImage(file);
+  const path = `${crypto.randomUUID()}.${extension}`;
   const { error } = await supabase.storage
     .from('package-images')
-    .upload(path, file, { contentType: file.type || 'image/jpeg', upsert: false });
+    .upload(path, file, {
+      contentType: file.type,
+      cacheControl: '31536000',
+      upsert: false
+    });
   if (error) throw error;
   return supabase.storage.from('package-images').getPublicUrl(path).data.publicUrl;
 }
 
-/** ממיר שורת חבילה-חדשה לאובייקט Package לתצוגה. */
 function customToPackage(o: PackageOverride): Package {
   return {
     id: o.package_id,
@@ -83,10 +92,6 @@ function customToPackage(o: PackageOverride): Package {
   };
 }
 
-/**
- * בונה את קטלוג החבילות האפקטיבי: חבילות הבסיס לאחר דריסות,
- * בתוספת חבילות חדשות שנוצרו בניהול. מוצרים קטנים נשארים בקטלוג המוצרים בלבד.
- */
 export function buildCatalog(packages: Package[], overrides: OverrideMap): Package[] {
   const base = packages
     .filter((p) => !overrides[p.id]?.hidden)
