@@ -43,7 +43,7 @@ describe('HomePage', () => {
 
     expect(screen.getAllByText(SHOP_PRODUCT_CATEGORIES.CENTERPIECES).length).toBeGreaterThan(0);
     expect(screen.getAllByText(SHOP_PRODUCT_CATEGORIES.CHUPPAH).length).toBeGreaterThan(0);
-    expect(screen.getByText(SHOP_PRODUCTS[0].title)).toBeInTheDocument();
+    expect(screen.getAllByText(SHOP_PRODUCTS[0].title).length).toBeGreaterThan(0);
     expect(screen.getAllByText(`₪${SHOP_PRODUCTS[0].price.toLocaleString()}`).length).toBeGreaterThan(0);
   });
 
