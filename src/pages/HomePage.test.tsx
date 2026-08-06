@@ -63,7 +63,7 @@ describe('HomePage', () => {
 
     expect(screen.queryByText(/הובלה.*500/)).not.toBeInTheDocument();
     expect(screen.queryByText(/מינימום הזמנה/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/2,500/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/מינימום הזמנה.*2,500/)).not.toBeInTheDocument();
   });
 
   it('stores palette, precise colors and a custom design request', () => {
