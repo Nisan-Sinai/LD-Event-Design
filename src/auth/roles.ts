@@ -2,8 +2,10 @@
 
 export type Role = 'guest' | 'customer' | 'admin';
 
+export const DEFAULT_ADMIN_EMAILS = 'luroni704@gmail.com,nisan.sinai5@gmail.com';
+
 /** מפענח רשימת אימיילים-מנהלים מ-env (מופרד בפסיקים, רווחים נסלחים, אותיות קטנות). */
-export function parseAdminEmails(raw: string | undefined, fallback = 'luroni704@gmail.com'): string[] {
+export function parseAdminEmails(raw: string | undefined, fallback = DEFAULT_ADMIN_EMAILS): string[] {
   return (raw ?? fallback)
     .split(',')
     .map((e) => e.trim().toLowerCase())
