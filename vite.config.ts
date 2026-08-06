@@ -1,4 +1,3 @@
-import { fileURLToPath, URL } from 'node:url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -9,7 +8,7 @@ export default defineConfig({
     alias: [
       {
         find: /^lucide-react$/,
-        replacement: fileURLToPath(new URL('./src/lucide-react-runtime.tsx', import.meta.url))
+        replacement: new URL('./src/lucide-react-runtime.tsx', import.meta.url).pathname
       }
     ]
   },
