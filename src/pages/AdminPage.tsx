@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router';
-import { ClipboardList, LayoutDashboard, Package as PackageIcon, Plus } from 'lucide-react';
+import { ClipboardList, EyeOff, ImagePlus, LayoutDashboard, Package as PackageIcon, Pencil, ShoppingBag } from 'lucide-react';
 import { OrderDetailModal } from '../components/OrderDetailModal';
 import { PackageManager } from '../components/PackageManager';
 import { ProductManager } from '../components/ProductManager';
@@ -8,12 +7,12 @@ import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/i18n';
 import { fetchOrders, type OrderRow } from '../lib/orders';
 
-type AdminTab = 'orders' | 'catalog';
+type AdminTab = 'catalog' | 'orders';
 
 export function AdminPage() {
-  const { t } = useI18n();
-  const { configured } = useAuth();
-  const [tab, setTab] = useState<AdminTab>('orders');
+  const { t, lang } = useI18n();
+  const { configured, user } = useAuth();
+  const [tab, setTab] = useState<AdminTab>('catalog');
   const [orders, setOrders] = useState<OrderRow[] | null>(null);
   const [blocked, setBlocked] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -46,34 +45,73 @@ export function AdminPage() {
     </button>
   );
 
+  const capabilityCards = lang === 'he'
+    ? [
+        { title: 'תמונות ומדיה', body: 'העלאת תמונה חדשה, החלפה, תצוגה מקדימה והסרת תמונה.', icon: ImagePlus },
+        { title: 'תוכן ומחירים', body: 'שינוי שמות, תיאורים, יתרונות, קטגוריות ומחירים.', icon: Pencil },
+        { title: 'שליטה מלאה בקטלוג', body: 'הוספה, הסתרה, הצגה, שחזור ומחיקה של מוצרים וחבילות.', icon: EyeOff }
+      ]
+    : [
+        { title: 'Images & media', body: 'Upload, replace, preview and remove catalogue images.', icon: ImagePlus },
+        { title: 'Content & pricing', body: 'Edit names, descriptions, benefits, categories and prices.', icon: Pencil },
+        { title: 'Full catalogue control', body: 'Create, hide, show, restore and delete products and packages.', icon: EyeOff }
+      ];
+
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="flex items-center gap-2 text-xl font-bold text-[#8C6D3F]">
-            <LayoutDashboard className="h-5 w-5 text-[#B29259]" aria-hidden="true" />
-            {t('adminPage.adminArea')}
-          </h2>
-          <p className="mt-0.5 text-xs text-gray-400">{t('adminPage.adminAreaSub')}</p>
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:py-10">
+      <div className="rounded-[2rem] border border-[#E8C5B8]/70 bg-gradient-to-br from-white via-[#FDFBF7] to-[#F4E3E3]/45 p-5 shadow-[0_24px_70px_rgba(140,109,63,0.10)] sm:p-7">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="flex items-center gap-2 font-display text-2xl font-black text-[#8C6D3F] sm:text-3xl">
+              <LayoutDashboard className="h-6 w-6 text-[#B29259]" aria-hidden="true" />
+              {lang === 'he' ? 'ניהול האתר והקטלוג' : 'Website & catalogue management'}
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">
+              {lang === 'he'
+                ? 'מכאן אפשר לעדכן את התמונות, החבילות, המוצרים, הטקסטים והמחירים שמופיעים באתר. השינויים נשמרים ב־Supabase ומופיעים לכל הלקוחות.'
+                : 'Manage the images, packages, products, copy and prices shown on the website. Changes are stored in Supabase and published to all visitors.'}
+            </p>
+          </div>
+          {user?.email && (
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] font-bold text-emerald-700" dir="ltr">
+              {user.email}
+            </span>
+          )}
         </div>
-        {tab === 'orders' && (
-          <Link to="/order" className="flex items-center gap-1.5 rounded-xl bg-[#B29259] px-4 py-2 text-xs font-bold text-white hover:bg-[#8C6D3F]">
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            {t('adminPage.newForClient')}
-          </Link>
-        )}
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          {capabilityCards.map(({ title, body, icon: Icon }) => (
+            <div key={title} className="rounded-2xl border border-[#EAE3D2] bg-white/85 p-4 shadow-sm">
+              <Icon className="h-5 w-5 text-[#B8860B]" aria-hidden="true" />
+              <h3 className="mt-2 text-sm font-black text-[#4D4037]">{title}</h3>
+              <p className="mt-1 text-xs leading-relaxed text-gray-500">{body}</p>
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="mb-6 inline-flex gap-1 rounded-2xl border border-[#EAE3D2] bg-white p-1.5 shadow-sm" role="tablist" aria-label={t('adminPage.adminArea')}>
+      <div className="my-6 flex flex-wrap gap-1 rounded-2xl border border-[#EAE3D2] bg-white p-1.5 shadow-sm" role="tablist" aria-label={t('adminPage.adminArea')}>
+        {tabBtn('catalog', lang === 'he' ? 'תמונות, מוצרים וחבילות' : 'Images, products & packages', PackageIcon)}
         {tabBtn('orders', t('adminPage.tabOrders'), ClipboardList)}
-        {tabBtn('catalog', t('adminPage.tabCatalog'), PackageIcon)}
       </div>
 
       {tab === 'catalog' && (
-        <>
-          <ProductManager />
-          <PackageManager />
-        </>
+        <div className="space-y-6">
+          <div id="admin-products" className="scroll-mt-28">
+            <div className="mb-3 flex items-center gap-2 px-1">
+              <ShoppingBag className="h-5 w-5 text-[#B8860B]" aria-hidden="true" />
+              <p className="text-sm font-black text-[#4D4037]">{lang === 'he' ? 'ניהול מוצרים ופריטים' : 'Products and design pieces'}</p>
+            </div>
+            <ProductManager />
+          </div>
+          <div id="admin-packages" className="scroll-mt-28">
+            <div className="mb-3 flex items-center gap-2 px-1">
+              <PackageIcon className="h-5 w-5 text-[#B8860B]" aria-hidden="true" />
+              <p className="text-sm font-black text-[#4D4037]">{lang === 'he' ? 'ניהול חבילות עיצוב' : 'Design packages'}</p>
+            </div>
+            <PackageManager />
+          </div>
+        </div>
       )}
 
       {tab === 'orders' && (orders === null ? (
