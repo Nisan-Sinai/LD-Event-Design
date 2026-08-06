@@ -1,7 +1,7 @@
 import { fireEvent, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CATEGORIES, PACKAGES } from '../App';
-import { CART_STORAGE_KEY, CartProvider } from '../cart/CartProvider';
+import { CART_DESIGN_STORAGE_KEY, CART_STORAGE_KEY, CartProvider } from '../cart/CartProvider';
 import { SHOP_PRODUCTS, SHOP_PRODUCT_CATEGORIES } from '../catalog/shopProducts';
 import type { OverrideMap, PackageOverride } from '../lib/packages';
 import { renderWithProviders } from '../test/render';
@@ -44,59 +44,69 @@ beforeEach(() => {
   catalogState.overrides = {};
   window.localStorage.removeItem('ld-lang');
   window.localStorage.removeItem(CART_STORAGE_KEY);
+  window.localStorage.removeItem(CART_DESIGN_STORAGE_KEY);
+  window.sessionStorage.clear();
 });
 
 describe('HomePage', () => {
-  it('renders a simple store hero with products and packages entry points', () => {
+  it('renders a luxury hero and quote-only package builder', () => {
     renderHome();
 
-    expect(screen.getByText('עיצוב אירועים בקליק!')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'מוצרים קטנים' })).toHaveAttribute('href', '#products');
-    expect(screen.getAllByRole('link', { name: 'חבילות' }).length).toBeGreaterThan(0);
-    expect(screen.getByText('אין צורך בהרשמה כדי להזמין')).toBeInTheDocument();
+    expect(screen.getByText('האירוע שלכם. האמנות שלנו.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /הרכבת חבילה אישית/ })).toHaveAttribute('href', '#builder');
+    expect(screen.getAllByText(/הרכבת החבילה באתר היא לקבלת הצעת מחיר בלבד/).length).toBeGreaterThan(0);
+    expect(screen.getByRole('heading', { name: 'בואו נרכיב את שפת העיצוב שלכם' })).toBeInTheDocument();
   });
 
-  it('shows minimum order and delivery prices', () => {
+  it('critically removes delivery and minimum-order messaging from the homepage', () => {
     renderHome();
 
-    expect(screen.getByText(/מינימום הזמנה ₪2,500/)).toBeInTheDocument();
-    expect(screen.getByText(/הובלה, הקמה ופירוק ₪500/)).toBeInTheDocument();
+    expect(screen.queryByText(/הובלה.*500/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/מינימום הזמנה/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/2,500/)).not.toBeInTheDocument();
   });
 
-  it('shows the choose, order and love flow', () => {
+  it('stores palette, precise colors and a custom design request', () => {
     renderHome();
 
-    expect(screen.getByText('1. בוחרים')).toBeInTheDocument();
-    expect(screen.getByText('2. מזמינים')).toBeInTheDocument();
-    expect(screen.getByText('3. מתאהבים')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /בורדו וזהב/ }));
+    fireEvent.change(screen.getByLabelText('גוונים מדויקים שתרצו לשלב'), { target: { value: 'בורדו עמוק וזהב מט' } });
+    fireEvent.change(screen.getByLabelText(/יש משהו ספציפי/), { target: { value: 'קיר צילום עם פרחים' } });
+
+    const stored = JSON.parse(window.localStorage.getItem(CART_DESIGN_STORAGE_KEY) ?? '{}') as Record<string, unknown>;
+    expect(stored).toMatchObject({
+      palette: 'בורדו וזהב',
+      customColors: 'בורדו עמוק וזהב מט',
+      customRequest: 'קיר צילום עם פרחים'
+    });
   });
 
-  it('renders compact small-product categories', () => {
+  it('renders compact design-product categories and adds products to the cart', () => {
     renderHome();
+    const first = SHOP_PRODUCTS[0];
 
     expect(screen.getAllByText(SHOP_PRODUCT_CATEGORIES.CENTERPIECES).length).toBeGreaterThan(0);
     expect(screen.getAllByText(SHOP_PRODUCT_CATEGORIES.CHUPPAH).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(SHOP_PRODUCTS[0].title).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(`₪${SHOP_PRODUCTS[0].price.toLocaleString()}`).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: `הוספה לסל: ${first.title}` }));
+
+    expect(screen.getByText('עגלת קניות: 1 פריט')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /לצפייה בעגלה/ })).toHaveAttribute('href', '/cart');
   });
 
-  it('adds a small product with both card controls and shows plural cart state', () => {
+  it('adds an item twice from both product-card controls', () => {
     renderHome();
     const first = SHOP_PRODUCTS[0];
-    const second = SHOP_PRODUCTS[1];
 
     fireEvent.click(screen.getByRole('button', { name: `הוספה לסל: ${first.title}` }));
     const firstArticle = screen.getAllByText(first.title)
       .map((node) => node.closest('article'))
       .find((node): node is HTMLElement => node instanceof HTMLElement)!;
     fireEvent.click(within(firstArticle).getByRole('button', { name: 'נוסף לסל' }));
-    fireEvent.click(screen.getByRole('button', { name: `הוספה לסל: ${second.title}` }));
 
-    expect(screen.getByText('עגלת קניות: 3 פריטים')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /לצפייה בעגלה/ })).toHaveAttribute('href', '/cart');
+    expect(screen.getByText('עגלת קניות: 2 פריטים')).toBeInTheDocument();
   });
 
-  it('renders package categories and package cards separately', () => {
+  it('renders package categories, media controls and from prices separately', () => {
     renderHome();
     const sample = PACKAGES.find((pkg) => pkg.id === 'classic-s')!;
 
@@ -105,6 +115,7 @@ describe('HomePage', () => {
     expect(screen.getAllByText('החל מ־').length).toBeGreaterThan(0);
     expect(screen.getAllByText(/₪2,900/).length).toBeGreaterThan(0);
     expect(screen.getAllByText('מה כלול?').length).toBeGreaterThan(0);
+    expect(screen.getByRole('img', { name: `המחשת עיצוב ${sample.title}` })).toBeInTheDocument();
   });
 
   it('adds a package to the same cart', () => {
@@ -117,7 +128,7 @@ describe('HomePage', () => {
     expect(screen.getAllByText('נוסף לסל').length).toBeGreaterThan(0);
   });
 
-  it('shows product and package images uploaded by the manager', () => {
+  it('shows product and package media uploaded by the manager', () => {
     const product = SHOP_PRODUCTS[0];
     const pkg = PACKAGES.find((item) => item.id === 'classic-s')!;
     catalogState.overrides = {
@@ -147,15 +158,9 @@ describe('HomePage', () => {
     expect(screen.queryByRole('heading', { name: CATEGORIES.HENNA })).not.toBeInTheDocument();
   });
 
-  it('shop navigation points to product categories and packages', () => {
-    const { container } = renderHome();
-
-    expect(container.querySelectorAll('a[href^="#product-category-"]').length).toBe(Object.values(SHOP_PRODUCT_CATEGORIES).length);
-    expect(container.querySelector('a[href="#packages"]')).toBeInTheDocument();
-  });
-
-  it('shows a WhatsApp contact link', () => {
+  it('includes social and WhatsApp links', () => {
     renderHome();
+    expect(screen.getAllByRole('link', { name: /אינסטגרם|Instagram/ }).length).toBeGreaterThan(0);
     expect(screen.getByRole('link', { name: 'WhatsApp' })).toHaveAttribute('href', expect.stringContaining('wa.me'));
   });
 
@@ -163,8 +168,7 @@ describe('HomePage', () => {
     window.localStorage.setItem('ld-lang', 'en');
     renderHome();
 
-    expect(screen.getByText('Event design in a click!')).toBeInTheDocument();
-    expect(screen.getAllByText('Small products').length).toBeGreaterThan(0);
+    expect(screen.getByText('Your celebration. Our art.')).toBeInTheDocument();
     expect(screen.getByText('Wedding Design Package — Classic S')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /Add to cart/ }).length).toBeGreaterThan(0);
   });
