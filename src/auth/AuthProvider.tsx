@@ -3,9 +3,13 @@ import type { Session, User } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { parseAdminEmails, roleForEmail, type Role } from './roles';
 
-// אימיילים שמקבלים הרשאת מנהל אוטומטית (לא ניתן להפוך למנהל מהממשק).
-// ניתן לעקוף דרך VITE_ADMIN_EMAILS (מופרד בפסיקים).
-const ADMIN_EMAILS = parseAdminEmails(import.meta.env.VITE_ADMIN_EMAILS as string | undefined);
+// המנהלים הקבועים תמיד נשמרים; VITE_ADMIN_EMAILS יכול להוסיף מנהלים נוספים.
+const BUILT_IN_ADMIN_EMAILS = parseAdminEmails(undefined);
+const ENV_ADMIN_EMAILS = parseAdminEmails(
+  import.meta.env.VITE_ADMIN_EMAILS as string | undefined,
+  ''
+);
+const ADMIN_EMAILS = Array.from(new Set([...BUILT_IN_ADMIN_EMAILS, ...ENV_ADMIN_EMAILS]));
 
 export type { Role };
 
