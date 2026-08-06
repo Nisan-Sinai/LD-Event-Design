@@ -29,7 +29,7 @@ describe('SiteLayout', () => {
     expect(screen.getAllByText('LD Event Design').length).toBeGreaterThan(0);
   });
 
-  it('guest sees the cart without aggressive login or registration actions', () => {
+  it('guest sees the cart and a dedicated manager login without aggressive customer auth', () => {
     renderLayout();
     const header = within(screen.getByRole('banner'));
     expect(header.getByRole('link', { name: /עגלת קניות: 0/ })).toBeInTheDocument();
@@ -37,7 +37,9 @@ describe('SiteLayout', () => {
     expect(header.queryByRole('link', { name: /הרשמה/ })).not.toBeInTheDocument();
     expect(header.queryByRole('link', { name: 'האזור שלי' })).not.toBeInTheDocument();
     expect(header.queryByRole('link', { name: 'ניהול' })).not.toBeInTheDocument();
-    expect(within(screen.getByRole('contentinfo')).getByRole('link', { name: 'כניסת לקוחות קיימים' })).toBeInTheDocument();
+    const managerLogin = within(screen.getByRole('contentinfo')).getByRole('link', { name: 'כניסת מנהלת' });
+    expect(managerLogin).toBeInTheDocument();
+    expect(managerLogin).toHaveAttribute('href', '/login');
   });
 
   it('customer sees account and logout, not admin', () => {
