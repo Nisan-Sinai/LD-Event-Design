@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
-import { CART_STORAGE_KEY, CartProvider, type CartItem } from '../cart/CartProvider';
+import { CART_DESIGN_STORAGE_KEY, CART_STORAGE_KEY, CartProvider, type CartItem } from '../cart/CartProvider';
 import { renderWithProviders } from '../test/render';
 import { CartPage } from './CartPage';
 
@@ -31,13 +31,13 @@ describe('CartPage', () => {
     expect(screen.getByRole('link', { name: 'חזרה לחנות' })).toHaveAttribute('href', '/#packages');
   });
 
-  it('shows totals and allows checkout when minimum is reached', () => {
+  it('shows quote totals without a fixed delivery charge when the minimum is reached', () => {
     renderCart([item]);
     expect(screen.getByText(item.title)).toBeInTheDocument();
-    expect(screen.getByText('אין צורך בהרשמה. ממלאים פרטים ומסיימים.')).toBeInTheDocument();
+    expect(screen.getByText(/בקשה להצעת מחיר בלבד/)).toBeInTheDocument();
     expect(screen.getAllByText('₪2,900').length).toBeGreaterThan(0);
-    expect(screen.getByText('₪3,400')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'המשך לפרטים ותשלום' })).toHaveAttribute('href', '/checkout');
+    expect(screen.queryByText('₪3,400')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'המשך לשליחת הצעת מחיר' })).toHaveAttribute('href', '/checkout');
   });
 
   it('updates quantities with plus and minus buttons', () => {
@@ -61,16 +61,31 @@ describe('CartPage', () => {
     expect(screen.getByText('העגלה עדיין ריקה')).toBeInTheDocument();
   });
 
-  it('blocks checkout below the minimum order', () => {
+  it('blocks quote submission below the minimum and shows the minimum only in the cart', () => {
     renderCart([{ ...item, price: 1000 }]);
+    expect(screen.getByText('מינימום להזמנה הינו 2,900 ש״ח')).toBeInTheDocument();
     expect(screen.getByText(/חסרים להשלמת מינימום ההזמנה/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'המשך לפרטים ותשלום' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'המשך לשליחת הצעת מחיר' })).toBeDisabled();
   });
 
-  it('renders English cart content', () => {
+  it('accepts only the gift coupon and persists it', () => {
+    renderCart([item]);
+    const input = screen.getByLabelText('קוד קופון');
+
+    fireEvent.change(input, { target: { value: 'לא תקין' } });
+    fireEvent.click(screen.getByRole('button', { name: 'הפעלת קופון' }));
+    expect(screen.getByRole('alert')).toHaveTextContent(/אינו תקין/);
+
+    fireEvent.change(input, { target: { value: 'מתנה' } });
+    fireEvent.click(screen.getByRole('button', { name: 'הפעלת קופון' }));
+    expect(screen.getByRole('status')).toHaveTextContent(/מתנה מפתיעה/);
+    expect(JSON.parse(window.localStorage.getItem(CART_DESIGN_STORAGE_KEY) ?? '{}')).toMatchObject({ couponApplied: true, couponCode: 'מתנה' });
+  });
+
+  it('renders English quote cart content', () => {
     window.localStorage.setItem('ld-lang', 'en');
     renderCart([item]);
-    expect(screen.getByText('Your shopping cart')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Continue to checkout' })).toBeInTheDocument();
+    expect(screen.getByText('Your design cart')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Continue to quote request' })).toBeInTheDocument();
   });
 });
