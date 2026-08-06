@@ -6,12 +6,16 @@ import { LoginPage } from './LoginPage';
 
 const a = vi.hoisted(() => ({
   configured: true,
+  user: null as { email?: string } | null,
+  role: 'guest' as 'guest' | 'customer' | 'admin',
   signIn: vi.fn(async () => ({ error: null as string | null })),
   resetPassword: vi.fn(async () => ({ error: null as string | null })),
   google: vi.fn(async () => ({ error: null as string | null }))
 }));
 vi.mock('../auth/AuthProvider', () => ({
   useAuth: () => ({
+    user: a.user,
+    role: a.role,
     signIn: a.signIn,
     resetPassword: a.resetPassword,
     signInWithGoogle: a.google,
@@ -19,7 +23,7 @@ vi.mock('../auth/AuthProvider', () => ({
   })
 }));
 
-function renderLogin(initial: string | { pathname: string; state?: { from?: string } } = '/login') {
+function renderLogin(initial: string | { pathname: string; search?: string; state?: { from?: string } } = '/login') {
   return render(
     <I18nProvider>
       <MemoryRouter initialEntries={[initial]}>
@@ -35,7 +39,10 @@ function renderLogin(initial: string | { pathname: string; state?: { from?: stri
 }
 
 beforeEach(() => {
+  window.sessionStorage.clear();
   a.configured = true;
+  a.user = null;
+  a.role = 'guest';
   a.signIn.mockClear().mockResolvedValue({ error: null });
   a.resetPassword.mockClear().mockResolvedValue({ error: null });
   a.google.mockClear().mockResolvedValue({ error: null });
@@ -51,9 +58,10 @@ describe('LoginPage', () => {
   });
 
   it('offers Google sign-in and returns manager login to admin', async () => {
-    renderLogin({ pathname: '/login', state: { from: '/admin' } });
+    renderLogin('/login?from=%2Fadmin');
     fireEvent.click(screen.getByRole('button', { name: /Google/ }));
     await waitFor(() => expect(a.google).toHaveBeenCalledWith('/admin'));
+    expect(window.sessionStorage.getItem('ld-event-design-auth-return')).toBe('/admin');
   });
 
   it('shows a not-configured notice and blocks submit', () => {
@@ -64,13 +72,37 @@ describe('LoginPage', () => {
     expect(a.signIn).not.toHaveBeenCalled();
   });
 
-  it('navigates to /order on successful login', async () => {
+  it('navigates to admin by default instead of the order-details form', async () => {
     renderLogin();
     fireEvent.change(screen.getByLabelText('אימייל'), { target: { value: 'a@b.com' } });
     fireEvent.change(screen.getByLabelText('סיסמה'), { target: { value: 'secret' } });
     fireEvent.click(screen.getByRole('button', { name: 'התחברות' }));
-    await waitFor(() => expect(screen.getByText('ORDER PAGE')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('ADMIN PAGE')).toBeInTheDocument());
+    expect(screen.queryByText('ORDER PAGE')).not.toBeInTheDocument();
     expect(a.signIn).toHaveBeenCalledWith('a@b.com', 'secret');
+  });
+
+  it('uses a safe query return path from a direct login URL', async () => {
+    renderLogin('/login?from=%2Faccount');
+    fireEvent.change(screen.getByLabelText('אימייל'), { target: { value: 'a@b.com' } });
+    fireEvent.change(screen.getByLabelText('סיסמה'), { target: { value: 'secret' } });
+    fireEvent.click(screen.getByRole('button', { name: 'התחברות' }));
+    await waitFor(() => expect(screen.getByText('ACCOUNT PAGE')).toBeInTheDocument());
+  });
+
+  it('rejects an external return URL and falls back to admin', async () => {
+    renderLogin('/login?from=https%3A%2F%2Fevil.example');
+    fireEvent.change(screen.getByLabelText('אימייל'), { target: { value: 'a@b.com' } });
+    fireEvent.change(screen.getByLabelText('סיסמה'), { target: { value: 'secret' } });
+    fireEvent.click(screen.getByRole('button', { name: 'התחברות' }));
+    await waitFor(() => expect(screen.getByText('ADMIN PAGE')).toBeInTheDocument());
+  });
+
+  it('automatically forwards an authenticated manager to admin', async () => {
+    a.user = { email: 'nisan.sinai5@gmail.com' };
+    a.role = 'admin';
+    renderLogin('/login?from=%2Fadmin');
+    await waitFor(() => expect(screen.getByText('ADMIN PAGE')).toBeInTheDocument());
   });
 
   it('shows the error returned by signIn', async () => {
@@ -82,7 +114,7 @@ describe('LoginPage', () => {
     await waitFor(() => expect(screen.getByText('Invalid login credentials')).toBeInTheDocument());
   });
 
-  it('returns to the page the user came from', async () => {
+  it('returns to the page supplied through router state', async () => {
     renderLogin({ pathname: '/login', state: { from: '/account' } });
     fireEvent.change(screen.getByLabelText('אימייל'), { target: { value: 'a@b.com' } });
     fireEvent.change(screen.getByLabelText('סיסמה'), { target: { value: 'secret' } });
@@ -91,12 +123,12 @@ describe('LoginPage', () => {
   });
 
   it('sends a password reset email and shows confirmation', async () => {
-    renderLogin({ pathname: '/login', state: { from: '/admin' } });
+    renderLogin('/login?from=%2Fadmin');
     fireEvent.click(screen.getByRole('button', { name: 'שכחתי סיסמה — שלחו לי קישור איפוס' }));
     expect(screen.queryByLabelText('סיסמה')).not.toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('אימייל'), { target: { value: ' luroni704@gmail.com ' } });
+    fireEvent.change(screen.getByLabelText('אימייל'), { target: { value: ' nisan.sinai5@gmail.com ' } });
     fireEvent.click(screen.getByRole('button', { name: 'שליחת קישור איפוס' }));
-    await waitFor(() => expect(a.resetPassword).toHaveBeenCalledWith('luroni704@gmail.com'));
+    await waitFor(() => expect(a.resetPassword).toHaveBeenCalledWith('nisan.sinai5@gmail.com'));
     expect(screen.getByRole('status')).toHaveTextContent(/שלחנו קישור/);
   });
 
