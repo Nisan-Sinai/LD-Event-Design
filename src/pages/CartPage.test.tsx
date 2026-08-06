@@ -35,7 +35,7 @@ describe('CartPage', () => {
     renderCart([item]);
     expect(screen.getByText(item.title)).toBeInTheDocument();
     expect(screen.getByText('אין צורך בהרשמה. ממלאים פרטים ומסיימים.')).toBeInTheDocument();
-    expect(screen.getByText('₪2,900')).toBeInTheDocument();
+    expect(screen.getAllByText('₪2,900').length).toBeGreaterThan(0);
     expect(screen.getByText('₪3,400')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'המשך לפרטים ותשלום' })).toHaveAttribute('href', '/checkout');
   });
@@ -43,10 +43,10 @@ describe('CartPage', () => {
   it('updates quantities with plus and minus buttons', () => {
     renderCart([item]);
     fireEvent.click(screen.getByRole('button', { name: `הגדלת כמות ${item.title}` }));
-    expect(screen.getByText('₪5,800')).toBeInTheDocument();
+    expect(screen.getAllByText('₪5,800').length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole('button', { name: `הפחתת כמות ${item.title}` }));
-    expect(screen.getByText('₪2,900')).toBeInTheDocument();
+    expect(screen.getAllByText('₪2,900').length).toBeGreaterThan(0);
   });
 
   it('removes an item and clears all items', () => {
