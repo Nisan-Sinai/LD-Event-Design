@@ -50,7 +50,7 @@ export function TestimonialsCarousel() {
             <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-[#D4AF37] bg-gradient-to-br from-[#F4E3E3] to-[#E8C5B8] text-lg font-black text-[#2C2C2C] shadow-lg" role="img" aria-label={`תמונת פרופיל של ${current.name}`}>{current.initials}</div>
             <strong className="mt-3 text-base">{current.name}</strong>
             <span className="mt-0.5 text-xs text-white/55">{current.event}</span>
-            <div className="mt-2 flex gap-0.5" aria-label="דירוג 5 מתוך 5">
+            <div className="mt-2 flex gap-0.5" role="img" aria-label="דירוג 5 מתוך 5">
               {Array.from({ length: 5 }, (_, starIndex) => <Star key={starIndex} className="h-4 w-4 fill-[#D4AF37] text-[#D4AF37]" aria-hidden="true" />)}
             </div>
           </div>
