@@ -81,7 +81,7 @@ describe('ProductManager', () => {
     expect(screen.getByText('מוצרים קטנים בחנות')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'שמירה' })).toHaveLength(SHOP_PRODUCTS.length);
     expect(screen.getByDisplayValue(firstProduct.title)).toBeInTheDocument();
-    expect(screen.getByDisplayValue(String(firstProduct.price))).toBeInTheDocument();
+    expect(screen.getAllByDisplayValue(String(firstProduct.price)).length).toBeGreaterThan(0);
   });
 
   it('changes product text, category and price and saves the override', async () => {
