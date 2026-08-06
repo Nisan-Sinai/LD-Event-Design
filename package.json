@@ -6,7 +6,7 @@
   "description": "טופס הזמנה והסכם דיגיטלי לעיצוב אירועים - LD Event Design",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "npm run audit:prod && npm run type-check && npm run test:coverage && npx playwright install chromium && npm run test:e2e && vite build",
     "type-check": "tsc --noEmit",
     "preview": "vite preview",
     "test": "vitest run",
