@@ -1,25 +1,33 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MemoryRouter, Routes, Route } from 'react-router';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router';
 import { I18nProvider } from '../i18n/i18n';
 import { LoginPage } from './LoginPage';
 
 const a = vi.hoisted(() => ({
   configured: true,
   signIn: vi.fn(async () => ({ error: null as string | null })),
+  resetPassword: vi.fn(async () => ({ error: null as string | null })),
   google: vi.fn(async () => ({ error: null as string | null }))
 }));
 vi.mock('../auth/AuthProvider', () => ({
-  useAuth: () => ({ signIn: a.signIn, signInWithGoogle: a.google, configured: a.configured })
+  useAuth: () => ({
+    signIn: a.signIn,
+    resetPassword: a.resetPassword,
+    signInWithGoogle: a.google,
+    configured: a.configured
+  })
 }));
 
-function renderLogin(initial = '/login') {
+function renderLogin(initial: string | { pathname: string; state?: { from?: string } } = '/login') {
   return render(
     <I18nProvider>
       <MemoryRouter initialEntries={[initial]}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/order" element={<div>ORDER PAGE</div>} />
+          <Route path="/account" element={<div>ACCOUNT PAGE</div>} />
+          <Route path="/admin" element={<div>ADMIN PAGE</div>} />
         </Routes>
       </MemoryRouter>
     </I18nProvider>
@@ -29,23 +37,25 @@ function renderLogin(initial = '/login') {
 beforeEach(() => {
   a.configured = true;
   a.signIn.mockClear().mockResolvedValue({ error: null });
+  a.resetPassword.mockClear().mockResolvedValue({ error: null });
   a.google.mockClear().mockResolvedValue({ error: null });
 });
 
 describe('LoginPage', () => {
-  it('renders the login form', () => {
+  it('renders the login form and forgot-password action', () => {
     renderLogin();
     expect(screen.getByLabelText('אימייל')).toBeInTheDocument();
     expect(screen.getByLabelText('סיסמה')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'שכחתי סיסמה' })).toBeInTheDocument();
   });
 
-  it('offers Google sign-in', async () => {
-    renderLogin();
+  it('offers Google sign-in and returns manager login to admin', async () => {
+    renderLogin({ pathname: '/login', state: { from: '/admin' } });
     fireEvent.click(screen.getByRole('button', { name: /Google/ }));
-    await waitFor(() => expect(a.google).toHaveBeenCalled());
+    await waitFor(() => expect(a.google).toHaveBeenCalledWith('/admin'));
   });
 
-  it('shows a not-configured notice and blocks submit', async () => {
+  it('shows a not-configured notice and blocks submit', () => {
     a.configured = false;
     renderLogin();
     expect(screen.getAllByText(/לא הופעלה/).length).toBeGreaterThan(0);
@@ -72,19 +82,39 @@ describe('LoginPage', () => {
   });
 
   it('returns to the page the user came from', async () => {
-    render(
-      <I18nProvider>
-        <MemoryRouter initialEntries={[{ pathname: '/login', state: { from: '/account' } }]}>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/account" element={<div>ACCOUNT PAGE</div>} />
-          </Routes>
-        </MemoryRouter>
-      </I18nProvider>
-    );
+    renderLogin({ pathname: '/login', state: { from: '/account' } });
     fireEvent.change(screen.getByLabelText('אימייל'), { target: { value: 'a@b.com' } });
     fireEvent.change(screen.getByLabelText('סיסמה'), { target: { value: 'secret' } });
     fireEvent.click(screen.getByRole('button', { name: 'התחברות' }));
     await waitFor(() => expect(screen.getByText('ACCOUNT PAGE')).toBeInTheDocument());
+  });
+
+  it('sends a password reset email and shows confirmation', async () => {
+    renderLogin({ pathname: '/login', state: { from: '/admin' } });
+    fireEvent.click(screen.getByRole('button', { name: 'שכחתי סיסמה' }));
+    expect(screen.queryByLabelText('סיסמה')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('אימייל'), { target: { value: ' luroni704@gmail.com ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'שליחת קישור איפוס' }));
+    await waitFor(() => expect(a.resetPassword).toHaveBeenCalledWith('luroni704@gmail.com'));
+    expect(screen.getByRole('status')).toHaveTextContent(/שלחנו קישור/);
+  });
+
+  it('shows reset errors and can return to login', async () => {
+    a.resetPassword.mockResolvedValueOnce({ error: 'email rate limit exceeded' });
+    renderLogin();
+    fireEvent.click(screen.getByRole('button', { name: 'שכחתי סיסמה' }));
+    fireEvent.change(screen.getByLabelText('אימייל'), { target: { value: 'a@b.com' } });
+    fireEvent.click(screen.getByRole('button', { name: 'שליחת קישור איפוס' }));
+    await waitFor(() => expect(screen.getByText('email rate limit exceeded')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'חזרה להתחברות' }));
+    expect(screen.getByLabelText('סיסמה')).toBeInTheDocument();
+  });
+
+  it('blocks password reset when Supabase is not configured', () => {
+    a.configured = false;
+    renderLogin();
+    fireEvent.click(screen.getByRole('button', { name: 'שכחתי סיסמה' }));
+    fireEvent.submit(screen.getByLabelText('אימייל').closest('form')!);
+    expect(a.resetPassword).not.toHaveBeenCalled();
   });
 });
