@@ -4,6 +4,7 @@ import { Root } from './Root';
 import { I18nProvider } from './i18n/i18n';
 import { initHashNavigation } from './lib/hashNavigation';
 import './index.css';
+import './storefront.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
