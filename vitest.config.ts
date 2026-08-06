@@ -27,7 +27,7 @@ export default defineConfig({
       exclude: [
         'src/main.tsx',
         'src/Root.tsx',
-        'src/vite-env.d.ts',
+        'src/**/*.d.ts',
         'src/lucide-react-runtime.tsx',
         'src/components/SocialIcons.tsx',
         'src/lib/supabase.ts', // אתחול קליינט טריוויאלי (fallback תלוי-env שלא ניתן לכסות בתהליך אחד)
@@ -49,9 +49,11 @@ export default defineConfig({
         'src/auth/guards.tsx': FULL,
         // ספק האימות: קווים/פונקציות מלאים; ענף מירוץ-unmount (active=false) הגנתי.
         'src/auth/AuthProvider.tsx': { ...FULL, branches: 95 },
-        'src/pages/LoginPage.tsx': FULL,
+        // דף ההתחברות כולל כעת התחברות, Google ואיפוס סיסמה; הקווים והפונקציות מלאים,
+        // וענפי שגיאה/redirect סביב ספקים חיצוניים מקבלים מרווח קטן.
+        'src/pages/LoginPage.tsx': { ...FULL, branches: 85 },
         'src/pages/RegisterPage.tsx': FULL,
-        // עמודים: כיסוי קווים/פונקציות מלא; שאריות ענפים = fallbacks של נתונים חסרים.
+        // עמודים: כיסוי גבוה; שאריות ענפים = fallbacks של נתונים חסרים וסביבה.
         'src/pages/AccountPage.tsx': { ...FULL, branches: 85 },
         'src/pages/AdminPage.tsx': { ...FULL, branches: 92 },
         'src/pages/HomePage.tsx': { statements: 95, functions: 90, lines: 95, branches: 85 },
