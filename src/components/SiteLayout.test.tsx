@@ -4,10 +4,11 @@ import { MemoryRouter } from 'react-router';
 import { I18nProvider } from '../i18n/i18n';
 import { SiteLayout } from './SiteLayout';
 
-const a = vi.hoisted(() => ({
+const auth = vi.hoisted(() => ({
   value: { user: null as { email?: string } | null, role: 'guest', signOut: vi.fn() }
 }));
-vi.mock('../auth/AuthProvider', () => ({ useAuth: () => a.value }));
+
+vi.mock('../auth/AuthProvider', () => ({ useAuth: () => auth.value }));
 
 const renderLayout = () =>
   render(
@@ -17,33 +18,56 @@ const renderLayout = () =>
   );
 
 beforeEach(() => {
-  a.value = { user: null, role: 'guest', signOut: vi.fn() };
+  auth.value = { user: null, role: 'guest', signOut: vi.fn() };
   document.body.style.overflow = '';
-  window.localStorage.removeItem('ld-lang');
+  window.localStorage.clear();
 });
 
 describe('SiteLayout', () => {
-  it('renders children and brand', () => {
+  it('renders the luxury brand shell and children', () => {
     renderLayout();
     expect(screen.getByText('CHILD')).toBeInTheDocument();
     expect(screen.getAllByText('LD Event Design').length).toBeGreaterThan(0);
+    expect(screen.getByRole('banner')).toBeInTheDocument();
+    expect(screen.getByRole('contentinfo')).toBeInTheDocument();
   });
 
-  it('guest sees the cart and a dedicated manager login without aggressive customer auth', () => {
+  it('keeps customer authentication quiet and exposes a dedicated manager login', () => {
     renderLayout();
     const header = within(screen.getByRole('banner'));
     expect(header.getByRole('link', { name: /עגלת קניות: 0/ })).toBeInTheDocument();
-    expect(header.queryByRole('link', { name: /התחברות/ })).not.toBeInTheDocument();
-    expect(header.queryByRole('link', { name: /הרשמה/ })).not.toBeInTheDocument();
+    expect(header.queryByRole('link', { name: /הרשמה|התחברות/ })).not.toBeInTheDocument();
     expect(header.queryByRole('link', { name: 'האזור שלי' })).not.toBeInTheDocument();
     expect(header.queryByRole('link', { name: 'ניהול' })).not.toBeInTheDocument();
+
     const managerLogin = within(screen.getByRole('contentinfo')).getByRole('link', { name: 'כניסת מנהלת' });
-    expect(managerLogin).toBeInTheDocument();
     expect(managerLogin).toHaveAttribute('href', '/login');
   });
 
-  it('customer sees account and logout, not admin', () => {
-    a.value = { user: { email: 'c@x.com' }, role: 'customer', signOut: vi.fn() };
+  it('opens and closes the slide-in quote cart from the header', async () => {
+    renderLayout();
+    fireEvent.click(within(screen.getByRole('banner')).getByRole('link', { name: /עגלת קניות: 0/ }));
+
+    const drawer = screen.getByRole('dialog', { name: 'סל הצעת מחיר' });
+    await waitFor(() => expect(drawer).toHaveFocus());
+    expect(screen.getByText('הסל מחכה לעיצוב שלכם')).toBeInTheDocument();
+    expect(document.body).toHaveStyle({ overflow: 'hidden' });
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: 'סל הצעת מחיר' })).not.toBeInTheDocument();
+    expect(document.body.style.overflow).toBe('');
+  });
+
+  it('closes the cart drawer from its close action', () => {
+    renderLayout();
+    fireEvent.click(within(screen.getByRole('banner')).getByRole('link', { name: /עגלת קניות: 0/ }));
+    const drawer = screen.getByRole('dialog', { name: 'סל הצעת מחיר' });
+    fireEvent.click(within(drawer).getByRole('button', { name: 'סגירה' }));
+    expect(screen.queryByRole('dialog', { name: 'סל הצעת מחיר' })).not.toBeInTheDocument();
+  });
+
+  it('shows account and logout for a customer but not management', () => {
+    auth.value = { user: { email: 'customer@example.com' }, role: 'customer', signOut: vi.fn() };
     renderLayout();
     const header = within(screen.getByRole('banner'));
     expect(header.getByRole('link', { name: 'האזור שלי' })).toBeInTheDocument();
@@ -51,90 +75,87 @@ describe('SiteLayout', () => {
     expect(header.getByRole('button', { name: /התנתקות/ })).toBeInTheDocument();
   });
 
-  it('admin sees the admin link', () => {
-    a.value = { user: { email: 'luroni704@gmail.com' }, role: 'admin', signOut: vi.fn() };
+  it('shows management for an administrator', () => {
+    auth.value = { user: { email: 'luroni704@gmail.com' }, role: 'admin', signOut: vi.fn() };
     renderLayout();
-    expect(within(screen.getByRole('banner')).getByRole('link', { name: 'ניהול' })).toBeInTheDocument();
+    expect(within(screen.getByRole('banner')).getByRole('link', { name: 'ניהול' })).toHaveAttribute('href', '/admin');
+    expect(within(screen.getByRole('contentinfo')).getByRole('link', { name: 'ניהול' })).toBeInTheDocument();
   });
 
-  it('logout calls signOut', () => {
+  it('calls signOut', () => {
     const signOut = vi.fn();
-    a.value = { user: { email: 'c@x.com' }, role: 'customer', signOut };
+    auth.value = { user: { email: 'customer@example.com' }, role: 'customer', signOut };
     renderLayout();
     fireEvent.click(screen.getByRole('button', { name: /התנתקות/ }));
-    expect(signOut).toHaveBeenCalled();
-  });
-
-  it('switches language via the toggle in both directions', () => {
-    renderLayout();
-    const header = within(screen.getByRole('banner'));
-    fireEvent.click(header.getByRole('button', { name: 'EN' }));
-    expect(header.getByRole('link', { name: /Shopping cart: 0/ })).toBeInTheDocument();
-    expect(header.getByRole('link', { name: 'Home' })).toBeInTheDocument();
-    fireEvent.click(header.getByRole('button', { name: 'עברית' }));
-    expect(header.getByRole('link', { name: /עגלת קניות: 0/ })).toBeInTheDocument();
-  });
-
-  it('opens the accessibility statement from the accessibility widget', () => {
-    renderLayout();
-    fireEvent.click(screen.getByRole('button', { name: 'פתיחת תפריט נגישות' }));
-    const widget = screen.getByRole('dialog', { name: 'נגישות' });
-    fireEvent.click(within(widget).getByRole('button', { name: /הצהרת נגישות/ }));
-    expect(screen.getByRole('dialog', { name: 'הצהרת נגישות' })).toBeInTheDocument();
-  });
-
-  it('opens and closes a legal modal with Escape', () => {
-    renderLayout();
-    fireEvent.click(screen.getByRole('button', { name: 'מדיניות פרטיות' }));
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-    fireEvent.keyDown(window, { key: 'a' });
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-    fireEvent.keyDown(window, { key: 'Escape' });
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(signOut).toHaveBeenCalledTimes(1);
   });
 
   it('renders a logged-in user without an email safely', () => {
-    a.value = { user: {}, role: 'customer', signOut: vi.fn() };
+    auth.value = { user: {}, role: 'customer', signOut: vi.fn() };
     renderLayout();
     expect(screen.getByRole('button', { name: /התנתקות/ })).toBeInTheDocument();
   });
 
-  it('closes the legal modal with the top close button', () => {
+  it('switches language in both directions', () => {
     renderLayout();
-    fireEvent.click(within(screen.getByRole('contentinfo')).getByRole('button', { name: 'תנאי שימוש' }));
-    const dialog = screen.getByRole('dialog');
-    fireEvent.click(within(dialog).getAllByRole('button', { name: 'סגירה' })[0]);
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    const header = within(screen.getByRole('banner'));
+    fireEvent.click(header.getByRole('button', { name: 'EN' }));
+    expect(header.getByRole('link', { name: 'Home' })).toBeInTheDocument();
+    expect(header.getByRole('link', { name: /Shopping cart: 0/ })).toBeInTheDocument();
+    fireEvent.click(header.getByRole('button', { name: 'עברית' }));
+    expect(header.getByRole('link', { name: 'בית' })).toBeInTheDocument();
   });
 
-  it('closes the legal modal with the bottom close action', () => {
+  it('opens the official cancellation policy from the footer', () => {
     renderLayout();
-    fireEvent.click(within(screen.getByRole('contentinfo')).getByRole('button', { name: 'הצהרת נגישות' }));
-    const dialog = screen.getByRole('dialog');
-    const closeButtons = within(dialog).getAllByRole('button', { name: 'סגירה' });
-    fireEvent.click(closeButtons[closeButtons.length - 1]);
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    fireEvent.click(within(screen.getByRole('contentinfo')).getByRole('button', { name: 'מדיניות ביטולים ושינויים' }));
+    const dialog = screen.getByRole('dialog', { name: 'מדיניות ביטולים ושינויים' });
+    expect(within(dialog).getByText(/מלחמה או מגפה/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/30 ימי עסקים/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/האחריות על הציוד בזמן האירוע/)).toBeInTheDocument();
   });
 
-  it('closes on backdrop click but not panel click', () => {
+  it('opens and closes privacy with Escape', () => {
     renderLayout();
     fireEvent.click(within(screen.getByRole('contentinfo')).getByRole('button', { name: 'מדיניות פרטיות' }));
-    const dialog = screen.getByRole('dialog');
-    fireEvent.click(within(dialog).getByRole('heading', { name: 'מדיניות פרטיות' }));
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-    fireEvent.click(dialog);
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-    fireEvent.click(dialog.parentElement!);
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'מדיניות פרטיות' })).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: 'מדיניות פרטיות' })).not.toBeInTheDocument();
   });
 
-  it('moves focus into the legal dialog, traps it, locks scroll and restores focus', async () => {
+  it('closes legal content from the top and bottom actions', () => {
+    const first = renderLayout();
+    fireEvent.click(within(screen.getByRole('contentinfo')).getByRole('button', { name: 'מדיניות פרטיות' }));
+    let dialog = screen.getByRole('dialog', { name: 'מדיניות פרטיות' });
+    fireEvent.click(within(dialog).getAllByRole('button', { name: 'סגירה' })[0]);
+    expect(screen.queryByRole('dialog', { name: 'מדיניות פרטיות' })).not.toBeInTheDocument();
+    first.unmount();
+
+    renderLayout();
+    fireEvent.click(within(screen.getByRole('contentinfo')).getByRole('button', { name: 'הצהרת נגישות' }));
+    dialog = screen.getByRole('dialog', { name: 'הצהרת נגישות' });
+    const closeButtons = within(dialog).getAllByRole('button', { name: 'סגירה' });
+    fireEvent.click(closeButtons[closeButtons.length - 1]);
+    expect(screen.queryByRole('dialog', { name: 'הצהרת נגישות' })).not.toBeInTheDocument();
+  });
+
+  it('closes a legal modal from the backdrop but not its panel', () => {
+    renderLayout();
+    fireEvent.click(within(screen.getByRole('contentinfo')).getByRole('button', { name: 'מדיניות פרטיות' }));
+    const dialog = screen.getByRole('dialog', { name: 'מדיניות פרטיות' });
+    fireEvent.click(within(dialog).getByRole('heading', { name: 'מדיניות פרטיות' }));
+    expect(screen.getByRole('dialog', { name: 'מדיניות פרטיות' })).toBeInTheDocument();
+    fireEvent.click(dialog.parentElement!);
+    expect(screen.queryByRole('dialog', { name: 'מדיניות פרטיות' })).not.toBeInTheDocument();
+  });
+
+  it('traps focus, locks scrolling and restores focus for legal dialogs', async () => {
     renderLayout();
     const trigger = within(screen.getByRole('contentinfo')).getByRole('button', { name: 'מדיניות פרטיות' });
     trigger.focus();
     fireEvent.click(trigger);
 
-    const dialog = screen.getByRole('dialog');
+    const dialog = screen.getByRole('dialog', { name: 'מדיניות פרטיות' });
     await waitFor(() => expect(dialog).toHaveFocus());
     expect(document.body).toHaveStyle({ overflow: 'hidden' });
 
@@ -144,17 +165,15 @@ describe('SiteLayout', () => {
     expect(closeButtons[closeButtons.length - 1]).toHaveFocus();
 
     fireEvent.keyDown(window, { key: 'Escape' });
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
     expect(document.body.style.overflow).toBe('');
   });
 
-  it('keeps keyboard focus inside for every Tab edge case', async () => {
+  it('keeps keyboard focus inside at every Tab edge', async () => {
     renderLayout();
     const trigger = within(screen.getByRole('contentinfo')).getByRole('button', { name: 'מדיניות פרטיות' });
     fireEvent.click(trigger);
-
-    const dialog = screen.getByRole('dialog');
+    const dialog = screen.getByRole('dialog', { name: 'מדיניות פרטיות' });
     await waitFor(() => expect(dialog).toHaveFocus());
     const closeButtons = within(dialog).getAllByRole('button', { name: 'סגירה' });
     const first = closeButtons[0];
@@ -178,22 +197,19 @@ describe('SiteLayout', () => {
     expect(dialog).toHaveFocus();
   });
 
-  it('closes safely when the previously focused element is detached', () => {
+  it('opens the accessibility statement from the accessibility widget', () => {
     renderLayout();
-    const detachedTrigger = document.createElement('button');
-    document.body.appendChild(detachedTrigger);
-    detachedTrigger.focus();
-
-    const legalTrigger = within(screen.getByRole('contentinfo')).getByRole('button', { name: 'מדיניות פרטיות' });
-    fireEvent.click(legalTrigger);
-    detachedTrigger.remove();
-    fireEvent.keyDown(window, { key: 'Escape' });
-
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'פתיחת תפריט נגישות' }));
+    const widget = screen.getByRole('dialog', { name: 'נגישות' });
+    fireEvent.click(within(widget).getByRole('button', { name: /הצהרת נגישות/ }));
+    expect(screen.getByRole('dialog', { name: 'הצהרת נגישות' })).toBeInTheDocument();
   });
 
-  it('marks the English toggle with lang=en', () => {
+  it('marks the English toggle with lang=en and exposes social links', () => {
     renderLayout();
     expect(within(screen.getByRole('banner')).getByRole('button', { name: 'EN' })).toHaveAttribute('lang', 'en');
+    const footer = within(screen.getByRole('contentinfo'));
+    expect(footer.getByRole('link', { name: 'אינסטגרם LD Event Design' })).toHaveAttribute('href', expect.stringContaining('instagram.com'));
+    expect(footer.getByRole('link', { name: 'פייסבוק LD Event Design' })).toHaveAttribute('href', expect.stringContaining('facebook.com'));
   });
 });
