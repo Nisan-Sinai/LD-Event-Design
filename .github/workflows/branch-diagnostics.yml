@@ -1,0 +1,36 @@
+name: Branch build diagnostics
+
+on:
+  push:
+    branches:
+      - feat/storefront-ordering-flow
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    if: ${{ !contains(github.event.head_commit.message, '[skip diagnostics]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: feat/storefront-ordering-flow
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Capture TypeScript diagnostics
+        run: npx tsc --noEmit > branch-type-errors.txt 2>&1 || true
+      - name: Capture Vite diagnostics
+        run: npx vite build > branch-vite-errors.txt 2>&1 || true
+      - name: Store diagnostics on branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add branch-type-errors.txt branch-vite-errors.txt
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: store build diagnostics [skip diagnostics]"
+            git push origin HEAD:feat/storefront-ordering-flow
+          fi
