@@ -166,7 +166,18 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
               <li><Link to="/cart" className="link-underline hover:text-white">{cartText}</Link></li>
               {role === 'admin' && <li><Link to="/admin" className="link-underline hover:text-white">{t('nav.admin')}</Link></li>}
               {role === 'customer' && <li><Link to="/account" className="link-underline hover:text-white">{t('nav.account')}</Link></li>}
-              {!user && <li><Link to="/login" className="link-underline text-[#D8C29A] hover:text-white">{lang === 'he' ? 'כניסת לקוחות קיימים' : 'Existing customer login'}</Link></li>}
+              {!user && (
+                <li>
+                  <Link
+                    to="/login"
+                    state={{ from: '/admin' }}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[#B29259]/70 px-4 py-2 font-bold text-[#D8C29A] transition hover:bg-[#B29259] hover:text-white"
+                  >
+                    <UserIcon className="h-4 w-4" aria-hidden="true" />
+                    {lang === 'he' ? 'כניסת מנהלת' : 'Manager login'}
+                  </Link>
+                </li>
+              )}
             </ul>
           </nav>
 
