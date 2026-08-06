@@ -126,9 +126,7 @@ export function HomePage() {
         };
 
   const packageHighlights = (pkg: Package) =>
-    Object.values(pkg.details)
-      .flatMap((items) => items ?? [])
-      .slice(0, 4);
+    (Object.values(pkg.details).flat() as string[]).slice(0, 4);
 
   const categories = Object.values(CATEGORIES);
   const byCategory = categories.map((category) => ({
