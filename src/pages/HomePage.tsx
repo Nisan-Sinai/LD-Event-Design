@@ -5,83 +5,91 @@ import {
   ArrowRight,
   Check,
   Heart,
+  Instagram,
   MessageCircle,
   PackageOpen,
+  Palette,
+  Play,
   ShoppingBag,
-  Truck
+  Sparkles
 } from 'lucide-react';
 import { ArtDefsHost, CATEGORIES, PACKAGES, renderPackageSVG, type Package } from '../App';
-import { MINIMUM_ORDER, useCart } from '../cart/CartProvider';
+import { useCart } from '../cart/CartProvider';
 import {
   buildShopProducts,
   SHOP_PRODUCT_CATEGORIES,
   type ShopProduct
 } from '../catalog/shopProducts';
+import { LeadCaptureModal } from '../components/LeadCaptureModal';
+import { PackageMediaCarousel } from '../components/PackageMediaCarousel';
+import { QuoteNotice } from '../components/QuoteNotice';
+import { TestimonialsCarousel } from '../components/TestimonialsCarousel';
 import { useI18n } from '../i18n/i18n';
 import { categoryLabel, PACKAGE_EN } from '../i18n/content';
 import { buildCatalog } from '../lib/packages';
-import { DELIVERY_FEE } from '../lib/pricing';
 import { usePackages } from '../packages/PackagesProvider';
 
 const COPY = {
   he: {
-    minimum: 'מינימום הזמנה',
-    delivery: 'הובלה, הקמה ופירוק',
-    hero: 'עיצוב אירועים בקליק!',
-    heroBody: 'בוחרים מוצרים קטנים או חבילה מלאה, מוסיפים לעגלה ומסיימים הזמנה פשוטה — בדיוק כמו בחנות רגילה.',
-    choose: '1. בוחרים',
-    chooseBody: 'מוצרים קטנים או חבילה שמתאימה לאירוע.',
-    order: '2. מזמינים',
-    orderBody: 'מוסיפים לסל, מעדכנים כמויות וממלאים פרטים.',
-    love: '3. מתאהבים',
-    loveBody: 'אנחנו מתאמים, מכינים ומעצבים את האירוע.',
-    products: 'מוצרים קטנים',
-    productsBody: 'מוסיפים כל פריט בנפרד ובוחרים את הכמות הרצויה.',
-    packages: 'חבילות',
-    packagesBody: 'חבילות מוכנות שמרכזות כמה אלמנטים במחיר אחד.',
+    eyebrow: 'עיצוב אירועים בקליק!',
+    hero: 'האירוע שלכם. האמנות שלנו.',
+    heroBody: 'פורטל אינטראקטיבי להרכבת חבילת עיצוב אישית — מדויקת לסיפור, לצבעים ולחלום שלכם.',
+    products: 'פריטי עיצוב',
+    packages: 'חבילות עיצוב',
     add: 'הוספה לסל',
     added: 'נוסף לסל',
     from: 'החל מ־',
     details: 'מה כלול?',
     cart: 'עגלת קניות',
     viewCart: 'לצפייה בעגלה',
-    noSignup: 'אין צורך בהרשמה כדי להזמין',
-    whatsapp: 'יש לכם שאלה?',
     item: 'פריט',
     items: 'פריטים',
+    builderTitle: 'בואו נרכיב את שפת העיצוב שלכם',
+    builderBody: 'בחרו פלטה מובילה, הוסיפו גוונים מדויקים וספרו לנו מה תרצו להגשים.',
+    customColors: 'גוונים מדויקים שתרצו לשלב',
+    customColorsPlaceholder: 'לדוגמה: שמנת, זהב מט, ורוד עתיק ונגיעות ירוק זית',
+    customRequest: 'יש משהו ספציפי שתרצו באירוע ולא מופיע בחבילות?',
+    customRequestPlaceholder: 'ספרו לנו עליו כאן ונשמח להגשים לכם אותו!',
+    estimate: 'אומדן החבילה שלכם כרגע',
+    mediaHint: 'החליקו בין תמונות והמחשות העיצוב',
     shopNav: 'קטגוריות החנות'
   },
   en: {
-    minimum: 'Minimum order',
-    delivery: 'Delivery, setup and collection',
-    hero: 'Event design in a click!',
-    heroBody: 'Choose small products or a complete package, add them to your cart and complete a simple guest order.',
-    choose: '1. Choose',
-    chooseBody: 'Small products or a package that fits your event.',
-    order: '2. Order',
-    orderBody: 'Add to cart, update quantities and enter your details.',
-    love: '3. Fall in love',
-    loveBody: 'We coordinate, prepare and style your event.',
-    products: 'Small products',
-    productsBody: 'Add each item separately and choose the quantity you need.',
-    packages: 'Packages',
-    packagesBody: 'Ready-made packages that combine several elements at one price.',
+    eyebrow: 'Event design in a click!',
+    hero: 'Your celebration. Our art.',
+    heroBody: 'An interactive portal for building a personal event-design package around your story, colors and vision.',
+    products: 'Design pieces',
+    packages: 'Design packages',
     add: 'Add to cart',
     added: 'Added to cart',
     from: 'From',
     details: 'What is included?',
     cart: 'Shopping cart',
     viewCart: 'View cart',
-    noSignup: 'No registration is required',
-    whatsapp: 'Have a question?',
     item: 'item',
     items: 'items',
+    builderTitle: 'Create your event design language',
+    builderBody: 'Choose a leading palette, add precise shades and tell us what you dream of creating.',
+    customColors: 'Exact shades you would like to include',
+    customColorsPlaceholder: 'For example: ivory, matte gold, antique pink and olive accents',
+    customRequest: 'Is there something special that is not included in the packages?',
+    customRequestPlaceholder: 'Tell us about it and we will be happy to make it happen.',
+    estimate: 'Your current package estimate',
+    mediaHint: 'Swipe through imagery and design illustrations',
     shopNav: 'Shop categories'
   }
 } as const;
 
+const PALETTES = [
+  { name: 'לבן וזהב', colors: ['#FDFBF7', '#D4AF37', '#B8860B'] },
+  { name: 'ורוד פודרה וזהב־ורוד', colors: ['#F4E3E3', '#E8C5B8', '#C69A71'] },
+  { name: 'בורדו וזהב', colors: ['#6E1F2A', '#D4AF37', '#F7E8DA'] },
+  { name: 'ירוק זית ושמנת', colors: ['#6D7657', '#FAF6F0', '#C7A76A'] },
+  { name: 'שחור, פנינה וזהב', colors: ['#2C2C2C', '#FDFBF7', '#D4AF37'] }
+];
+
 function money(value: number) {
-  return `₪${value.toLocaleString()}`;
+  return `₪${value.toLocaleString('he-IL')}`;
 }
 
 function productCategoryLabel(category: string, lang: 'he' | 'en') {
@@ -99,14 +107,24 @@ export function HomePage() {
   const { lang } = useI18n();
   const copy = COPY[lang];
   const { overrides } = usePackages();
-  const { addItem, itemCount, subtotal } = useCart();
+  const {
+    addItem,
+    itemCount,
+    subtotal,
+    preferences,
+    setPalette,
+    setCustomColors,
+    setCustomRequest
+  } = useCart();
   const [addedId, setAddedId] = useState('');
+  const [videoFailed, setVideoFailed] = useState(false);
   const Arrow = lang === 'he' ? ArrowLeft : ArrowRight;
 
   const products = useMemo(() => buildShopProducts(overrides), [overrides]);
   const packages = useMemo(() => buildCatalog(PACKAGES, overrides), [overrides]);
   const productCategories = Object.values(SHOP_PRODUCT_CATEGORIES);
   const packageCategories = Object.values(CATEGORIES);
+  const heroVideo = (import.meta.env.VITE_HERO_VIDEO_URL as string | undefined) ?? '/media/ld-event-design-hero.mp4';
 
   const packageText = (pkg: Package) =>
     lang === 'en' && PACKAGE_EN[pkg.id]
@@ -150,77 +168,114 @@ export function HomePage() {
     <>
       <ArtDefsHost />
 
-      <div className="border-b border-[#EAE3D2] bg-[#2c241a] text-[#F7F0E4]">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-1 px-4 py-2.5 text-xs font-bold">
-          <span>{copy.minimum} {money(MINIMUM_ORDER)}</span>
-          <span className="inline-flex items-center gap-1.5 text-[#EAE3D2]/80"><Truck className="h-3.5 w-3.5" aria-hidden="true" />{copy.delivery} {money(DELIVERY_FEE)}</span>
-        </div>
-      </div>
-
-      <section className="hero-glow bg-white py-14 sm:py-20">
-        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="text-center lg:text-start">
-            <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-[#B29259]">LD Event Design</p>
-            <h2 className="font-display mt-4 text-4xl font-black leading-tight text-gray-900 sm:text-6xl">{copy.hero}</h2>
-            <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-gray-600 lg:mx-0">{copy.heroBody}</p>
-            <div className="mt-7 flex flex-wrap justify-center gap-3 lg:justify-start">
-              <a href="#products" className="inline-flex items-center gap-2 rounded-full bg-[#8C6D3F] px-6 py-3 text-sm font-bold text-white shadow-warm hover:bg-[#6d5430]">
-                {copy.products}<Arrow className="h-4 w-4" aria-hidden="true" />
-              </a>
-              <a href="#packages" className="inline-flex items-center gap-2 rounded-full border border-[#B29259] bg-white px-6 py-3 text-sm font-bold text-[#8C6D3F] hover:bg-[#FAF7F2]">
-                {copy.packages}<PackageOpen className="h-4 w-4" aria-hidden="true" />
-              </a>
-            </div>
-            <p className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-emerald-700"><Check className="h-4 w-4" aria-hidden="true" />{copy.noSignup}</p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
-            {products.slice(0, 4).map((product, index) => (
-              <div key={product.id} className={`overflow-hidden rounded-[2rem] border border-[#EAE3D2] bg-[#FAF7F2] shadow-warm ${index % 2 === 1 ? 'translate-y-5' : ''}`}>
-                <div className="aspect-[4/5] bg-white p-3">
-                  {product.image ? <img src={product.image} alt={product.title} className="h-full w-full rounded-2xl object-cover" /> : <div className="flex h-full items-center justify-center">{renderPackageSVG(product.svgType)}</div>}
-                </div>
-                <div className="p-3 text-center">
-                  <p className="truncate text-xs font-bold text-gray-800">{product.title}</p>
-                  <p className="mt-1 text-sm font-black text-[#8C6D3F]">{money(product.price)}</p>
-                </div>
+      <section className="relative isolate min-h-[78vh] overflow-hidden bg-[#2C2C2C] text-white">
+        {!videoFailed && (
+          <video
+            className="absolute inset-0 h-full w-full object-cover opacity-75"
+            src={heroVideo}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            onError={() => setVideoFailed(true)}
+            aria-label="עיצוב אירועים יוקרתי"
+          />
+        )}
+        {videoFailed && (
+          <div className="absolute inset-0 grid grid-cols-2 opacity-55 sm:grid-cols-4">
+            {products.slice(0, 4).map((product) => (
+              <div key={product.id} className="relative min-h-[78vh] overflow-hidden border-e border-white/10">
+                {product.image ? (
+                  <img src={product.image} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full items-center justify-center bg-gradient-to-br from-[#F4E3E3] to-[#C69A71] p-8">{renderPackageSVG(product.svgType)}</div>
+                )}
               </div>
             ))}
           </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#2C2C2C]/35 via-[#2C2C2C]/42 to-[#2C2C2C]/88" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(232,197,184,0.25),transparent_34%),radial-gradient(circle_at_20%_75%,rgba(212,175,55,0.16),transparent_30%)]" />
+
+        <div className="relative mx-auto flex min-h-[78vh] max-w-6xl items-end px-4 pb-16 pt-24 sm:items-center sm:pb-20 sm:pt-20">
+          <div className="max-w-3xl">
+            <p className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.3em] backdrop-blur-xl">
+              <Sparkles className="h-4 w-4 text-[#E8C5B8]" aria-hidden="true" /> {copy.eyebrow}
+            </p>
+            <h2 className="font-display mt-6 text-5xl font-black leading-[0.98] tracking-tight sm:text-7xl lg:text-8xl">{copy.hero}</h2>
+            <p className="mt-6 max-w-2xl text-base leading-relaxed text-white/82 sm:text-xl">{copy.heroBody}</p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <a href="#builder" className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#C69A71] px-7 py-3.5 text-sm font-extrabold text-white shadow-[0_18px_45px_rgba(184,134,11,0.3)] transition hover:-translate-y-1">
+                הרכבת חבילה אישית <Arrow className="h-4 w-4" aria-hidden="true" />
+              </a>
+              <a href="#packages" className="inline-flex items-center gap-2 rounded-full border border-white/35 bg-white/10 px-7 py-3.5 text-sm font-extrabold text-white backdrop-blur transition hover:bg-white hover:text-[#2C2C2C]">
+                צפייה בחבילות <Play className="h-4 w-4" aria-hidden="true" />
+              </a>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section className="border-y border-[#EAE3D2] bg-[#FAF7F2] py-10">
-        <div className="mx-auto grid max-w-5xl gap-6 px-4 sm:grid-cols-3">
-          {[
-            { icon: ShoppingBag, title: copy.choose, body: copy.chooseBody },
-            { icon: PackageOpen, title: copy.order, body: copy.orderBody },
-            { icon: Heart, title: copy.love, body: copy.loveBody }
-          ].map(({ icon: Icon, title, body }) => (
-            <article key={title} className="text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#B29259] shadow-sm"><Icon className="h-5 w-5" aria-hidden="true" /></div>
-              <h3 className="font-display mt-3 text-xl font-extrabold text-gray-900">{title}</h3>
-              <p className="mx-auto mt-1.5 max-w-xs text-sm leading-relaxed text-gray-600">{body}</p>
-            </article>
-          ))}
+      <section id="builder" className="scroll-mt-28 bg-[#FDFBF7] py-16 sm:py-24">
+        <div className="mx-auto max-w-6xl px-4">
+          <QuoteNotice />
+
+          <div className="mt-10 grid gap-8 rounded-[2.5rem] border border-[#E8C5B8]/70 bg-white p-5 shadow-[0_30px_80px_rgba(184,134,11,0.08)] sm:p-8 lg:grid-cols-[1fr_0.42fr]">
+            <div>
+              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.3em] text-[#B8860B]"><Palette className="h-4 w-4" aria-hidden="true" /> Design palette</p>
+              <h2 className="font-display mt-3 text-3xl font-black text-[#2C2C2C] sm:text-5xl">{copy.builderTitle}</h2>
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#6C625A]">{copy.builderBody}</p>
+
+              <div className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {PALETTES.map((palette) => (
+                  <button key={palette.name} type="button" onClick={() => setPalette(palette.name)} aria-pressed={preferences.palette === palette.name} className={`rounded-3xl border p-4 text-start transition ${preferences.palette === palette.name ? 'border-[#B8860B] bg-[#FAF6F0] shadow-[0_12px_30px_rgba(184,134,11,0.12)]' : 'border-[#E8C5B8]/65 bg-white hover:-translate-y-0.5 hover:border-[#D4AF37]'}`}>
+                    <span className="flex gap-1.5">{palette.colors.map((color) => <span key={color} className="h-7 flex-1 rounded-full border border-black/5" style={{ backgroundColor: color }} />)}</span>
+                    <span className="mt-3 flex items-center justify-between gap-2 text-sm font-extrabold text-[#2C2C2C]">{palette.name}{preferences.palette === palette.name && <Check className="h-4 w-4 text-[#B8860B]" aria-hidden="true" />}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-6 grid gap-5 sm:grid-cols-2">
+                <label className="text-sm font-extrabold text-[#2C2C2C]">
+                  {copy.customColors}
+                  <input value={preferences.customColors} onChange={(event) => setCustomColors(event.target.value)} placeholder={copy.customColorsPlaceholder} className="mt-2 w-full rounded-2xl border border-[#E8C5B8] bg-[#FDFBF7] px-4 py-3 font-normal outline-none transition placeholder:text-[#A99B90] focus:border-[#B8860B] focus:ring-4 focus:ring-[#E8C5B8]/30" />
+                </label>
+                <label className="text-sm font-extrabold text-[#2C2C2C]">
+                  {copy.customRequest}
+                  <textarea value={preferences.customRequest} onChange={(event) => setCustomRequest(event.target.value)} placeholder={copy.customRequestPlaceholder} rows={3} className="mt-2 w-full resize-y rounded-2xl border border-[#E8C5B8] bg-[#FDFBF7] px-4 py-3 font-normal outline-none transition placeholder:text-[#A99B90] focus:border-[#B8860B] focus:ring-4 focus:ring-[#E8C5B8]/30" />
+                </label>
+              </div>
+            </div>
+
+            <aside className="flex flex-col justify-between rounded-[2rem] bg-gradient-to-br from-[#2C2C2C] to-[#4A3C34] p-6 text-white">
+              <div>
+                <Heart className="h-8 w-8 text-[#E8C5B8]" aria-hidden="true" />
+                <p className="mt-5 text-xs font-bold uppercase tracking-[0.22em] text-white/55">{copy.estimate}</p>
+                <strong className="font-display mt-2 block text-4xl font-black text-[#E8C5B8]">{money(subtotal)}</strong>
+                <p className="mt-2 text-xs leading-relaxed text-white/55">האומדן מתעדכן בזמן אמת לפי הפריטים והחבילות שתבחרו.</p>
+              </div>
+              <a href="#products" className="mt-8 inline-flex items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-extrabold text-[#2C2C2C] transition hover:-translate-y-0.5">מתחילים לבחור <Arrow className="h-4 w-4" aria-hidden="true" /></a>
+            </aside>
+          </div>
         </div>
       </section>
 
-      <nav aria-label={copy.shopNav} className="sticky top-[73px] z-40 border-b border-[#EAE3D2] bg-white/95 shadow-sm backdrop-blur">
+      <nav aria-label={copy.shopNav} className="sticky top-[73px] z-40 border-y border-[#E8C5B8]/60 bg-[#FDFBF7]/92 shadow-sm backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl gap-2 overflow-x-auto px-4 py-3">
           {productCategories.map((category, index) => (
-            <a key={category} href={`#product-category-${index}`} className="shrink-0 rounded-full border border-[#EAE3D2] px-4 py-2 text-xs font-bold text-[#8C6D3F] hover:border-[#B29259] hover:bg-[#FAF7F2]">{productCategoryLabel(category, lang)}</a>
+            <a key={category} href={`#product-category-${index}`} className="shrink-0 rounded-full border border-[#E8C5B8] bg-white px-4 py-2 text-xs font-bold text-[#7A5A46] transition hover:border-[#B8860B] hover:text-[#B8860B]">{productCategoryLabel(category, lang)}</a>
           ))}
-          <a href="#packages" className="shrink-0 rounded-full bg-[#8C6D3F] px-4 py-2 text-xs font-bold text-white">{copy.packages}</a>
+          <a href="#packages" className="shrink-0 rounded-full bg-gradient-to-r from-[#B8860B] to-[#D4AF37] px-4 py-2 text-xs font-bold text-white">{copy.packages}</a>
         </div>
       </nav>
 
-      <section id="products" className="scroll-mt-36 bg-white py-14 sm:py-20">
+      <section id="products" className="scroll-mt-36 bg-[#FAF6F0] py-16 sm:py-24">
         <div className="mx-auto max-w-6xl px-4">
-          <div className="mb-10 text-center">
-            <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-[#B29259]">Shop</p>
-            <h3 className="font-display mt-2 text-3xl font-black text-gray-900 sm:text-4xl">{copy.products}</h3>
-            <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-gray-600">{copy.productsBody}</p>
+          <div className="mb-12 text-center">
+            <p className="text-[11px] font-bold uppercase tracking-[0.35em] text-[#B8860B]">Curated details</p>
+            <h2 className="font-display mt-3 text-4xl font-black text-[#2C2C2C] sm:text-6xl">{copy.products}</h2>
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-[#6C625A]">בחרו פריטים קטנים, שנו כמויות וצרו שילוב שמרגיש בדיוק שלכם.</p>
           </div>
 
           <div className="space-y-16">
@@ -229,30 +284,30 @@ export function HomePage() {
               if (categoryProducts.length === 0) return null;
               return (
                 <section key={category} id={`product-category-${categoryIndex}`} className="scroll-mt-36">
-                  <div className="mb-5 flex items-center justify-between gap-4">
-                    <h4 className="font-display text-2xl font-extrabold text-gray-900">{productCategoryLabel(category, lang)}</h4>
-                    <span className="h-px flex-1 bg-[#EAE3D2]" aria-hidden="true" />
+                  <div className="mb-6 flex items-center gap-4">
+                    <h3 className="font-display text-2xl font-black text-[#2C2C2C] sm:text-3xl">{productCategoryLabel(category, lang)}</h3>
+                    <span className="h-px flex-1 bg-gradient-to-l from-transparent via-[#E8C5B8] to-transparent" aria-hidden="true" />
                   </div>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
                     {categoryProducts.map((product) => (
-                      <article key={product.id} className="group flex flex-col overflow-hidden rounded-2xl border border-[#EAE3D2] bg-white transition hover:-translate-y-1 hover:shadow-warm">
-                        <div className="relative aspect-[4/5] overflow-hidden bg-[#FAF7F2]">
+                      <article key={product.id} className="group flex flex-col overflow-hidden rounded-[1.75rem] border border-[#E8C5B8]/70 bg-white transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_22px_55px_rgba(184,134,11,0.13)]">
+                        <div className="relative aspect-[4/5] overflow-hidden bg-[#F4E3E3]">
                           {product.image ? (
-                            <img src={product.image} alt={product.title} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                            <img src={product.image} alt={product.title} loading="lazy" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
                           ) : (
                             <div className="flex h-full items-center justify-center p-4">{renderPackageSVG(product.svgType)}</div>
                           )}
-                          <button type="button" onClick={() => addProduct(product)} aria-label={`${copy.add}: ${product.title}`} className="absolute bottom-3 end-3 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#8C6D3F] shadow-lg transition hover:bg-[#8C6D3F] hover:text-white">
+                          <button type="button" onClick={() => addProduct(product)} aria-label={`${copy.add}: ${product.title}`} className="absolute bottom-3 end-3 flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#B8860B] shadow-xl transition hover:scale-105 hover:bg-[#B8860B] hover:text-white">
                             {addedId === product.id ? <Check className="h-4 w-4" aria-hidden="true" /> : <ShoppingBag className="h-4 w-4" aria-hidden="true" />}
                           </button>
                         </div>
-                        <div className="flex flex-1 flex-col p-3.5 sm:p-4">
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-[#B29259]">{productCategoryLabel(product.category, lang)}</p>
-                          <h5 className="mt-1.5 text-sm font-bold leading-snug text-gray-900 sm:text-base">{product.title}</h5>
-                          <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-gray-500 sm:text-xs">{product.subtitle}</p>
+                        <div className="flex flex-1 flex-col p-4">
+                          <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#B8860B]">{productCategoryLabel(product.category, lang)}</p>
+                          <h4 className="mt-2 text-sm font-extrabold leading-snug text-[#2C2C2C] sm:text-base">{product.title}</h4>
+                          <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-[#7A7069] sm:text-xs">{product.subtitle}</p>
                           <div className="mt-auto flex items-center justify-between gap-2 pt-4">
-                            <strong className="text-base font-black text-[#8C6D3F]">{money(product.price)}</strong>
-                            <button type="button" onClick={() => addProduct(product)} className="text-[11px] font-bold text-[#8C6D3F] underline-offset-4 hover:underline">{addedId === product.id ? copy.added : copy.add}</button>
+                            <strong className="text-base font-black text-[#B8860B]">{money(product.price)}</strong>
+                            <button type="button" onClick={() => addProduct(product)} className="text-[10px] font-extrabold text-[#7A5A46] underline-offset-4 hover:underline">{addedId === product.id ? copy.added : copy.add}</button>
                           </div>
                         </div>
                       </article>
@@ -265,43 +320,41 @@ export function HomePage() {
         </div>
       </section>
 
-      <section id="packages" className="scroll-mt-36 bg-[#FAF7F2] py-14 sm:py-20">
+      <section id="packages" className="scroll-mt-36 bg-[#FDFBF7] py-16 sm:py-24">
         <div className="mx-auto max-w-6xl px-4">
-          <div className="mb-10 text-center">
-            <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-[#B29259]">Complete packages</p>
-            <h3 className="font-display mt-2 text-3xl font-black text-gray-900 sm:text-4xl">{copy.packages}</h3>
-            <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-gray-600">{copy.packagesBody}</p>
+          <div className="mb-12 text-center">
+            <p className="text-[11px] font-bold uppercase tracking-[0.35em] text-[#B8860B]">Signature collections</p>
+            <h2 className="font-display mt-3 text-4xl font-black text-[#2C2C2C] sm:text-6xl">{copy.packages}</h2>
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-[#6C625A]">{copy.mediaHint}</p>
           </div>
 
-          <div className="space-y-14">
+          <div className="space-y-16">
             {packageCategories.map((category) => {
               const categoryPackages = packages.filter((pkg) => pkg.category === category);
               if (categoryPackages.length === 0) return null;
               return (
                 <section key={category}>
-                  <h4 className="font-display mb-5 text-center text-2xl font-extrabold text-gray-900">{categoryLabel(category, lang)}</h4>
-                  <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  <h3 className="font-display mb-6 text-center text-3xl font-black text-[#2C2C2C]">{categoryLabel(category, lang)}</h3>
+                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                     {categoryPackages.map((pkg) => {
                       const text = packageText(pkg);
-                      const details = Object.values(pkg.details).flatMap((items) => items ?? []).slice(0, 4);
+                      const details = Object.values(pkg.details).flatMap((items) => items ?? []).slice(0, 5);
                       return (
-                        <article key={pkg.id} className="flex flex-col overflow-hidden rounded-[2rem] border border-[#EAE3D2] bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-warm">
-                          <div className="aspect-[16/11] overflow-hidden bg-[#FAF7F2] p-4">
-                            {pkg.image ? <img src={pkg.image} alt={text.title} className="h-full w-full rounded-2xl object-cover" /> : <div className="flex h-full items-center justify-center">{renderPackageSVG(pkg.svgType)}</div>}
-                          </div>
-                          <div className="flex flex-1 flex-col p-5">
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-[#B29259]">{categoryLabel(category, lang)}</p>
-                            <h5 className="mt-2 text-xl font-extrabold text-gray-900">{text.title}</h5>
-                            <p className="mt-2 text-sm leading-relaxed text-gray-500">{text.subtitle}</p>
+                        <article key={pkg.id} className="flex flex-col overflow-hidden rounded-[2.25rem] border border-[#E8C5B8]/70 bg-white shadow-[0_18px_55px_rgba(44,44,44,0.07)] transition hover:-translate-y-1.5 hover:shadow-[0_28px_70px_rgba(184,134,11,0.14)]">
+                          <PackageMediaCarousel title={text.title} mediaUrl={pkg.image} art={renderPackageSVG(pkg.svgType)} />
+                          <div className="flex flex-1 flex-col p-5 sm:p-6">
+                            <p className="text-[9px] font-bold uppercase tracking-[0.24em] text-[#B8860B]">{categoryLabel(category, lang)}</p>
+                            <h4 className="font-display mt-2 text-2xl font-black leading-tight text-[#2C2C2C]">{text.title}</h4>
+                            <p className="mt-3 text-sm leading-relaxed text-[#6C625A]">{text.subtitle}</p>
                             {details.length > 0 && (
-                              <details className="mt-4 rounded-2xl bg-[#FAF7F2] p-4 text-xs text-gray-600">
-                                <summary className="cursor-pointer font-bold text-[#8C6D3F]">{copy.details}</summary>
-                                <ul className="mt-3 space-y-2">{details.map((detail, index) => <li key={`${pkg.id}-${index}`}>• {detail}</li>)}</ul>
+                              <details className="mt-4 rounded-2xl border border-[#E8C5B8]/60 bg-[#FAF6F0] p-4 text-xs text-[#6C625A]">
+                                <summary className="cursor-pointer font-extrabold text-[#7A5A46]">{copy.details}</summary>
+                                <ul className="mt-3 space-y-2">{details.map((detail, index) => <li key={`${pkg.id}-${index}`} className="flex gap-2"><Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#B8860B]" aria-hidden="true" />{detail}</li>)}</ul>
                               </details>
                             )}
-                            <div className="mt-auto flex items-end justify-between gap-3 pt-5">
-                              <div><span className="block text-[10px] font-bold text-gray-400">{copy.from}</span><strong className="text-2xl font-black text-[#8C6D3F]">{money(pkg.price)}</strong></div>
-                              <button type="button" onClick={() => addPackage(pkg)} aria-label={`${copy.add}: ${text.title}`} className="inline-flex items-center gap-2 rounded-full bg-[#8C6D3F] px-5 py-3 text-xs font-bold text-white hover:bg-[#6d5430]">
+                            <div className="mt-auto flex items-end justify-between gap-3 pt-6">
+                              <div><span className="block text-[10px] font-bold text-[#9B8A7D]">{copy.from}</span><strong className="font-display text-2xl font-black text-[#B8860B]">{money(pkg.price)}</strong></div>
+                              <button type="button" onClick={() => addPackage(pkg)} aria-label={`${copy.add}: ${text.title}`} className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#B8860B] to-[#D4AF37] px-5 py-3 text-xs font-extrabold text-white shadow-lg transition hover:-translate-y-0.5">
                                 {addedId === pkg.id ? <Check className="h-4 w-4" aria-hidden="true" /> : <ShoppingBag className="h-4 w-4" aria-hidden="true" />}
                                 {addedId === pkg.id ? copy.added : copy.add}
                               </button>
@@ -318,26 +371,49 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="bg-white py-14">
+      <TestimonialsCarousel />
+
+      <section className="bg-[#FAF6F0] py-16 sm:py-24" aria-labelledby="instagram-title">
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="flex flex-wrap items-end justify-between gap-5">
+            <div>
+              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.3em] text-[#B8860B]"><Instagram className="h-4 w-4" aria-hidden="true" /> Live inspiration</p>
+              <h2 id="instagram-title" className="font-display mt-3 text-4xl font-black text-[#2C2C2C]">מהאינסטגרם שלנו</h2>
+            </div>
+            <a href="https://www.instagram.com/ld_event_design?igsh=MWpsN2c2OWhyY2FsaQ==" target="_blank" rel="noopener noreferrer" className="rounded-full border border-[#B8860B] px-5 py-2.5 text-xs font-extrabold text-[#7A5A46] transition hover:bg-[#B8860B] hover:text-white">@ld_event_design</a>
+          </div>
+          <div className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
+            {products.slice(0, 6).map((product) => (
+              <a key={product.id} href="https://www.instagram.com/ld_event_design?igsh=MWpsN2c2OWhyY2FsaQ==" target="_blank" rel="noopener noreferrer" aria-label={`פתיחת אינסטגרם — ${product.title}`} className="group aspect-square overflow-hidden rounded-3xl bg-white shadow-sm">
+                {product.image ? <img src={product.image} alt={product.title} loading="lazy" className="h-full w-full object-cover transition duration-700 group-hover:scale-110" /> : <div className="flex h-full items-center justify-center p-3 transition duration-500 group-hover:scale-105">{renderPackageSVG(product.svgType)}</div>}
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white py-16">
         <div className="mx-auto max-w-5xl px-4 text-center">
-          <MessageCircle className="mx-auto h-7 w-7 text-[#B29259]" aria-hidden="true" />
-          <h3 className="font-display mt-3 text-2xl font-extrabold text-gray-900">{copy.whatsapp}</h3>
-          <a href="https://wa.me/972545740423" target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-full border border-[#B29259] px-6 py-3 text-sm font-bold text-[#8C6D3F] hover:bg-[#FAF7F2]">WhatsApp</a>
+          <MessageCircle className="mx-auto h-8 w-8 text-[#B8860B]" aria-hidden="true" />
+          <h2 className="font-display mt-4 text-3xl font-black text-[#2C2C2C]">בואו נדבר על האירוע שלכם</h2>
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-[#6C625A]">אנחנו כאן לכל שאלה, רעיון או חלום עיצובי — גם לפני שבחרתם חבילה.</p>
+          <a href="https://wa.me/972545740423" target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#2C2C2C] px-7 py-3.5 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-[#B8860B]">WhatsApp</a>
         </div>
       </section>
 
       {itemCount > 0 && (
-        <div className="fixed bottom-4 left-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-2xl border border-[#D8C29A] bg-white p-3 shadow-2xl sm:bottom-6">
+        <div className="fixed bottom-4 left-1/2 z-40 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-[1.5rem] border border-[#E8C5B8] bg-white/94 p-3 shadow-[0_20px_60px_rgba(44,44,44,0.2)] backdrop-blur-xl sm:bottom-6">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-xs font-bold text-gray-700">{copy.cart}: {cartCount}</p>
-              <p className="text-lg font-black text-[#8C6D3F]">{money(subtotal)}</p>
+              <p className="text-xs font-bold text-[#6C625A]">{copy.cart}: {cartCount}</p>
+              <p className="font-display text-xl font-black text-[#B8860B]">{money(subtotal)}</p>
             </div>
-            <Link to="/cart" className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-[#8C6D3F] px-5 py-3 text-xs font-bold text-white hover:bg-[#6d5430]">{copy.viewCart}<Arrow className="h-4 w-4" aria-hidden="true" /></Link>
+            <Link to="/cart" className="inline-flex shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-[#B8860B] to-[#D4AF37] px-5 py-3 text-xs font-extrabold text-white shadow-lg">{copy.viewCart}<Arrow className="h-4 w-4" aria-hidden="true" /></Link>
           </div>
         </div>
       )}
 
+      <LeadCaptureModal />
       <div aria-live="polite" className="sr-only">{addedId ? copy.added : ''}</div>
     </>
   );
