@@ -1,14 +1,47 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CATEGORIES, PACKAGES } from '../App';
 import { CART_STORAGE_KEY, CartProvider } from '../cart/CartProvider';
 import { SHOP_PRODUCTS, SHOP_PRODUCT_CATEGORIES } from '../catalog/shopProducts';
+import type { OverrideMap, PackageOverride } from '../lib/packages';
 import { renderWithProviders } from '../test/render';
+
+const catalogState = vi.hoisted(() => ({ overrides: {} as OverrideMap }));
+
+vi.mock('../packages/PackagesProvider', () => ({
+  usePackages: () => ({
+    overrides: catalogState.overrides,
+    loading: false,
+    refresh: vi.fn(),
+    saveOverride: vi.fn(),
+    removeOverride: vi.fn()
+  })
+}));
+
 import { HomePage } from './HomePage';
 
 const renderHome = () => renderWithProviders(<CartProvider><HomePage /></CartProvider>);
 
+function override(input: Partial<PackageOverride> & { package_id: string }): PackageOverride {
+  return {
+    price: null,
+    title: null,
+    subtitle: null,
+    description: null,
+    benefits: null,
+    image_url: null,
+    category: null,
+    svg_type: null,
+    pricing_tiers: null,
+    hidden: false,
+    is_custom: false,
+    sort_order: null,
+    ...input
+  };
+}
+
 beforeEach(() => {
+  catalogState.overrides = {};
   window.localStorage.removeItem('ld-lang');
   window.localStorage.removeItem(CART_STORAGE_KEY);
 });
@@ -47,15 +80,20 @@ describe('HomePage', () => {
     expect(screen.getAllByText(`₪${SHOP_PRODUCTS[0].price.toLocaleString()}`).length).toBeGreaterThan(0);
   });
 
-  it('adds a small product and shows the floating cart', () => {
+  it('adds a small product with both card controls and shows plural cart state', () => {
     renderHome();
-    const product = SHOP_PRODUCTS[0];
+    const first = SHOP_PRODUCTS[0];
+    const second = SHOP_PRODUCTS[1];
 
-    fireEvent.click(screen.getByRole('button', { name: `הוספה לסל: ${product.title}` }));
+    fireEvent.click(screen.getByRole('button', { name: `הוספה לסל: ${first.title}` }));
+    const firstArticle = screen.getAllByText(first.title)
+      .map((node) => node.closest('article'))
+      .find((node): node is HTMLElement => node instanceof HTMLElement)!;
+    fireEvent.click(within(firstArticle).getByRole('button', { name: 'נוסף לסל' }));
+    fireEvent.click(screen.getByRole('button', { name: `הוספה לסל: ${second.title}` }));
 
-    expect(screen.getByText('עגלת קניות: 1 פריט')).toBeInTheDocument();
+    expect(screen.getByText('עגלת קניות: 3 פריטים')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /לצפייה בעגלה/ })).toHaveAttribute('href', '/cart');
-    expect(screen.getAllByText('נוסף לסל').length).toBeGreaterThan(0);
   });
 
   it('renders package categories and package cards separately', () => {
@@ -79,6 +117,36 @@ describe('HomePage', () => {
     expect(screen.getAllByText('נוסף לסל').length).toBeGreaterThan(0);
   });
 
+  it('shows product and package images uploaded by the manager', () => {
+    const product = SHOP_PRODUCTS[0];
+    const pkg = PACKAGES.find((item) => item.id === 'classic-s')!;
+    catalogState.overrides = {
+      [product.id]: override({ package_id: product.id, image_url: 'https://cdn.example/product.webp' }),
+      [pkg.id]: override({ package_id: pkg.id, image_url: 'https://cdn.example/package.webp' })
+    };
+
+    renderHome();
+
+    expect(screen.getAllByRole('img', { name: product.title }).length).toBeGreaterThan(0);
+    expect(screen.getByRole('img', { name: pkg.title })).toHaveAttribute('src', 'https://cdn.example/package.webp');
+  });
+
+  it('omits empty product and package category sections', () => {
+    const hiddenProducts = SHOP_PRODUCTS
+      .filter((product) => product.category === SHOP_PRODUCT_CATEGORIES.SWEET_BAR)
+      .map((product) => [product.id, override({ package_id: product.id, hidden: true })] as const);
+    const hiddenPackages = PACKAGES
+      .filter((pkg) => pkg.category === CATEGORIES.HENNA)
+      .map((pkg) => [pkg.id, override({ package_id: pkg.id, hidden: true })] as const);
+    catalogState.overrides = Object.fromEntries([...hiddenProducts, ...hiddenPackages]);
+
+    const { container } = renderHome();
+    const productCategoryIndex = Object.values(SHOP_PRODUCT_CATEGORIES).indexOf(SHOP_PRODUCT_CATEGORIES.SWEET_BAR);
+
+    expect(container.querySelector(`#product-category-${productCategoryIndex}`)).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: CATEGORIES.HENNA })).not.toBeInTheDocument();
+  });
+
   it('shop navigation points to product categories and packages', () => {
     const { container } = renderHome();
 
@@ -91,7 +159,7 @@ describe('HomePage', () => {
     expect(screen.getByRole('link', { name: 'WhatsApp' })).toHaveAttribute('href', expect.stringContaining('wa.me'));
   });
 
-  it('renders English storefront content', () => {
+  it('renders English storefront and built-in package translations', () => {
     window.localStorage.setItem('ld-lang', 'en');
     renderHome();
 
@@ -99,5 +167,25 @@ describe('HomePage', () => {
     expect(screen.getAllByText('Small products').length).toBeGreaterThan(0);
     expect(screen.getByText('Wedding Design Package — Classic S')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /Add to cart/ }).length).toBeGreaterThan(0);
+  });
+
+  it('uses the original text for a custom package in English', () => {
+    catalogState.overrides = {
+      'custom-package': override({
+        package_id: 'custom-package',
+        title: 'Custom Package',
+        subtitle: 'Custom subtitle',
+        category: CATEGORIES.WEDDING,
+        price: 4100,
+        is_custom: true,
+        sort_order: 1
+      })
+    };
+    window.localStorage.setItem('ld-lang', 'en');
+
+    renderHome();
+
+    expect(screen.getByText('Custom Package')).toBeInTheDocument();
+    expect(screen.getByText('Custom subtitle')).toBeInTheDocument();
   });
 });
