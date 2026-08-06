@@ -21,7 +21,9 @@ interface AuthValue {
   configured: boolean;
   signUp: (email: string, password: string) => Promise<AuthResult>;
   signIn: (email: string, password: string) => Promise<AuthResult>;
-  signInWithGoogle: () => Promise<AuthResult>;
+  signInWithGoogle: (returnTo?: string) => Promise<AuthResult>;
+  resetPassword: (email: string) => Promise<AuthResult>;
+  updatePassword: (password: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
 }
 
@@ -29,6 +31,11 @@ const AuthContext = createContext<AuthValue | null>(null);
 
 function roleFor(user: User | null): Role {
   return roleForEmail(user?.email ?? null, ADMIN_EMAILS);
+}
+
+function safeAppUrl(path: string): string {
+  const safePath = path.startsWith('/') && !path.startsWith('//') ? path : '/';
+  return new URL(safePath, window.location.origin).toString();
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -73,12 +80,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: error?.message ?? null };
   }, []);
 
-  const signInWithGoogle = useCallback(async (): Promise<AuthResult> => {
+  const signInWithGoogle = useCallback(async (returnTo = '/'): Promise<AuthResult> => {
     if (!isSupabaseConfigured) return { error: 'NOT_CONFIGURED' };
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin }
+      options: {
+        redirectTo: safeAppUrl(returnTo),
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'select_account'
+        }
+      }
     });
+    return { error: error?.message ?? null };
+  }, []);
+
+  const resetPassword = useCallback(async (email: string): Promise<AuthResult> => {
+    if (!isSupabaseConfigured) return { error: 'NOT_CONFIGURED' };
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: safeAppUrl('/reset-password')
+    });
+    return { error: error?.message ?? null };
+  }, []);
+
+  const updatePassword = useCallback(async (password: string): Promise<AuthResult> => {
+    if (!isSupabaseConfigured) return { error: 'NOT_CONFIGURED' };
+    const { error } = await supabase.auth.updateUser({ password });
     return { error: error?.message ?? null };
   }, []);
 
@@ -87,7 +114,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, role, loading, configured: isSupabaseConfigured, signUp, signIn, signInWithGoogle, signOut }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        role,
+        loading,
+        configured: isSupabaseConfigured,
+        signUp,
+        signIn,
+        signInWithGoogle,
+        resetPassword,
+        updatePassword,
+        signOut
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
