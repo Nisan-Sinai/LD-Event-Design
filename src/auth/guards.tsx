@@ -14,7 +14,6 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading, configured } = useAuth();
   const location = useLocation();
   if (loading) return <Spinner />;
-  // אם Supabase לא הוגדר — מאפשרים גישה (אורח), כי אין מערכת התחברות פעילה
   if (!configured) return <>{children}</>;
   if (!user) return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   return <>{children}</>;
@@ -22,8 +21,9 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
 
 export function RequireAdmin({ children }: { children: React.ReactNode }) {
   const { user, role, loading } = useAuth();
+  const location = useLocation();
   if (loading) return <Spinner />;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   if (role !== 'admin') return <Navigate to="/" replace />;
   return <>{children}</>;
 }
