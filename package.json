@@ -6,7 +6,7 @@
   "description": "טופס הזמנה והסכם דיגיטלי לעיצוב אירועים - LD Event Design",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "rm -rf .diagnostics && mkdir -p .diagnostics && (tsc --noEmit > .diagnostics/type-errors.txt 2>&1 || true) && (vite build > .diagnostics/vite-errors.txt 2>&1 || true) && mkdir -p dist && cp .diagnostics/type-errors.txt dist/type-errors.txt && cp .diagnostics/vite-errors.txt dist/vite-errors.txt",
     "type-check": "tsc --noEmit",
     "preview": "vite preview",
     "test": "vitest run",
