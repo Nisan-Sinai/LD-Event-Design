@@ -11,6 +11,7 @@ import { CheckoutPage } from './pages/CheckoutPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import OrderPage from './App';
 
 export function Root() {
@@ -25,6 +26,7 @@ export function Root() {
               <Route path="/checkout" element={<SiteLayout><CheckoutPage /></SiteLayout>} />
               <Route path="/login" element={<SiteLayout><LoginPage /></SiteLayout>} />
               <Route path="/register" element={<SiteLayout><RegisterPage /></SiteLayout>} />
+              <Route path="/reset-password" element={<SiteLayout><ResetPasswordPage /></SiteLayout>} />
               {/* הטופס הישן נשאר זמין למנהל ולהזמנות חוזה מורכבות. */}
               <Route path="/order" element={<OrderPage />} />
               <Route
