@@ -8,7 +8,6 @@ import {
   MessageCircle,
   PackageOpen,
   ShoppingBag,
-  Sparkles,
   Truck
 } from 'lucide-react';
 import { ArtDefsHost, CATEGORIES, PACKAGES, renderPackageSVG, type Package } from '../App';
