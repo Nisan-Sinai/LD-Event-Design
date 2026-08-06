@@ -42,11 +42,12 @@ beforeEach(() => {
 });
 
 describe('LoginPage', () => {
-  it('renders the login form and forgot-password action', () => {
+  it('renders the login form and a prominent forgot-password action', () => {
     renderLogin();
     expect(screen.getByLabelText('אימייל')).toBeInTheDocument();
     expect(screen.getByLabelText('סיסמה')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'שכחתי סיסמה' })).toBeInTheDocument();
+    expect(screen.getByText('לא זוכרים את הסיסמה?')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'שכחתי סיסמה — שלחו לי קישור איפוס' })).toBeInTheDocument();
   });
 
   it('offers Google sign-in and returns manager login to admin', async () => {
@@ -91,7 +92,7 @@ describe('LoginPage', () => {
 
   it('sends a password reset email and shows confirmation', async () => {
     renderLogin({ pathname: '/login', state: { from: '/admin' } });
-    fireEvent.click(screen.getByRole('button', { name: 'שכחתי סיסמה' }));
+    fireEvent.click(screen.getByRole('button', { name: 'שכחתי סיסמה — שלחו לי קישור איפוס' }));
     expect(screen.queryByLabelText('סיסמה')).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('אימייל'), { target: { value: ' luroni704@gmail.com ' } });
     fireEvent.click(screen.getByRole('button', { name: 'שליחת קישור איפוס' }));
@@ -102,7 +103,7 @@ describe('LoginPage', () => {
   it('shows reset errors and can return to login', async () => {
     a.resetPassword.mockResolvedValueOnce({ error: 'email rate limit exceeded' });
     renderLogin();
-    fireEvent.click(screen.getByRole('button', { name: 'שכחתי סיסמה' }));
+    fireEvent.click(screen.getByRole('button', { name: 'שכחתי סיסמה — שלחו לי קישור איפוס' }));
     fireEvent.change(screen.getByLabelText('אימייל'), { target: { value: 'a@b.com' } });
     fireEvent.click(screen.getByRole('button', { name: 'שליחת קישור איפוס' }));
     await waitFor(() => expect(screen.getByText('email rate limit exceeded')).toBeInTheDocument());
@@ -113,7 +114,7 @@ describe('LoginPage', () => {
   it('blocks password reset when Supabase is not configured', () => {
     a.configured = false;
     renderLogin();
-    fireEvent.click(screen.getByRole('button', { name: 'שכחתי סיסמה' }));
+    fireEvent.click(screen.getByRole('button', { name: 'שכחתי סיסמה — שלחו לי קישור איפוס' }));
     fireEvent.submit(screen.getByLabelText('אימייל').closest('form')!);
     expect(a.resetPassword).not.toHaveBeenCalled();
   });
