@@ -3,7 +3,9 @@ import type { Session, User } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { parseAdminEmails, roleForEmail, type Role } from './roles';
 
-// המנהלים הקבועים תמיד נשמרים; VITE_ADMIN_EMAILS יכול להוסיף מנהלים נוספים בלבד.
+const AUTH_RETURN_KEY = 'ld-event-design-auth-return';
+
+// המנהלים הקבועים תמיד נשמרים; VITE_ADMIN_EMAILS יכול להוסיף מנהלים נוספים.
 const BUILT_IN_ADMIN_EMAILS = parseAdminEmails(undefined);
 const ENV_ADMIN_EMAILS = parseAdminEmails(
   import.meta.env.VITE_ADMIN_EMAILS as string | undefined,
@@ -25,7 +27,9 @@ interface AuthValue {
   configured: boolean;
   signUp: (email: string, password: string) => Promise<AuthResult>;
   signIn: (email: string, password: string) => Promise<AuthResult>;
-  signInWithGoogle: () => Promise<AuthResult>;
+  signInWithGoogle: (returnTo?: string) => Promise<AuthResult>;
+  resetPassword: (email: string) => Promise<AuthResult>;
+  updatePassword: (password: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
 }
 
@@ -33,6 +37,16 @@ const AuthContext = createContext<AuthValue | null>(null);
 
 function roleFor(user: User | null): Role {
   return roleForEmail(user?.email ?? null, ADMIN_EMAILS);
+}
+
+function safeReturnPath(value: string | undefined): string {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) return '/admin';
+  return value;
+}
+
+function safeAppUrl(path: string): string {
+  const safePath = path.startsWith('/') && !path.startsWith('//') ? path : '/';
+  return new URL(safePath, window.location.origin).toString();
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -53,7 +67,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
-      // בהתחברות — משייכים הזמנות-אורח עם האימייל המאומת לחשבון (guest checkout)
       if (event === 'SIGNED_IN' && s?.user) void supabase.rpc('claim_my_orders');
     });
     return () => {
@@ -77,21 +90,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: error?.message ?? null };
   }, []);
 
-  const signInWithGoogle = useCallback(async (): Promise<AuthResult> => {
+  const signInWithGoogle = useCallback(async (returnTo = '/admin'): Promise<AuthResult> => {
     if (!isSupabaseConfigured) return { error: 'NOT_CONFIGURED' };
+    const safeReturn = safeReturnPath(returnTo);
+    window.sessionStorage.setItem(AUTH_RETURN_KEY, safeReturn);
+    const callbackPath = `/login?from=${encodeURIComponent(safeReturn)}`;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin }
+      options: {
+        redirectTo: safeAppUrl(callbackPath),
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'select_account'
+        }
+      }
     });
     return { error: error?.message ?? null };
   }, []);
 
+  const resetPassword = useCallback(async (email: string): Promise<AuthResult> => {
+    if (!isSupabaseConfigured) return { error: 'NOT_CONFIGURED' };
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: safeAppUrl('/reset-password')
+    });
+    return { error: error?.message ?? null };
+  }, []);
+
+  const updatePassword = useCallback(async (password: string): Promise<AuthResult> => {
+    if (!isSupabaseConfigured) return { error: 'NOT_CONFIGURED' };
+    const { error } = await supabase.auth.updateUser({ password });
+    return { error: error?.message ?? null };
+  }, []);
+
   const signOut = useCallback(async () => {
+    window.sessionStorage.removeItem(AUTH_RETURN_KEY);
     if (isSupabaseConfigured) await supabase.auth.signOut();
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, role, loading, configured: isSupabaseConfigured, signUp, signIn, signInWithGoogle, signOut }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        role,
+        loading,
+        configured: isSupabaseConfigured,
+        signUp,
+        signIn,
+        signInWithGoogle,
+        resetPassword,
+        updatePassword,
+        signOut
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
