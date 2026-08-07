@@ -49,14 +49,14 @@ describe('AdminPage', () => {
   it('shows blocked orders state when Supabase is not configured', async () => {
     a.configured = false;
     renderAdmin();
-    fireEvent.click(screen.getByRole('button', { name: 'הזמנות' }));
+    fireEvent.click(screen.getByRole('button', { name: 'ניהול הזמנות' }));
     await waitFor(() => expect(screen.getByText(/נדרשת הגדרת Supabase/)).toBeInTheDocument());
     expect(fetchOrders).not.toHaveBeenCalled();
   });
 
   it('shows the empty orders state after switching tabs', async () => {
     renderAdmin();
-    fireEvent.click(screen.getByRole('button', { name: 'הזמנות' }));
+    fireEvent.click(screen.getByRole('button', { name: 'ניהול הזמנות' }));
     await waitFor(() => expect(screen.getByText('אין הזמנות עדיין.')).toBeInTheDocument());
   });
 
@@ -66,7 +66,7 @@ describe('AdminPage', () => {
       { id: 'o2', created_at: '2026-06-03T10:00:00Z', groom_name: 'רון', bride_name: 'מיה', event_date: null, package_title: 'חופה', total_price: 5000 }
     ]);
     renderAdmin();
-    fireEvent.click(screen.getByRole('button', { name: 'הזמנות' }));
+    fireEvent.click(screen.getByRole('button', { name: 'ניהול הזמנות' }));
     await waitFor(() => expect(screen.getByText(/דנה/)).toBeInTheDocument());
     expect(screen.getByText('בר מתוק')).toBeInTheDocument();
     expect(screen.getByText('₪2,500')).toBeInTheDocument();
@@ -76,7 +76,7 @@ describe('AdminPage', () => {
   it('falls back to blocked when the orders query throws', async () => {
     fetchOrders.mockRejectedValue(new Error('rls'));
     renderAdmin();
-    fireEvent.click(screen.getByRole('button', { name: 'הזמנות' }));
+    fireEvent.click(screen.getByRole('button', { name: 'ניהול הזמנות' }));
     await waitFor(() => expect(screen.getByText(/נדרשת הגדרת Supabase/)).toBeInTheDocument());
   });
 
@@ -85,7 +85,7 @@ describe('AdminPage', () => {
       { id: 'o1', created_at: '2026-06-02T10:00:00Z', groom_name: 'דנה', bride_name: 'יוסי', event_date: '2026-09-01', package_title: 'בר מתוק', total_price: 2500 }
     ]);
     renderAdmin();
-    fireEvent.click(screen.getByRole('button', { name: 'הזמנות' }));
+    fireEvent.click(screen.getByRole('button', { name: 'ניהול הזמנות' }));
     await waitFor(() => expect(screen.getByText('בר מתוק')).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: 'תמונות, מוצרים וחבילות' }));
     expect(screen.getByText('PRODUCT MEDIA MANAGER')).toBeInTheDocument();
@@ -106,7 +106,7 @@ describe('AdminPage', () => {
       groom_signature_path: null, bride_signature_path: null
     });
     renderAdmin();
-    fireEvent.click(screen.getByRole('button', { name: 'הזמנות' }));
+    fireEvent.click(screen.getByRole('button', { name: 'ניהול הזמנות' }));
     await waitFor(() => expect(screen.getByText('בר מתוק')).toBeInTheDocument());
     const row = screen.getByRole('button', { name: /צפייה בהזמנה/ });
     fireEvent.keyDown(row, { key: 'Tab' });
