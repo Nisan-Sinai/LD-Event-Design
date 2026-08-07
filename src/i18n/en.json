@@ -265,7 +265,10 @@
     "login": "Log in",
     "register": "Sign up",
     "logout": "Log out",
-    "menu": "Menu"
+    "menu": "Menu",
+    "cart": "Shopping cart",
+    "buildPackage": "Build a package",
+    "managerLogin": "Manager login"
   },
   "home": {
     "heroKicker": "Event design studio",
@@ -284,7 +287,15 @@
     "value2Body": "Pick a package, add extras, upgrade — and the event takes on exactly your character.",
     "value3Title": "With you to the big moment",
     "value3Body": "Delivery, setup and teardown nationwide — you celebrate, we handle the rest.",
-    "marquee": ["✦ weddings", "henna", "✦ bar / bat mitzvah", "brit", "✦ sweet bars", "custom design", "✦ handmade"],
+    "marquee": [
+      "✦ weddings",
+      "henna",
+      "✦ bar / bat mitzvah",
+      "brit",
+      "✦ sweet bars",
+      "custom design",
+      "✦ handmade"
+    ],
     "packagesKicker": "Our collection",
     "packagesTitle": "Design packages for every event",
     "packagesSub": "Choose a category to see packages, prices and add-ons — and you can combine several packages together.",
@@ -319,7 +330,16 @@
     "tabLogin": "Log in",
     "tabRegister": "Quick sign-up",
     "google": "Continue with Google",
-    "or": "or"
+    "or": "or",
+    "resetTitle": "Reset password",
+    "resetSub": "Enter the manager email and we will send a secure link for choosing a new password.",
+    "loginSub": "Sign in to manage images, packages, products, pricing and content.",
+    "resetLinkSent": "A password reset link was sent to your email. Open it on this device to choose a new password.",
+    "forgotTitle": "Forgot your password?",
+    "forgotSub": "We will email you a secure link for choosing a new password.",
+    "forgotBtn": "Forgot password — send me a reset link",
+    "sendResetLink": "Send reset link",
+    "backToLogin": "Back to login"
   },
   "account": {
     "title": "My orders",
@@ -344,7 +364,18 @@
     "colPackage": "Package",
     "colTotal": "Total",
     "newForClient": "Order for a client",
-    "viewOrder": "View order"
+    "viewOrder": "View order",
+    "manageTitle": "Website & catalogue management",
+    "manageSub": "Manage the images, packages, products, copy and prices shown on the website. Changes are stored in Supabase and published to all visitors.",
+    "tabCatalogFull": "Images, products & packages",
+    "productsTitle": "Products and design pieces",
+    "packagesTitle": "Design packages",
+    "capabilityMediaTitle": "Images & media",
+    "capabilityMediaBody": "Upload, replace, preview and remove catalogue images.",
+    "capabilityContentTitle": "Content & pricing",
+    "capabilityContentBody": "Edit names, descriptions, benefits, categories and prices.",
+    "capabilityCatalogTitle": "Full catalogue control",
+    "capabilityCatalogBody": "Create, hide, show, restore and delete products and packages."
   },
   "packageManager": {
     "title": "Package catalog management",
@@ -441,5 +472,26 @@
     "line1": "Event design · 054-5740423",
     "rights": "All Rights Reserved.",
     "credit": "Designed & developed by Nisan Sinai Technologies · 058-7170978"
+  },
+  "resetPassword": {
+    "tooShort": "Password must contain at least 8 characters.",
+    "mismatch": "Passwords do not match.",
+    "loading": "Loading",
+    "notConfigured": "Authentication is not currently available.",
+    "linkInvalid": "Reset link is invalid",
+    "linkInvalidSub": "The link may have expired or already been used. Request a new one from the login page.",
+    "backToLogin": "Back to login",
+    "updated": "Password updated successfully",
+    "openAdmin": "Open management",
+    "openAccount": "Open account",
+    "title": "Choose a new password",
+    "subtitle": "Choose a new secure password for the manager account.",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "saving": "Updating...",
+    "save": "Save new password"
+  },
+  "cart": {
+    "couponInvalid": "The code is not valid."
   }
 }

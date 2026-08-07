@@ -2,11 +2,17 @@ import { useState } from 'react';
 import { useI18n } from '../i18n/i18n';
 import { useAuth } from '../auth/AuthProvider';
 
+interface GoogleButtonProps {
+  onError?: (message: string) => void;
+  className?: string;
+  returnTo?: string;
+}
+
 /**
  * כפתור "התחברות עם Google" משותף — בחלון ההזמנה וגם בדפי ההתחברות/הרשמה.
- * בהצלחה Supabase מבצע redirect לגוגל וחזרה; שגיאות מדווחות דרך onError.
+ * בהצלחה Supabase מבצע redirect לגוגל וחזרה לעמוד שהתבקש.
  */
-export function GoogleButton({ onError, className = '' }: { onError?: (msg: string) => void; className?: string }) {
+export function GoogleButton({ onError, className = '', returnTo = '/' }: GoogleButtonProps) {
   const { t } = useI18n();
   const { signInWithGoogle, configured } = useAuth();
   const [busy, setBusy] = useState(false);
@@ -17,7 +23,7 @@ export function GoogleButton({ onError, className = '' }: { onError?: (msg: stri
       return;
     }
     setBusy(true);
-    const { error } = await signInWithGoogle();
+    const { error } = await signInWithGoogle(returnTo);
     setBusy(false);
     if (error) onError?.(error);
   };

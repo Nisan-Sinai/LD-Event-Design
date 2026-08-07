@@ -4,6 +4,14 @@ import react from '@vitejs/plugin-react';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: [
+      {
+        find: /^lucide-react$/,
+        replacement: new URL('./src/lucide-react-runtime.tsx', import.meta.url).pathname
+      }
+    ]
+  },
   build: {
     rollupOptions: {
       output: {

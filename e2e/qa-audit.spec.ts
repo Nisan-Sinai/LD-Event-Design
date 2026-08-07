@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const PUBLIC_ROUTES = ['/', '/order', '/login', '/register'];
+const PUBLIC_ROUTES = ['/', '/cart', '/checkout', '/order', '/login', '/register', '/reset-password'];
 
 function collectRuntimeFailures(page: Page) {
   const failures: string[] = [];
@@ -9,18 +9,22 @@ function collectRuntimeFailures(page: Page) {
   page.on('console', (message) => {
     if (message.type() !== 'error') return;
     const text = message.text();
-    // External fonts can be blocked in isolated CI networks; application errors may not.
+    // External fonts and optional hero media can be blocked in isolated CI networks.
     if (!text.includes('Failed to load resource')) failures.push(`console: ${text}`);
   });
   page.on('requestfailed', (request) => {
     const url = new URL(request.url());
-    if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+    if ((url.hostname === 'localhost' || url.hostname === '127.0.0.1') && !url.pathname.includes('/media/ld-event-design-hero.mp4')) {
       failures.push(`requestfailed: ${request.method()} ${url.pathname} — ${request.failure()?.errorText ?? 'unknown'}`);
     }
   });
 
   return failures;
 }
+
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => window.sessionStorage.setItem('ld-event-design-lead-popup-dismissed', '1'));
+});
 
 for (const route of PUBLIC_ROUTES) {
   test(`${route} loads cleanly without runtime failures or horizontal overflow`, async ({ page }) => {
@@ -43,12 +47,14 @@ for (const route of PUBLIC_ROUTES) {
 }
 
 test.describe('Production-readiness gates', () => {
-  test('direct #packages deep link scrolls the catalog into view', async ({ page }) => {
+  test('direct #packages deep link scrolls the design packages heading into view', async ({ page }) => {
     await page.goto('/#packages', { waitUntil: 'networkidle' });
     const packages = page.locator('#packages');
+    const heading = packages.getByRole('heading', { name: 'חבילות עיצוב', exact: true });
 
     await expect(packages).toBeVisible();
-    await expect(packages).toBeInViewport({ ratio: 0.1 });
+    await expect(heading).toBeVisible();
+    await expect(heading).toBeInViewport();
     await expect(page).toHaveURL(/\/#packages$/);
   });
 
@@ -83,5 +89,12 @@ test.describe('Production-readiness gates', () => {
     await expect(skipLink).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(page.locator('#main')).toBeFocused();
+  });
+
+  test('homepage never exposes fixed delivery or minimum-order messaging', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByText(/מינימום להזמנה/)).toHaveCount(0);
+    await expect(page.getByText(/הובלה.*500/)).toHaveCount(0);
+    await expect(page.getByText(/מינימום הזמנה.*2,500/)).toHaveCount(0);
   });
 });

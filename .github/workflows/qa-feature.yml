@@ -1,0 +1,176 @@
+name: Storefront exhaustive QA
+
+on:
+  push:
+    branches:
+      - feat/storefront-ordering-flow
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: storefront-exhaustive-qa
+  cancel-in-progress: true
+
+jobs:
+  qa:
+    name: Full storefront QA
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - id: install
+        name: npm ci
+        continue-on-error: true
+        shell: bash
+        run: npm ci > qa-install.log 2>&1
+
+      - id: audit
+        name: Production audit
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: npm run audit:prod > qa-audit.log 2>&1
+
+      - id: typecheck
+        name: TypeScript
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: npm run type-check > qa-typecheck.log 2>&1
+
+      - id: coverage
+        name: Unit tests and coverage
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: npm run test:coverage > qa-coverage.log 2>&1
+
+      - id: build
+        name: Production build
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: npm run build > qa-build.log 2>&1
+
+      - id: browser
+        name: Install Chromium
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: npx playwright install --with-deps chromium > qa-browser.log 2>&1
+
+      - id: playwright
+        name: Playwright desktop and mobile
+        if: steps.install.outcome == 'success' && steps.browser.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: npm run test:e2e > qa-playwright.log 2>&1
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: storefront-playwright-report
+          path: playwright-report
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Publish detailed QA result
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          INSTALL: ${{ steps.install.outcome }}
+          AUDIT: ${{ steps.audit.outcome }}
+          TYPECHECK: ${{ steps.typecheck.outcome }}
+          COVERAGE: ${{ steps.coverage.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          BROWSER: ${{ steps.browser.outcome }}
+          PLAYWRIGHT: ${{ steps.playwright.outcome }}
+        with:
+          script: |
+            const fs = require('fs');
+            const tail = (file, lines = 100) => {
+              if (!fs.existsSync(file)) return '';
+              return fs.readFileSync(file, 'utf8').split('\n').slice(-lines).join('\n').trim();
+            };
+            const gates = {
+              install: process.env.INSTALL,
+              audit: process.env.AUDIT,
+              typecheck: process.env.TYPECHECK,
+              coverage: process.env.COVERAGE,
+              build: process.env.BUILD,
+              browser: process.env.BROWSER,
+              playwright: process.env.PLAYWRIGHT
+            };
+            const ok = Object.values(gates).every(value => value === 'success');
+            const details = [];
+            const addFailure = (label, outcome, file, lines) => {
+              if (outcome === 'success') return;
+              const log = tail(file, lines);
+              details.push(`### ${label}`, '```text', log || '(no log produced)', '```', '');
+            };
+            addFailure('npm ci error tail', gates.install, 'qa-install.log', 80);
+            addFailure('Production audit error tail', gates.audit, 'qa-audit.log', 80);
+            addFailure('TypeScript error tail', gates.typecheck, 'qa-typecheck.log', 120);
+            addFailure('Unit / coverage error tail', gates.coverage, 'qa-coverage.log', 160);
+            addFailure('Build error tail', gates.build, 'qa-build.log', 120);
+            addFailure('Chromium install error tail', gates.browser, 'qa-browser.log', 80);
+            addFailure('Playwright error tail', gates.playwright, 'qa-playwright.log', 180);
+            const body = [
+              '<!-- storefront-exhaustive-qa -->',
+              `## ${ok ? '✅' : '❌'} Storefront exhaustive QA`,
+              '',
+              `- npm ci: **${gates.install}**`,
+              `- Production audit: **${gates.audit}**`,
+              `- TypeScript: **${gates.typecheck}**`,
+              `- Unit + coverage: **${gates.coverage}**`,
+              `- Production build: **${gates.build}**`,
+              `- Chromium install: **${gates.browser}**`,
+              `- Desktop + mobile E2E: **${gates.playwright}**`,
+              `- Commit: \`${context.sha}\``,
+              '',
+              ...details,
+              ok ? 'הבראנץ׳ עבר את כל שערי האיכות.' : 'יש כשל ממוקד שדורש תיקון לפני מיזוג.'
+            ].join('\n');
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: 32,
+              per_page: 100
+            });
+            const previous = comments.find(comment => comment.body?.includes('<!-- storefront-exhaustive-qa -->'));
+            if (previous) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: previous.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: 32,
+                body
+              });
+            }
+
+      - name: Enforce QA gate
+        if: always()
+        shell: bash
+        run: |
+          test "${{ steps.install.outcome }}" = "success"
+          test "${{ steps.audit.outcome }}" = "success"
+          test "${{ steps.typecheck.outcome }}" = "success"
+          test "${{ steps.coverage.outcome }}" = "success"
+          test "${{ steps.build.outcome }}" = "success"
+          test "${{ steps.browser.outcome }}" = "success"
+          test "${{ steps.playwright.outcome }}" = "success"

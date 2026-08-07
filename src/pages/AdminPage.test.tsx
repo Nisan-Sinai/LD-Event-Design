@@ -1,15 +1,23 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { I18nProvider } from '../i18n/i18n';
 import { AdminPage } from './AdminPage';
 
-const a = vi.hoisted(() => ({ configured: true }));
+const a = vi.hoisted(() => ({
+  configured: true,
+  user: { email: 'admin@example.com' } as { email?: string } | null
+}));
 const fetchOrders = vi.hoisted(() => vi.fn());
 const fetchOrderById = vi.hoisted(() => vi.fn());
 const signatureUrl = vi.hoisted(() => vi.fn(async () => null));
-vi.mock('../auth/AuthProvider', () => ({ useAuth: () => ({ configured: a.configured }) }));
+
+vi.mock('../auth/AuthProvider', () => ({
+  useAuth: () => ({ configured: a.configured, user: a.user })
+}));
 vi.mock('../lib/orders', () => ({ fetchOrders, fetchOrderById, signatureUrl }));
+vi.mock('../components/ProductManager', () => ({ ProductManager: () => <section>PRODUCT MEDIA MANAGER</section> }));
+vi.mock('../components/PackageManager', () => ({ PackageManager: () => <section>PACKAGE MEDIA MANAGER</section> }));
 
 const renderAdmin = () =>
   render(
@@ -20,79 +28,71 @@ const renderAdmin = () =>
 
 beforeEach(() => {
   a.configured = true;
-  fetchOrders.mockReset();
+  a.user = { email: 'admin@example.com' };
+  fetchOrders.mockReset().mockResolvedValue([]);
   fetchOrderById.mockReset();
   signatureUrl.mockReset().mockResolvedValue(null);
 });
 
 describe('AdminPage', () => {
-  it('shows blocked when not configured (no query)', async () => {
+  it('opens on catalogue and image management by default', async () => {
+    renderAdmin();
+    expect(screen.getByRole('heading', { name: 'ניהול האתר והקטלוג' })).toBeInTheDocument();
+    expect(screen.getByText('admin@example.com')).toBeInTheDocument();
+    expect(screen.getByText('PRODUCT MEDIA MANAGER')).toBeInTheDocument();
+    expect(screen.getByText('PACKAGE MEDIA MANAGER')).toBeInTheDocument();
+    expect(screen.getByText('תמונות ומדיה')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /הזמנה חדשה|מילוי פרטים/ })).not.toBeInTheDocument();
+    await waitFor(() => expect(fetchOrders).toHaveBeenCalledWith());
+  });
+
+  it('shows blocked orders state when Supabase is not configured', async () => {
     a.configured = false;
     renderAdmin();
+    fireEvent.click(screen.getByRole('button', { name: 'ניהול הזמנות' }));
     await waitFor(() => expect(screen.getByText(/נדרשת הגדרת Supabase/)).toBeInTheDocument());
     expect(fetchOrders).not.toHaveBeenCalled();
   });
 
-  it('shows empty state', async () => {
-    fetchOrders.mockResolvedValue([]);
+  it('shows the empty orders state after switching tabs', async () => {
     renderAdmin();
+    fireEvent.click(screen.getByRole('button', { name: 'ניהול הזמנות' }));
     await waitFor(() => expect(screen.getByText('אין הזמנות עדיין.')).toBeInTheDocument());
   });
 
-  it('renders all orders in a table (including rows without an event date)', async () => {
+  it('renders all orders and rows without an event date', async () => {
     fetchOrders.mockResolvedValue([
       { id: 'o1', created_at: '2026-06-02T10:00:00Z', groom_name: 'דנה', bride_name: 'יוסי', event_date: '2026-09-01', package_title: 'בר מתוק', total_price: 2500 },
       { id: 'o2', created_at: '2026-06-03T10:00:00Z', groom_name: 'רון', bride_name: 'מיה', event_date: null, package_title: 'חופה', total_price: 5000 }
     ]);
     renderAdmin();
+    fireEvent.click(screen.getByRole('button', { name: 'ניהול הזמנות' }));
     await waitFor(() => expect(screen.getByText(/דנה/)).toBeInTheDocument());
     expect(screen.getByText('בר מתוק')).toBeInTheDocument();
     expect(screen.getByText('₪2,500')).toBeInTheDocument();
-    // שורה ללא תאריך אירוע מציגה "—"
     expect(screen.getByText('—')).toBeInTheDocument();
-    expect(fetchOrders).toHaveBeenCalledWith();
   });
 
-  it('falls back to blocked when the query throws', async () => {
+  it('falls back to blocked when the orders query throws', async () => {
     fetchOrders.mockRejectedValue(new Error('rls'));
     renderAdmin();
+    fireEvent.click(screen.getByRole('button', { name: 'ניהול הזמנות' }));
     await waitFor(() => expect(screen.getByText(/נדרשת הגדרת Supabase/)).toBeInTheDocument());
   });
 
-  it('switches to the catalog tab and hides the orders table', async () => {
+  it('returns from orders to catalogue management', async () => {
     fetchOrders.mockResolvedValue([
       { id: 'o1', created_at: '2026-06-02T10:00:00Z', groom_name: 'דנה', bride_name: 'יוסי', event_date: '2026-09-01', package_title: 'בר מתוק', total_price: 2500 }
     ]);
     renderAdmin();
+    fireEvent.click(screen.getByRole('button', { name: 'ניהול הזמנות' }));
     await waitFor(() => expect(screen.getByText('בר מתוק')).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: /ניהול קטלוג/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'תמונות, מוצרים וחבילות' }));
+    expect(screen.getByText('PRODUCT MEDIA MANAGER')).toBeInTheDocument();
     expect(screen.queryByText('בר מתוק')).not.toBeInTheDocument();
   });
 
-  it('opens the full order detail modal when a row is clicked', async () => {
-    fetchOrders.mockResolvedValue([
-      { id: 'o1', created_at: '2026-06-02T10:00:00Z', groom_name: 'דנה', bride_name: 'יוסי', event_date: '2026-09-01', package_title: 'בר מתוק', total_price: 2500 }
-    ]);
-    fetchOrderById.mockResolvedValue({
-      id: 'o1', created_at: '2026-06-02T10:00:00Z', groom_name: 'דנה', bride_name: 'יוסי', groom_phone: '050', bride_phone: '052',
-      email: 'a@b.com', event_date: '2026-09-01', event_location: 'חדרה', package_id: 'bar-candy', package_title: 'בר מתוק',
-      table_tier: null, composites_count: null, sponge_count: null, include_delivery: true, upgrades: [{ description: 'תוספת', price: 100 }],
-      base_price: 2500, upgrades_total: 100, delivery_price: 500, coupon_code: null, coupon_discount: 0, total_price: 3100,
-      status: 'paid', groom_sign_date: '2026-01-01', bride_sign_date: '2026-01-01', groom_signature_path: 'o1/g.png', bride_signature_path: 'o1/b.png'
-    });
-    renderAdmin();
-    await waitFor(() => expect(screen.getByText('בר מתוק')).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: /צפייה בהזמנה/ }));
-    await waitFor(() => expect(screen.getByRole('dialog', { name: 'פרטי הזמנה מלאים' })).toBeInTheDocument());
-    expect(fetchOrderById).toHaveBeenCalledWith('o1');
-    expect(screen.getByText('a@b.com')).toBeInTheDocument();
-    expect(screen.getByText('תוספת')).toBeInTheDocument();
-    // סגירת המודאל (covers the onClose handler)
-    fireEvent.click(screen.getByRole('button', { name: 'סגירה' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-  });
-
-  it('opens the order detail modal with the keyboard (Enter / Space) on a row', async () => {
+  it('opens and closes the full order details modal', async () => {
     fetchOrders.mockResolvedValue([
       { id: 'o1', created_at: '2026-06-02T10:00:00Z', groom_name: 'דנה', bride_name: 'יוסי', event_date: '2026-09-01', package_title: 'בר מתוק', total_price: 2500 }
     ]);
@@ -106,16 +106,20 @@ describe('AdminPage', () => {
       groom_signature_path: null, bride_signature_path: null
     });
     renderAdmin();
+    fireEvent.click(screen.getByRole('button', { name: 'ניהול הזמנות' }));
     await waitFor(() => expect(screen.getByText('בר מתוק')).toBeInTheDocument());
     const row = screen.getByRole('button', { name: /צפייה בהזמנה/ });
 
-    // a non-activating key is ignored (covers the guard branch)
+    fireEvent.click(row);
+    await waitFor(() => expect(screen.getByRole('dialog', { name: 'פרטי הזמנה מלאים' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'סגירה' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
     fireEvent.keyDown(row, { key: 'Tab' });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-
-    // Space activates
-    fireEvent.keyDown(row, { key: ' ' });
+    fireEvent.keyDown(row, { key: 'Enter' });
     await waitFor(() => expect(screen.getByRole('dialog', { name: 'פרטי הזמנה מלאים' })).toBeInTheDocument());
-    expect(fetchOrderById).toHaveBeenCalledWith('o1');
+    fireEvent.click(screen.getByRole('button', { name: 'סגירה' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 });

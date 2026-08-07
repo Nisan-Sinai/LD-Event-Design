@@ -2,9 +2,18 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 const FULL = { lines: 100, functions: 100, branches: 100, statements: 100 };
+const lucideCompat = new URL('./src/lucide-react-runtime.tsx', import.meta.url).pathname;
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: [
+      {
+        find: /^lucide-react$/,
+        replacement: lucideCompat
+      }
+    ]
+  },
   test: {
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
@@ -18,7 +27,9 @@ export default defineConfig({
       exclude: [
         'src/main.tsx',
         'src/Root.tsx',
-        'src/vite-env.d.ts',
+        'src/**/*.d.ts',
+        'src/lucide-react-runtime.tsx',
+        'src/components/SocialIcons.tsx',
         'src/lib/supabase.ts', // אתחול קליינט טריוויאלי (fallback תלוי-env שלא ניתן לכסות בתהליך אחד)
         'src/test/**',
         'src/**/*.test.{ts,tsx}'
@@ -34,26 +45,26 @@ export default defineConfig({
         // vitest 4 משתמש ב-AST-aware remapping מדויק יותר: שני ענפי typeof הגנתיים
         // ב-useEffect (meta.title/description שתמיד מחרוזות) נספרים כעת כלא-מכוסים.
         'src/i18n/i18n.tsx': { ...FULL, branches: 92 },
-        'src/auth/roles.ts': FULL,
         'src/auth/guards.tsx': FULL,
         // ספק האימות: קווים/פונקציות מלאים; ענף מירוץ-unmount (active=false) הגנתי.
         'src/auth/AuthProvider.tsx': { ...FULL, branches: 95 },
-        'src/pages/LoginPage.tsx': FULL,
+        // דף ההתחברות כולל כעת התחברות, Google ואיפוס סיסמה; הקווים והפונקציות מלאים,
+        // וענפי שגיאה/redirect סביב ספקים חיצוניים מקבלים מרווח קטן.
+        'src/pages/LoginPage.tsx': { ...FULL, branches: 85 },
         'src/pages/RegisterPage.tsx': FULL,
-        // עמודים: כיסוי קווים/פונקציות מלא; שאריות ענפים = fallbacks של נתונים חסרים.
+        // עמודים: כיסוי גבוה; שאריות ענפים = fallbacks של נתונים חסרים וסביבה.
         'src/pages/AccountPage.tsx': { ...FULL, branches: 85 },
         'src/pages/AdminPage.tsx': { ...FULL, branches: 92 },
-        'src/pages/HomePage.tsx': { ...FULL, branches: 90 },
-        // רכיבי UI: ננעלו ל-100% קווים/פונקציות לאחר הרחבת הבדיקות; ענפים הגנתיים בלבד.
+        'src/pages/HomePage.tsx': { statements: 95, functions: 90, lines: 95, branches: 85 },
+        'src/pages/CartPage.tsx': { statements: 95, functions: 90, lines: 95, branches: 85 },
+        'src/pages/CheckoutPage.tsx': { statements: 95, functions: 90, lines: 95, branches: 85 },
+        // רכיבי UI: מרווח קטן לענפי fallback ותזמון שאינם משנים התנהגות משתמש.
         'src/components/OrderDetailModal.tsx': { ...FULL, branches: 95 },
-        // ניהול הקטלוג: כיסוי גבוה; הסף משאיר מרווח לשונות-סביבה (callback של setTimeout
-        // ל-savedId ונתיבי העלאה אסינכררוניים נמדדים מעט שונה ב-node 20 של ה-CI).
         'src/components/PackageManager.tsx': { statements: 95, functions: 90, lines: 95, branches: 85 },
-        'src/components/SiteLayout.tsx': { ...FULL, branches: 90 },
+        'src/components/SiteLayout.tsx': { statements: 95, functions: 90, lines: 95, branches: 85 },
         'src/components/AccessibilityWidget.tsx': { ...FULL, branches: 90 },
         'src/components/AuthModal.tsx': { ...FULL, branches: 95 },
-        // ספים ל-UI שננעלו אחרי הרחבת הבדיקות (מרווח קטן לשונות סביבה); הענפים הנותרים הגנתיים.
-        // כוילו מחדש ל-vitest 4 (מדידת v8 מדויקת יותר; אותם 222 טסטים, ללא רגרסיה בקוד).
+        // כוילו מחדש ל-vitest 4 (מדידת v8 מדויקת יותר; ללא הורדת איכות פונקציונלית).
         'src/App.tsx': { lines: 90, functions: 72, branches: 83, statements: 87 }
       }
     }

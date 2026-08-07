@@ -1,0 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;500;600;700;800&family=Rubik:wght@500;600;700;800;900&display=swap');
+
+:root {
+  --ld-pearl: #fdfbf7;
+  --ld-ivory: #faf6f0;
+  --ld-gold: #d4af37;
+  --ld-deep-gold: #b8860b;
+  --ld-rose-gold: #e8c5b8;
+  --ld-powder: #f4e3e3;
+  --ld-charcoal: #2c2c2c;
+}
+
+body {
+  background: var(--ld-pearl);
+  color: var(--ld-charcoal);
+  font-family: 'Assistant', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.font-display {
+  font-family: 'Rubik', 'Assistant', system-ui, sans-serif !important;
+  letter-spacing: -0.035em;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+/* Mobile storefront alignment safeguards. */
+.hero-glow .translate-y-5 {
+  --tw-translate-y: 0px !important;
+  translate: 0 0 !important;
+  transform: none !important;
+}
+
+#products article h4,
+#products article h5 {
+  min-height: 2.75rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+#products article,
+#packages article {
+  min-width: 0;
+}
+
+#products img,
+#packages img {
+  display: block;
+}
+
+@media (max-width: 639px) {
+  nav[aria-label='קטגוריות החנות'],
+  nav[aria-label='Shop categories'] {
+    position: static;
+  }
+
+  /* Keep the bilingual switch available on phones; the compact two-button group fits beside the cart. */
+  header [role='group']:has(button[lang='en']) {
+    display: flex;
+  }
+
+  #products article h4,
+  #products article h5 {
+    min-height: 2.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  video[autoplay] {
+    display: none;
+  }
+}
