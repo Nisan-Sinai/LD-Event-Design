@@ -1,14 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router';
+import { Spinner } from '../components/Spinner';
 import { useAuth } from './AuthProvider';
-
-function Spinner() {
-  return (
-    <div className="flex items-center justify-center py-24">
-      <div className="w-8 h-8 border-2 border-[#B29259] border-t-transparent rounded-full animate-spin" role="status" aria-label="loading" />
-    </div>
-  );
-}
 
 export function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading, configured } = useAuth();
