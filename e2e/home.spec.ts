@@ -124,9 +124,9 @@ test.describe('Luxury quote storefront (guest)', () => {
     await page.goto('/cart');
     await page.getByRole('link', { name: 'חזרה לחנות' }).click();
     await expect(page).toHaveURL(/\/#packages$/);
+    await expect.poll(() => page.locator('#packages').evaluate((element) => element.getBoundingClientRect().top)).toBeLessThan(190);
     const packagesTop = await page.locator('#packages').evaluate((element) => element.getBoundingClientRect().top);
     expect(packagesTop).toBeGreaterThanOrEqual(0);
-    expect(packagesTop).toBeLessThan(190);
   });
 
   test('switches language to English and back', async ({ page }) => {
