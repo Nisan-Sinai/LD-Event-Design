@@ -109,6 +109,12 @@ describe('AdminPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'ניהול הזמנות' }));
     await waitFor(() => expect(screen.getByText('בר מתוק')).toBeInTheDocument());
     const row = screen.getByRole('button', { name: /צפייה בהזמנה/ });
+
+    fireEvent.click(row);
+    await waitFor(() => expect(screen.getByRole('dialog', { name: 'פרטי הזמנה מלאים' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'סגירה' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
     fireEvent.keyDown(row, { key: 'Tab' });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     fireEvent.keyDown(row, { key: 'Enter' });
