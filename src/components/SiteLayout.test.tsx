@@ -76,7 +76,7 @@ describe('SiteLayout', () => {
   });
 
   it('shows management for an administrator', () => {
-    auth.value = { user: { email: 'luroni704@gmail.com' }, role: 'admin', signOut: vi.fn() };
+    auth.value = { user: { email: 'admin@example.com' }, role: 'admin', signOut: vi.fn() };
     renderLayout();
     expect(within(screen.getByRole('banner')).getByRole('link', { name: 'ניהול' })).toHaveAttribute('href', '/admin');
     expect(within(screen.getByRole('contentinfo')).getByRole('link', { name: 'ניהול' })).toBeInTheDocument();

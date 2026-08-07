@@ -45,7 +45,6 @@ export default defineConfig({
         // vitest 4 משתמש ב-AST-aware remapping מדויק יותר: שני ענפי typeof הגנתיים
         // ב-useEffect (meta.title/description שתמיד מחרוזות) נספרים כעת כלא-מכוסים.
         'src/i18n/i18n.tsx': { ...FULL, branches: 92 },
-        'src/auth/roles.ts': FULL,
         'src/auth/guards.tsx': FULL,
         // ספק האימות: קווים/פונקציות מלאים; ענף מירוץ-unmount (active=false) הגנתי.
         'src/auth/AuthProvider.tsx': { ...FULL, branches: 95 },

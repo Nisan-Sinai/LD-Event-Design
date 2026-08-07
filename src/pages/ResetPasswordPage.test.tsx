@@ -7,7 +7,7 @@ import { ResetPasswordPage } from './ResetPasswordPage';
 const auth = vi.hoisted(() => ({
   configured: true,
   loading: false,
-  user: { email: 'luroni704@gmail.com' } as { email?: string } | null,
+  user: { email: 'admin@example.com' } as { email?: string } | null,
   role: 'admin' as 'admin' | 'customer',
   updatePassword: vi.fn(async () => ({ error: null as string | null }))
 }));
@@ -34,7 +34,7 @@ function renderPage() {
 beforeEach(() => {
   auth.configured = true;
   auth.loading = false;
-  auth.user = { email: 'luroni704@gmail.com' };
+  auth.user = { email: 'admin@example.com' };
   auth.role = 'admin';
   auth.updatePassword.mockClear().mockResolvedValue({ error: null });
 });

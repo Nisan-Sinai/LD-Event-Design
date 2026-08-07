@@ -36,7 +36,7 @@ describe('AdminPage English', () => {
     expect(screen.getByRole('button', { name: 'Images, products & packages' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByText('EN PRODUCT MANAGER')).toBeInTheDocument();
     expect(screen.getByText('EN PACKAGE MANAGER')).toBeInTheDocument();
-    expect(screen.queryByText('nisan.sinai5@gmail.com')).not.toBeInTheDocument();
+    expect(screen.queryByText('admin@example.com')).not.toBeInTheDocument();
     await waitFor(() => expect(fetchOrders).toHaveBeenCalledTimes(1));
   });
 });

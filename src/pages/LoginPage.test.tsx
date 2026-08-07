@@ -99,7 +99,7 @@ describe('LoginPage', () => {
   });
 
   it('automatically forwards an authenticated manager to admin', async () => {
-    a.user = { email: 'nisan.sinai5@gmail.com' };
+    a.user = { email: 'admin@example.com' };
     a.role = 'admin';
     renderLogin('/login?from=%2Fadmin');
     await waitFor(() => expect(screen.getByText('ADMIN PAGE')).toBeInTheDocument());
@@ -126,9 +126,9 @@ describe('LoginPage', () => {
     renderLogin('/login?from=%2Fadmin');
     fireEvent.click(screen.getByRole('button', { name: 'שכחתי סיסמה — שלחו לי קישור איפוס' }));
     expect(screen.queryByLabelText('סיסמה')).not.toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('אימייל'), { target: { value: ' nisan.sinai5@gmail.com ' } });
+    fireEvent.change(screen.getByLabelText('אימייל'), { target: { value: ' admin@example.com ' } });
     fireEvent.click(screen.getByRole('button', { name: 'שליחת קישור איפוס' }));
-    await waitFor(() => expect(a.resetPassword).toHaveBeenCalledWith('nisan.sinai5@gmail.com'));
+    await waitFor(() => expect(a.resetPassword).toHaveBeenCalledWith('admin@example.com'));
     expect(screen.getByRole('status')).toHaveTextContent(/שלחנו קישור/);
   });
 

@@ -6,7 +6,7 @@ import { AdminPage } from './AdminPage';
 
 const a = vi.hoisted(() => ({
   configured: true,
-  user: { email: 'nisan.sinai5@gmail.com' } as { email?: string } | null
+  user: { email: 'admin@example.com' } as { email?: string } | null
 }));
 const fetchOrders = vi.hoisted(() => vi.fn());
 const fetchOrderById = vi.hoisted(() => vi.fn());
@@ -28,7 +28,7 @@ const renderAdmin = () =>
 
 beforeEach(() => {
   a.configured = true;
-  a.user = { email: 'nisan.sinai5@gmail.com' };
+  a.user = { email: 'admin@example.com' };
   fetchOrders.mockReset().mockResolvedValue([]);
   fetchOrderById.mockReset();
   signatureUrl.mockReset().mockResolvedValue(null);
@@ -38,7 +38,7 @@ describe('AdminPage', () => {
   it('opens on catalogue and image management by default', async () => {
     renderAdmin();
     expect(screen.getByRole('heading', { name: 'ניהול האתר והקטלוג' })).toBeInTheDocument();
-    expect(screen.getByText('nisan.sinai5@gmail.com')).toBeInTheDocument();
+    expect(screen.getByText('admin@example.com')).toBeInTheDocument();
     expect(screen.getByText('PRODUCT MEDIA MANAGER')).toBeInTheDocument();
     expect(screen.getByText('PACKAGE MEDIA MANAGER')).toBeInTheDocument();
     expect(screen.getByText('תמונות ומדיה')).toBeInTheDocument();

@@ -1,19 +1,10 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { parseAdminEmails, roleForEmail, type Role } from './roles';
 
 const AUTH_RETURN_KEY = 'ld-event-design-auth-return';
 
-// המנהלים הקבועים תמיד נשמרים; VITE_ADMIN_EMAILS יכול להוסיף מנהלים נוספים.
-const BUILT_IN_ADMIN_EMAILS = parseAdminEmails(undefined);
-const ENV_ADMIN_EMAILS = parseAdminEmails(
-  import.meta.env.VITE_ADMIN_EMAILS as string | undefined,
-  ''
-);
-const ADMIN_EMAILS = Array.from(new Set([...BUILT_IN_ADMIN_EMAILS, ...ENV_ADMIN_EMAILS]));
-
-export type { Role };
+export type Role = 'guest' | 'customer' | 'admin';
 
 interface AuthResult {
   error: string | null;
@@ -24,6 +15,8 @@ interface AuthValue {
   session: Session | null;
   role: Role;
   loading: boolean;
+  /** דולק כל עוד תשובת is_admin מהשרת עדיין לא ודאית. */
+  roleLoading: boolean;
   configured: boolean;
   signUp: (email: string, password: string) => Promise<AuthResult>;
   signIn: (email: string, password: string) => Promise<AuthResult>;
@@ -34,10 +27,6 @@ interface AuthValue {
 }
 
 const AuthContext = createContext<AuthValue | null>(null);
-
-function roleFor(user: User | null): Role {
-  return roleForEmail(user?.email ?? null, ADMIN_EMAILS);
-}
 
 function safeReturnPath(value: string | undefined): string {
   if (!value || !value.startsWith('/') || value.startsWith('//')) return '/admin';
@@ -52,21 +41,53 @@ function safeAppUrl(path: string): string {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState<Role>('guest');
+  // מתחיל דלוק כדי שלא ייווצר רגע שבו שתי הטעינות כבויות והתפקיד עדיין לא ידוע.
+  const [roleLoading, setRoleLoading] = useState(true);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
       setLoading(false);
+      setRoleLoading(false);
       return;
     }
     let active = true;
+    let requestId = 0;
+
+    // מקור האמת לתפקיד הוא השרת (public.is_admin). עד לתשובה ודאית נשארים
+    // על 'customer' — ברירת המחדל הבטוחה — ולעולם לא נופלים ל-'admin'.
+    const resolveRole = async (next: Session | null) => {
+      const current = ++requestId;
+      if (!next?.user) {
+        setRole('guest');
+        setRoleLoading(false);
+        return;
+      }
+      setRole('customer');
+      setRoleLoading(true);
+      let resolved: Role = 'customer';
+      try {
+        const { data, error } = await supabase.rpc('is_admin');
+        if (!error && data === true) resolved = 'admin';
+      } catch {
+        // כשל רשת/RPC — נשארים על ברירת המחדל הבטוחה.
+      }
+      // תשובה שהוחלפה על ידי בקשה חדשה יותר, או קומפוננטה שהתפרקה — מתעלמים.
+      if (!active || current !== requestId) return;
+      setRole(resolved);
+      setRoleLoading(false);
+    };
+
     supabase.auth.getSession().then(({ data }) => {
       if (active) {
         setSession(data.session);
         setLoading(false);
+        void resolveRole(data.session);
       }
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
+      void resolveRole(s);
       if (event === 'SIGNED_IN' && s?.user) void supabase.rpc('claim_my_orders');
     });
     return () => {
@@ -76,7 +97,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const user = session?.user ?? null;
-  const role = roleFor(user);
 
   const signUp = useCallback(async (email: string, password: string): Promise<AuthResult> => {
     if (!isSupabaseConfigured) return { error: 'NOT_CONFIGURED' };
@@ -134,6 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         session,
         role,
         loading,
+        roleLoading,
         configured: isSupabaseConfigured,
         signUp,
         signIn,

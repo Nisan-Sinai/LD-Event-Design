@@ -4,7 +4,7 @@ import { MemoryRouter, Routes, Route } from 'react-router';
 import { RequireAuth, RequireAdmin } from './guards';
 
 const auth = vi.hoisted(() => ({
-  value: { user: null as unknown, role: 'guest', loading: false, configured: true }
+  value: { user: null as unknown, role: 'guest', loading: false, roleLoading: false, configured: true }
 }));
 vi.mock('./AuthProvider', () => ({ useAuth: () => auth.value }));
 
@@ -21,12 +21,12 @@ function renderAt(el: React.ReactElement, path = '/secret') {
 }
 
 beforeEach(() => {
-  auth.value = { user: null, role: 'guest', loading: false, configured: true };
+  auth.value = { user: null, role: 'guest', loading: false, roleLoading: false, configured: true };
 });
 
 describe('RequireAuth', () => {
   it('shows a spinner while loading', () => {
-    auth.value = { user: null, role: 'guest', loading: true, configured: true };
+    auth.value = { user: null, role: 'guest', loading: true, roleLoading: false, configured: true };
     renderAt(<RequireAuth><div>SECRET</div></RequireAuth>);
     expect(screen.getByRole('status')).toBeInTheDocument();
   });
@@ -37,13 +37,13 @@ describe('RequireAuth', () => {
   });
 
   it('allows access when not configured (guest fallback)', () => {
-    auth.value = { user: null, role: 'guest', loading: false, configured: false };
+    auth.value = { user: null, role: 'guest', loading: false, roleLoading: false, configured: false };
     renderAt(<RequireAuth><div>SECRET</div></RequireAuth>);
     expect(screen.getByText('SECRET')).toBeInTheDocument();
   });
 
   it('allows access when logged in', () => {
-    auth.value = { user: { id: '1' }, role: 'customer', loading: false, configured: true };
+    auth.value = { user: { id: '1' }, role: 'customer', loading: false, roleLoading: false, configured: true };
     renderAt(<RequireAuth><div>SECRET</div></RequireAuth>);
     expect(screen.getByText('SECRET')).toBeInTheDocument();
   });
@@ -51,9 +51,17 @@ describe('RequireAuth', () => {
 
 describe('RequireAdmin', () => {
   it('shows a spinner while loading', () => {
-    auth.value = { user: null, role: 'guest', loading: true, configured: true };
+    auth.value = { user: null, role: 'guest', loading: true, roleLoading: false, configured: true };
     renderAt(<RequireAdmin><div>ADMIN</div></RequireAdmin>);
     expect(screen.getByRole('status')).toBeInTheDocument();
+  });
+
+  it('keeps spinning while the server role check is still in flight', () => {
+    // התפקיד עדיין 'customer' (ברירת המחדל הבטוחה) — אסור להקפיץ מנהל אמיתי ל-'/'.
+    auth.value = { user: { id: '1' }, role: 'customer', loading: false, roleLoading: true, configured: true };
+    renderAt(<RequireAdmin><div>ADMIN</div></RequireAdmin>);
+    expect(screen.getByRole('status')).toBeInTheDocument();
+    expect(screen.queryByText('HOME PAGE')).not.toBeInTheDocument();
   });
 
   it('redirects to /login when not logged in', () => {
@@ -62,13 +70,13 @@ describe('RequireAdmin', () => {
   });
 
   it('redirects home when logged in but not admin', () => {
-    auth.value = { user: { id: '1' }, role: 'customer', loading: false, configured: true };
+    auth.value = { user: { id: '1' }, role: 'customer', loading: false, roleLoading: false, configured: true };
     renderAt(<RequireAdmin><div>ADMIN</div></RequireAdmin>);
     expect(screen.getByText('HOME PAGE')).toBeInTheDocument();
   });
 
   it('allows access for an admin', () => {
-    auth.value = { user: { id: '1' }, role: 'admin', loading: false, configured: true };
+    auth.value = { user: { id: '1' }, role: 'admin', loading: false, roleLoading: false, configured: true };
     renderAt(<RequireAdmin><div>ADMIN</div></RequireAdmin>);
     expect(screen.getByText('ADMIN')).toBeInTheDocument();
   });

@@ -20,9 +20,10 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
 }
 
 export function RequireAdmin({ children }: { children: React.ReactNode }) {
-  const { user, role, loading } = useAuth();
+  const { user, role, loading, roleLoading } = useAuth();
   const location = useLocation();
-  if (loading) return <Spinner />;
+  // ממתינים גם לתשובת is_admin מהשרת — בלי זה מנהל אמיתי היה מוקפץ ל-'/'.
+  if (loading || roleLoading) return <Spinner />;
   if (!user) return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   if (role !== 'admin') return <Navigate to="/" replace />;
   return <>{children}</>;
