@@ -98,7 +98,7 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
   }, [legalModal]);
 
   const navLink = 'rounded-full px-3 py-2 text-xs font-bold text-[#4A4540] transition hover:bg-white/75 hover:text-[#B8860B]';
-  const cartText = lang === 'he' ? 'עגלת קניות' : 'Shopping cart';
+  const cartText = t('nav.cart');
 
   return (
     <div className="flex min-h-screen flex-col overflow-x-hidden bg-[#FDFBF7] font-sans text-[#2C2C2C] antialiased" dir={dir}>
@@ -120,7 +120,7 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
 
           <nav className="order-last flex w-full items-center justify-center gap-1 border-t border-[#E8C5B8]/55 pt-2 sm:order-none sm:w-auto sm:border-0 sm:pt-0" aria-label={t('nav.menu')}>
             <Link to="/" className={navLink}>{t('nav.home')}</Link>
-            <a href="/#packages" className={navLink}>{lang === 'he' ? 'בניית חבילה' : 'Build a package'}</a>
+            <a href="/#packages" className={navLink}>{t('nav.buildPackage')}</a>
             {!roleLoading && role === 'customer' && <Link to="/account" className={navLink}>{t('nav.account')}</Link>}
             {!roleLoading && role === 'admin' && <Link to="/admin" className={navLink}>{t('nav.admin')}</Link>}
           </nav>
@@ -182,7 +182,7 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
             <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.3em] text-[#D4AF37]">{t('nav.menu')}</p>
             <ul className="space-y-3 text-sm text-white/70">
               <li><Link to="/" className="hover:text-white">{t('nav.home')}</Link></li>
-              <li><a href="/#packages" className="hover:text-white">{lang === 'he' ? 'בניית חבילה' : 'Build a package'}</a></li>
+              <li><a href="/#packages" className="hover:text-white">{t('nav.buildPackage')}</a></li>
               <li><button type="button" onClick={() => setCartOpen(true)} className="hover:text-white">{cartText}</button></li>
               {!roleLoading && role === 'admin' && <li><Link to="/admin" className="hover:text-white">{t('nav.admin')}</Link></li>}
               {!roleLoading && role === 'customer' && <li><Link to="/account" className="hover:text-white">{t('nav.account')}</Link></li>}
@@ -190,7 +190,7 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
                 <li>
                   <Link to="/login" state={{ from: '/admin' }} className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/60 px-4 py-2 font-bold text-[#E8C5B8] transition hover:bg-[#D4AF37] hover:text-[#24211F]">
                     <UserIcon className="h-4 w-4" aria-hidden="true" />
-                    {lang === 'he' ? 'כניסת מנהלת' : 'Manager login'}
+                    {t('nav.managerLogin')}
                   </Link>
                 </li>
               )}

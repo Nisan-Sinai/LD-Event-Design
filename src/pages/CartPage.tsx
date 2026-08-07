@@ -56,7 +56,7 @@ function money(value: number) {
 }
 
 export function CartPage() {
-  const { lang } = useI18n();
+  const { t, lang } = useI18n();
   const copy = COPY[lang];
   const {
     items,
@@ -79,7 +79,7 @@ export function CartPage() {
       setCouponError('');
       return;
     }
-    setCouponError(lang === 'he' ? `הקוד אינו תקין. הקוד הפעיל הוא “${GIFT_COUPON}”.` : 'The code is not valid.');
+    setCouponError(t('cart.couponInvalid', { code: GIFT_COUPON }));
   };
 
   if (items.length === 0) {

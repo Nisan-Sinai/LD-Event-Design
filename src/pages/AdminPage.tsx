@@ -10,7 +10,7 @@ import { fetchOrders, type OrderRow } from '../lib/orders';
 type AdminTab = 'catalog' | 'orders';
 
 export function AdminPage() {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const { configured, user } = useAuth();
   const [tab, setTab] = useState<AdminTab>('catalog');
   const [orders, setOrders] = useState<OrderRow[] | null>(null);
@@ -45,17 +45,11 @@ export function AdminPage() {
     </button>
   );
 
-  const capabilityCards = lang === 'he'
-    ? [
-        { title: 'תמונות ומדיה', body: 'העלאת תמונה חדשה, החלפה, תצוגה מקדימה והסרת תמונה.', icon: ImagePlus },
-        { title: 'תוכן ומחירים', body: 'שינוי שמות, תיאורים, יתרונות, קטגוריות ומחירים.', icon: Pencil },
-        { title: 'שליטה מלאה בקטלוג', body: 'הוספה, הסתרה, הצגה, שחזור ומחיקה של מוצרים וחבילות.', icon: EyeOff }
-      ]
-    : [
-        { title: 'Images & media', body: 'Upload, replace, preview and remove catalogue images.', icon: ImagePlus },
-        { title: 'Content & pricing', body: 'Edit names, descriptions, benefits, categories and prices.', icon: Pencil },
-        { title: 'Full catalogue control', body: 'Create, hide, show, restore and delete products and packages.', icon: EyeOff }
-      ];
+  const capabilityCards = [
+    { key: 'Media', icon: ImagePlus },
+    { key: 'Content', icon: Pencil },
+    { key: 'Catalog', icon: EyeOff }
+  ];
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:py-10">
@@ -64,12 +58,10 @@ export function AdminPage() {
           <div>
             <h2 className="flex items-center gap-2 font-display text-2xl font-black text-[#8C6D3F] sm:text-3xl">
               <LayoutDashboard className="h-6 w-6 text-[#B29259]" aria-hidden="true" />
-              {lang === 'he' ? 'ניהול האתר והקטלוג' : 'Website & catalogue management'}
+              {t('adminPage.manageTitle')}
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">
-              {lang === 'he'
-                ? 'מכאן אפשר לעדכן את התמונות, החבילות, המוצרים, הטקסטים והמחירים שמופיעים באתר. השינויים נשמרים ב־Supabase ומופיעים לכל הלקוחות.'
-                : 'Manage the images, packages, products, copy and prices shown on the website. Changes are stored in Supabase and published to all visitors.'}
+              {t('adminPage.manageSub')}
             </p>
           </div>
           {user?.email && (
@@ -80,18 +72,18 @@ export function AdminPage() {
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          {capabilityCards.map(({ title, body, icon: Icon }) => (
-            <div key={title} className="rounded-2xl border border-[#EAE3D2] bg-white/85 p-4 shadow-sm">
+          {capabilityCards.map(({ key, icon: Icon }) => (
+            <div key={key} className="rounded-2xl border border-[#EAE3D2] bg-white/85 p-4 shadow-sm">
               <Icon className="h-5 w-5 text-[#B8860B]" aria-hidden="true" />
-              <h3 className="mt-2 text-sm font-black text-[#4D4037]">{title}</h3>
-              <p className="mt-1 text-xs leading-relaxed text-gray-500">{body}</p>
+              <h3 className="mt-2 text-sm font-black text-[#4D4037]">{t(`adminPage.capability${key}Title`)}</h3>
+              <p className="mt-1 text-xs leading-relaxed text-gray-500">{t(`adminPage.capability${key}Body`)}</p>
             </div>
           ))}
         </div>
       </div>
 
       <div className="my-6 flex flex-wrap gap-1 rounded-2xl border border-[#EAE3D2] bg-white p-1.5 shadow-sm" role="tablist" aria-label={t('adminPage.adminArea')}>
-        {tabBtn('catalog', lang === 'he' ? 'תמונות, מוצרים וחבילות' : 'Images, products & packages', PackageIcon)}
+        {tabBtn('catalog', t('adminPage.tabCatalogFull'), PackageIcon)}
         {tabBtn('orders', t('adminPage.tabOrders'), ClipboardList)}
       </div>
 
@@ -100,14 +92,14 @@ export function AdminPage() {
           <div id="admin-products" className="scroll-mt-28">
             <div className="mb-3 flex items-center gap-2 px-1">
               <ShoppingBag className="h-5 w-5 text-[#B8860B]" aria-hidden="true" />
-              <p className="text-sm font-black text-[#4D4037]">{lang === 'he' ? 'ניהול מוצרים ופריטים' : 'Products and design pieces'}</p>
+              <p className="text-sm font-black text-[#4D4037]">{t('adminPage.productsTitle')}</p>
             </div>
             <ProductManager />
           </div>
           <div id="admin-packages" className="scroll-mt-28">
             <div className="mb-3 flex items-center gap-2 px-1">
               <PackageIcon className="h-5 w-5 text-[#B8860B]" aria-hidden="true" />
-              <p className="text-sm font-black text-[#4D4037]">{lang === 'he' ? 'ניהול חבילות עיצוב' : 'Design packages'}</p>
+              <p className="text-sm font-black text-[#4D4037]">{t('adminPage.packagesTitle')}</p>
             </div>
             <PackageManager />
           </div>

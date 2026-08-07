@@ -13,7 +13,7 @@ function safeReturnPath(value: string | null | undefined): string {
 }
 
 export function LoginPage() {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const { user, role, signIn, resetPassword, configured } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -75,11 +75,7 @@ export function LoginPage() {
       setError(result.error);
       return;
     }
-    setNotice(
-      lang === 'he'
-        ? 'שלחנו קישור לאיפוס הסיסמה למייל. יש לפתוח אותו מאותו מכשיר ולהגדיר סיסמה חדשה.'
-        : 'A password reset link was sent to your email. Open it on this device to choose a new password.'
-    );
+    setNotice(t('auth.resetLinkSent'));
   };
 
   const openResetMode = () => {
@@ -99,19 +95,11 @@ export function LoginPage() {
           ) : (
             <LogIn className="h-6 w-6 text-[#B29259]" aria-hidden="true" />
           )}
-          {resetMode
-            ? lang === 'he' ? 'איפוס סיסמה' : 'Reset password'
-            : t('auth.loginTitle')}
+          {resetMode ? t('auth.resetTitle') : t('auth.loginTitle')}
         </h2>
 
         <p className="mb-6 text-sm leading-relaxed text-gray-500">
-          {resetMode
-            ? lang === 'he'
-              ? 'הזינו את כתובת המייל של המנהלת ונשלח אליה קישור מאובטח להגדרת סיסמה חדשה.'
-              : 'Enter the manager email and we will send a secure link for choosing a new password.'
-            : lang === 'he'
-              ? 'התחברו לאזור הניהול כדי לעדכן תמונות, חבילות, מוצרים, מחירים ותוכן.'
-              : 'Sign in to manage images, packages, products, pricing and content.'}
+          {resetMode ? t('auth.resetSub') : t('auth.loginSub')}
         </p>
 
         {!configured && (
@@ -149,12 +137,10 @@ export function LoginPage() {
 
               <div className="rounded-2xl border border-[#E8C5B8] bg-gradient-to-br from-[#FDFBF7] to-[#F4E3E3]/55 p-3.5 shadow-sm">
                 <p className="text-sm font-black text-[#5A4636]">
-                  {lang === 'he' ? 'לא זוכרים את הסיסמה?' : 'Forgot your password?'}
+                  {t('auth.forgotTitle')}
                 </p>
                 <p className="mt-1 text-xs leading-relaxed text-[#786A60]">
-                  {lang === 'he'
-                    ? 'נשלח למייל קישור מאובטח להגדרת סיסמה חדשה.'
-                    : 'We will email you a secure link for choosing a new password.'}
+                  {t('auth.forgotSub')}
                 </p>
                 <button
                   type="button"
@@ -162,7 +148,7 @@ export function LoginPage() {
                   className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-[#B8860B] bg-white px-4 py-3 text-sm font-black text-[#8C6D3F] shadow-sm transition hover:-translate-y-0.5 hover:bg-[#B8860B] hover:text-white focus:outline-none focus:ring-4 focus:ring-[#D4AF37]/25"
                 >
                   <KeyRound className="h-4 w-4" aria-hidden="true" />
-                  {lang === 'he' ? 'שכחתי סיסמה — שלחו לי קישור איפוס' : 'Forgot password — send me a reset link'}
+                  {t('auth.forgotBtn')}
                 </button>
               </div>
             </>
@@ -185,7 +171,7 @@ export function LoginPage() {
             {busy
               ? t('auth.working')
               : resetMode
-                ? lang === 'he' ? 'שליחת קישור איפוס' : 'Send reset link'
+                ? t('auth.sendResetLink')
                 : t('auth.loginBtn')}
           </button>
         </form>
@@ -201,7 +187,7 @@ export function LoginPage() {
             className="mx-auto mt-4 flex items-center gap-1 text-xs font-bold text-[#8C6D3F] hover:text-[#B29259]"
           >
             <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-            {lang === 'he' ? 'חזרה להתחברות' : 'Back to login'}
+            {t('auth.backToLogin')}
           </button>
         ) : (
           <p className="mt-4 text-center text-xs text-gray-500">
