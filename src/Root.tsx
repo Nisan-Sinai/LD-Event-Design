@@ -1,5 +1,5 @@
-import { lazy, Suspense, type ReactNode } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
+import { lazy, Suspense, useEffect, type ReactNode } from 'react';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router';
 import { AuthProvider } from './auth/AuthProvider';
 import { CartProvider } from './cart/CartProvider';
 import { RequireAdmin, RequireAuth } from './auth/guards';
@@ -29,12 +29,55 @@ function Page({ children }: { children: ReactNode }) {
   );
 }
 
+function ScrollToLocation() {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (!location.hash) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      return;
+    }
+
+    const rawId = location.hash.slice(1);
+    let targetId = rawId;
+    try {
+      targetId = decodeURIComponent(rawId);
+    } catch {
+      // Keep the raw hash when it is not valid URI-encoded text.
+    }
+
+    const scrollToTarget = () => {
+      const target = document.getElementById(targetId);
+      if (!target) return false;
+      target.scrollIntoView({ block: 'start', behavior: 'auto' });
+      return true;
+    };
+
+    if (scrollToTarget()) return;
+
+    // Lazy routes can render after the URL changes; wait for their anchor to enter the DOM.
+    const observer = new MutationObserver(() => {
+      if (scrollToTarget()) observer.disconnect();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    const timeout = window.setTimeout(() => observer.disconnect(), 2500);
+
+    return () => {
+      window.clearTimeout(timeout);
+      observer.disconnect();
+    };
+  }, [location.hash, location.key, location.pathname]);
+
+  return null;
+}
+
 export function Root() {
   return (
     <AuthProvider>
       <PackagesProvider>
         <CartProvider>
           <BrowserRouter>
+            <ScrollToLocation />
             <Routes>
               <Route path="/" element={<Page><HomePage /></Page>} />
               <Route path="/cart" element={<Page><CartPage /></Page>} />
