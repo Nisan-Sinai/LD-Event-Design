@@ -114,7 +114,7 @@ test.describe('Luxury quote storefront (guest)', () => {
 
   test('resets route navigation to the top and honors cross-page section links', async ({ page }) => {
     await page.goto('/');
-    await page.locator('footer').scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(200);
 
     await page.getByRole('link', { name: 'כניסת מנהלת' }).click();
