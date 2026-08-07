@@ -58,7 +58,10 @@ function ScrollToLocation() {
       return true;
     };
 
-    if (!alignLocation() && location.hash) {
+    const alignedImmediately = alignLocation();
+    if (!location.hash) return;
+
+    if (!alignedImmediately) {
       // Lazy routes can render after the URL changes; wait for their anchor to enter the DOM.
       observer = new MutationObserver(() => {
         if (alignLocation()) observer?.disconnect();
@@ -66,7 +69,7 @@ function ScrollToLocation() {
       observer.observe(document.body, { childList: true, subtree: true });
     }
 
-    // Re-align after the next paints as lazy content and media settle into their final layout.
+    // Hash targets get a few extra alignment passes while lazy content settles.
     let secondFrame = 0;
     const firstFrame = window.requestAnimationFrame(() => {
       alignLocation();
