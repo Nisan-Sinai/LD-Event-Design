@@ -26,6 +26,9 @@ const input: CartOrderInput = {
   preferences: {
     palette: 'לבן וזהב',
     customColors: 'שמנת וזהב מט',
+    flowerColor: 'לבן ושמנת',
+    balloonColor: 'שמפניה וזהב',
+    tableclothColor: 'שמנת',
     customRequest: 'פרחים עדינים',
     couponCode: 'מתנה',
     couponApplied: true
@@ -65,6 +68,9 @@ describe('submitCartOrder', () => {
     expect(JSON.parse(payload.referral_detail)).toMatchObject({
       palette: 'לבן וזהב',
       customColors: 'שמנת וזהב מט',
+      flowerColor: 'לבן ושמנת',
+      balloonColor: 'שמפניה וזהב',
+      tableclothColor: 'שמנת',
       customRequest: 'פרחים עדינים',
       quoteOnly: true,
       noPaymentCollected: true
