@@ -117,7 +117,7 @@ test.describe('Luxury quote storefront (guest)', () => {
     await page.locator('footer').scrollIntoViewIfNeeded();
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(200);
 
-    await page.getByRole('link', { name: /כניסה למנהלת/ }).click();
+    await page.getByRole('link', { name: 'כניסת מנהלת' }).click();
     await expect(page).toHaveURL(/\/login$/);
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThanOrEqual(2);
 
