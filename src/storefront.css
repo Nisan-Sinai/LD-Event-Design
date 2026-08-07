@@ -60,6 +60,11 @@ select {
     position: static;
   }
 
+  /* Keep the bilingual switch available on phones; the compact two-button group fits beside the cart. */
+  header [role='group']:has(button[lang='en']) {
+    display: flex;
+  }
+
   #products article h4,
   #products article h5 {
     min-height: 2.5rem;
