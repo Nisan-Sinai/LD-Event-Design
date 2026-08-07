@@ -41,6 +41,7 @@ const COPY = {
     details: 'מה כלול?',
     cart: 'עגלת קניות',
     viewCart: 'לצפייה בעגלה',
+    reviewCart: 'לסיכום בעגלה',
     item: 'פריט',
     items: 'פריטים',
     designDetailsTitle: 'עכשיו מדייקים את הגוונים',
@@ -66,6 +67,7 @@ const COPY = {
     details: 'What is included?',
     cart: 'Shopping cart',
     viewCart: 'View cart',
+    reviewCart: 'Review in cart',
     item: 'item',
     items: 'items',
     designDetailsTitle: 'Now refine the shades',
@@ -441,7 +443,7 @@ export function HomePage() {
                   <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white/55">{copy.estimate}</p>
                   <strong className="font-display mt-1 block text-3xl font-black text-[#E8C5B8]">{money(subtotal)}</strong>
                 </div>
-                <Link to="/cart" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-xs font-extrabold text-[#2C2C2C] transition hover:-translate-y-0.5 lg:mt-5 lg:w-full">{copy.viewCart}<Arrow className="h-4 w-4" aria-hidden="true" /></Link>
+                <Link to="/cart" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-xs font-extrabold text-[#2C2C2C] transition hover:-translate-y-0.5 lg:mt-5 lg:w-full">{copy.reviewCart}<Arrow className="h-4 w-4" aria-hidden="true" /></Link>
               </aside>
             </div>
           </div>
