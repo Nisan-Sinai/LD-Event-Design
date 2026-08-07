@@ -1,9 +1,10 @@
 name: Storefront exhaustive QA
 
 on:
-  push:
+  pull_request:
     branches:
-      - feat/storefront-ordering-flow
+      - main
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 permissions:
@@ -12,7 +13,7 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: storefront-exhaustive-qa
+  group: storefront-exhaustive-qa-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -195,10 +196,11 @@ jobs:
               ...details,
               ok ? 'הבראנץ׳ עבר את כל שערי האיכות.' : 'יש כשל ממוקד שדורש תיקון לפני מיזוג.'
             ].join('\n');
+            const issueNumber = context.issue.number || 32;
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: 32,
+              issue_number: issueNumber,
               per_page: 100
             });
             const previous = comments.find(comment => comment.body?.includes('<!-- storefront-exhaustive-qa -->'));
@@ -213,7 +215,7 @@ jobs:
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: 32,
+                issue_number: issueNumber,
                 body
               });
             }
