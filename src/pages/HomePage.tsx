@@ -123,7 +123,9 @@ export function HomePage() {
   const packages = useMemo(() => buildCatalog(PACKAGES, overrides), [overrides]);
   const productCategories = Object.values(SHOP_PRODUCT_CATEGORIES);
   const packageCategories = Object.values(CATEGORIES);
-  const heroVideo = (import.meta.env.VITE_HERO_VIDEO_URL as string | undefined) ?? '/media/ld-event-design-hero.mp4';
+  const heroVideo =
+    (import.meta.env.VITE_HERO_VIDEO_URL as string | undefined) ??
+    'https://videos.pexels.com/video-files/31501465/13430839_1920_1080_60fps.mp4';
 
   const packageText = (pkg: Package) =>
     lang === 'en' && PACKAGE_EN[pkg.id]
