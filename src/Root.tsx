@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, type ReactNode } from 'react';
+import { lazy, Suspense, useLayoutEffect, type ReactNode } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router';
 import { AuthProvider } from './auth/AuthProvider';
 import { CartProvider } from './cart/CartProvider';
@@ -32,11 +32,9 @@ function Page({ children }: { children: ReactNode }) {
 function ScrollToLocation() {
   const location = useLocation();
 
-  useEffect(() => {
-    if (!location.hash) {
-      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-      return;
-    }
+  useLayoutEffect(() => {
+    let cancelled = false;
+    let observer: MutationObserver | undefined;
 
     const rawId = location.hash.slice(1);
     let targetId = rawId;
@@ -46,25 +44,46 @@ function ScrollToLocation() {
       // Keep the raw hash when it is not valid URI-encoded text.
     }
 
-    const scrollToTarget = () => {
+    const alignLocation = () => {
+      if (cancelled) return false;
+
+      if (!location.hash) {
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+        return true;
+      }
+
       const target = document.getElementById(targetId);
       if (!target) return false;
       target.scrollIntoView({ block: 'start', behavior: 'auto' });
       return true;
     };
 
-    if (scrollToTarget()) return;
+    if (!alignLocation() && location.hash) {
+      // Lazy routes can render after the URL changes; wait for their anchor to enter the DOM.
+      observer = new MutationObserver(() => {
+        if (alignLocation()) observer?.disconnect();
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    }
 
-    // Lazy routes can render after the URL changes; wait for their anchor to enter the DOM.
-    const observer = new MutationObserver(() => {
-      if (scrollToTarget()) observer.disconnect();
+    // Re-align after the next paints as lazy content and media settle into their final layout.
+    let secondFrame = 0;
+    const firstFrame = window.requestAnimationFrame(() => {
+      alignLocation();
+      secondFrame = window.requestAnimationFrame(() => {
+        alignLocation();
+      });
     });
-    observer.observe(document.body, { childList: true, subtree: true });
-    const timeout = window.setTimeout(() => observer.disconnect(), 2500);
+    const settleTimer = window.setTimeout(alignLocation, 120);
+    const observerTimer = window.setTimeout(() => observer?.disconnect(), 2500);
 
     return () => {
-      window.clearTimeout(timeout);
-      observer.disconnect();
+      cancelled = true;
+      window.cancelAnimationFrame(firstFrame);
+      if (secondFrame) window.cancelAnimationFrame(secondFrame);
+      window.clearTimeout(settleTimer);
+      window.clearTimeout(observerTimer);
+      observer?.disconnect();
     };
   }, [location.hash, location.key, location.pathname]);
 
