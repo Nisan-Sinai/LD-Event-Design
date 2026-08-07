@@ -43,10 +43,11 @@ const COPY = {
     viewCart: 'לצפייה בעגלה',
     item: 'פריט',
     items: 'פריטים',
-    builderTitle: 'בואו נרכיב את שפת העיצוב שלכם',
-    builderBody: 'בחרו פלטה מובילה, הוסיפו גוונים מדויקים וספרו לנו מה תרצו להגשים.',
-    customColors: 'גוונים מדויקים שתרצו לשלב',
-    customColorsPlaceholder: 'לדוגמה: שמנת, זהב מט, ורוד עתיק ונגיעות ירוק זית',
+    designDetailsTitle: 'עכשיו מדייקים את הגוונים',
+    designDetailsBody: 'אחרי שבחרתם פריטים וחבילות, בחרו גוון נפרד לפרחים, לבלונים ולמפות. סימנו עבורכם מה רלוונטי לפי הסל — ואפשר להשאיר כל בחירה פתוחה לשיחה איתנו.',
+    customShade: 'גוון מדויק / מותאם אישית',
+    customShadePlaceholder: 'אפשר לכתוב כאן גוון שלא מופיע באפשרויות',
+    recommended: 'רלוונטי לפי הסל',
     customRequest: 'יש משהו ספציפי שתרצו באירוע ולא מופיע בחבילות?',
     customRequestPlaceholder: 'ספרו לנו עליו כאן ונשמח להגשים לכם אותו!',
     estimate: 'אומדן החבילה שלכם כרגע',
@@ -67,10 +68,11 @@ const COPY = {
     viewCart: 'View cart',
     item: 'item',
     items: 'items',
-    builderTitle: 'Create your event design language',
-    builderBody: 'Choose a leading palette, add precise shades and tell us what you dream of creating.',
-    customColors: 'Exact shades you would like to include',
-    customColorsPlaceholder: 'For example: ivory, matte gold, antique pink and olive accents',
+    designDetailsTitle: 'Now refine the shades',
+    designDetailsBody: 'Once you have chosen your pieces and packages, set separate shades for flowers, balloons and table linens. We highlight what is relevant to your cart, and you can leave any choice open for our consultation.',
+    customShade: 'Exact / custom shade',
+    customShadePlaceholder: 'Type a shade that is not listed',
+    recommended: 'Relevant to your cart',
     customRequest: 'Is there something special that is not included in the packages?',
     customRequestPlaceholder: 'Tell us about it and we will be happy to make it happen.',
     estimate: 'Your current package estimate',
@@ -79,13 +81,42 @@ const COPY = {
   }
 } as const;
 
-const PALETTES = [
-  { name: 'לבן וזהב', colors: ['#FDFBF7', '#D4AF37', '#B8860B'] },
-  { name: 'ורוד פודרה וזהב־ורוד', colors: ['#F4E3E3', '#E8C5B8', '#C69A71'] },
-  { name: 'בורדו וזהב', colors: ['#6E1F2A', '#D4AF37', '#F7E8DA'] },
-  { name: 'ירוק זית ושמנת', colors: ['#6D7657', '#FAF6F0', '#C7A76A'] },
-  { name: 'שחור, פנינה וזהב', colors: ['#2C2C2C', '#FDFBF7', '#D4AF37'] }
-];
+const DESIGN_COLOR_GROUPS = [
+  {
+    key: 'flowerColor' as const,
+    label: { he: 'פרחים', en: 'Flowers' },
+    hint: { he: 'לסידורי שולחן, חופה ואלמנטים פרחוניים', en: 'For centerpieces, chuppah and floral elements' },
+    options: [
+      { label: { he: 'לבן ושמנת', en: 'White & ivory' }, colors: ['#FDFBF7', '#EFE7D8'] },
+      { label: { he: 'ורוד פודרה', en: 'Powder pink' }, colors: ['#F4E3E3', '#D8AAA4'] },
+      { label: { he: 'בורדו', en: 'Burgundy' }, colors: ['#6E1F2A', '#E7CFC8'] },
+      { label: { he: 'צבעוני עדין', en: 'Soft multicolor' }, colors: ['#D7B7C9', '#E6C98D', '#A8B89A'] }
+    ]
+  },
+  {
+    key: 'balloonColor' as const,
+    label: { he: 'בלונים', en: 'Balloons' },
+    hint: { he: 'לשערים, עמודים וקירות בלונים', en: 'For arches, columns and balloon walls' },
+    options: [
+      { label: { he: 'לבן פנינה', en: 'Pearl white' }, colors: ['#FDFBF7', '#E8E1D8'] },
+      { label: { he: 'שמפניה וזהב', en: 'Champagne & gold' }, colors: ['#DFC99F', '#D4AF37'] },
+      { label: { he: 'ורוד פודרה', en: 'Powder pink' }, colors: ['#F4E3E3', '#D8AAA4'] },
+      { label: { he: 'שחור וזהב', en: 'Black & gold' }, colors: ['#2C2C2C', '#D4AF37'] }
+    ]
+  },
+  {
+    key: 'tableclothColor' as const,
+    label: { he: 'מפות וטקסטיל', en: 'Table linens' },
+    hint: { he: 'למפות, בדים וטקסטיל משלים', en: 'For tablecloths, draping and complementary textiles' },
+    options: [
+      { label: { he: 'לבן', en: 'White' }, colors: ['#FDFBF7'] },
+      { label: { he: 'שמנת', en: 'Ivory' }, colors: ['#F3EBDD'] },
+      { label: { he: 'שמפניה', en: 'Champagne' }, colors: ['#D8C09C'] },
+      { label: { he: 'ורוד עתיק', en: 'Antique pink' }, colors: ['#CFA59E'] },
+      { label: { he: 'שחור', en: 'Black' }, colors: ['#2C2C2C'] }
+    ]
+  }
+] as const;
 
 function money(value: number) {
   return `₪${value.toLocaleString('he-IL')}`;
@@ -108,11 +139,11 @@ export function HomePage() {
   const { overrides } = usePackages();
   const {
     addItem,
+    items,
     itemCount,
     subtotal,
     preferences,
-    setPalette,
-    setCustomColors,
+    setDesignColor,
     setCustomRequest
   } = useCart();
   const [addedId, setAddedId] = useState('');
@@ -164,6 +195,15 @@ export function HomePage() {
   };
 
   const cartCount = `${itemCount} ${itemCount === 1 ? copy.item : copy.items}`;
+  const cartDesignText = items
+    .map((item) => `${item.title} ${item.subtitle} ${item.category}`)
+    .join(' ')
+    .toLocaleLowerCase(lang === 'he' ? 'he-IL' : 'en-US');
+  const colorRelevance = {
+    flowerColor: /פרח|גיבס|flower|floral/.test(cartDesignText),
+    balloonColor: /בלונ|balloon/.test(cartDesignText),
+    tableclothColor: /מפה|מפות|שולחן|table|linen|cloth/.test(cartDesignText)
+  };
 
   return (
     <>
@@ -207,57 +247,13 @@ export function HomePage() {
             <h2 className="font-display mt-6 text-5xl font-black leading-[0.98] tracking-tight sm:text-7xl lg:text-8xl">{copy.hero}</h2>
             <p className="mt-6 max-w-2xl text-base leading-relaxed text-white/82 sm:text-xl">{copy.heroBody}</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <a href="#builder" className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#C69A71] px-7 py-3.5 text-sm font-extrabold text-white shadow-[0_18px_45px_rgba(184,134,11,0.3)] transition hover:-translate-y-1">
+              <a href="#products" className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#C69A71] px-7 py-3.5 text-sm font-extrabold text-white shadow-[0_18px_45px_rgba(184,134,11,0.3)] transition hover:-translate-y-1">
                 הרכבת חבילה אישית <Arrow className="h-4 w-4" aria-hidden="true" />
               </a>
               <a href="#packages" className="inline-flex items-center gap-2 rounded-full border border-white/35 bg-white/10 px-7 py-3.5 text-sm font-extrabold text-white backdrop-blur transition hover:bg-white hover:text-[#2C2C2C]">
                 צפייה בחבילות <Play className="h-4 w-4" aria-hidden="true" />
               </a>
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="builder" className="scroll-mt-28 bg-[#FDFBF7] py-16 sm:py-24">
-        <div className="mx-auto max-w-6xl px-4">
-          <QuoteNotice />
-
-          <div className="mt-10 grid gap-8 rounded-[2.5rem] border border-[#E8C5B8]/70 bg-white p-5 shadow-[0_30px_80px_rgba(184,134,11,0.08)] sm:p-8 lg:grid-cols-[1fr_0.42fr]">
-            <div>
-              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.3em] text-[#B8860B]"><Palette className="h-4 w-4" aria-hidden="true" /> Design palette</p>
-              <h2 className="font-display mt-3 text-3xl font-black text-[#2C2C2C] sm:text-5xl">{copy.builderTitle}</h2>
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#6C625A]">{copy.builderBody}</p>
-
-              <div className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {PALETTES.map((palette) => (
-                  <button key={palette.name} type="button" onClick={() => setPalette(palette.name)} aria-pressed={preferences.palette === palette.name} className={`rounded-3xl border p-4 text-start transition ${preferences.palette === palette.name ? 'border-[#B8860B] bg-[#FAF6F0] shadow-[0_12px_30px_rgba(184,134,11,0.12)]' : 'border-[#E8C5B8]/65 bg-white hover:-translate-y-0.5 hover:border-[#D4AF37]'}`}>
-                    <span className="flex gap-1.5">{palette.colors.map((color) => <span key={color} className="h-7 flex-1 rounded-full border border-black/5" style={{ backgroundColor: color }} />)}</span>
-                    <span className="mt-3 flex items-center justify-between gap-2 text-sm font-extrabold text-[#2C2C2C]">{palette.name}{preferences.palette === palette.name && <Check className="h-4 w-4 text-[#B8860B]" aria-hidden="true" />}</span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="mt-6 grid gap-5 sm:grid-cols-2">
-                <label className="text-sm font-extrabold text-[#2C2C2C]">
-                  {copy.customColors}
-                  <input value={preferences.customColors} onChange={(event) => setCustomColors(event.target.value)} placeholder={copy.customColorsPlaceholder} className="mt-2 w-full rounded-2xl border border-[#E8C5B8] bg-[#FDFBF7] px-4 py-3 font-normal outline-none transition placeholder:text-[#A99B90] focus:border-[#B8860B] focus:ring-4 focus:ring-[#E8C5B8]/30" />
-                </label>
-                <label className="text-sm font-extrabold text-[#2C2C2C]">
-                  {copy.customRequest}
-                  <textarea value={preferences.customRequest} onChange={(event) => setCustomRequest(event.target.value)} placeholder={copy.customRequestPlaceholder} rows={3} className="mt-2 w-full resize-y rounded-2xl border border-[#E8C5B8] bg-[#FDFBF7] px-4 py-3 font-normal outline-none transition placeholder:text-[#A99B90] focus:border-[#B8860B] focus:ring-4 focus:ring-[#E8C5B8]/30" />
-                </label>
-              </div>
-            </div>
-
-            <aside className="flex flex-col justify-between rounded-[2rem] bg-gradient-to-br from-[#2C2C2C] to-[#4A3C34] p-6 text-white">
-              <div>
-                <Heart className="h-8 w-8 text-[#E8C5B8]" aria-hidden="true" />
-                <p className="mt-5 text-xs font-bold uppercase tracking-[0.22em] text-white/55">{copy.estimate}</p>
-                <strong className="font-display mt-2 block text-4xl font-black text-[#E8C5B8]">{money(subtotal)}</strong>
-                <p className="mt-2 text-xs leading-relaxed text-white/55">האומדן מתעדכן בזמן אמת לפי הפריטים והחבילות שתבחרו.</p>
-              </div>
-              <a href="#products" className="mt-8 inline-flex items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-extrabold text-[#2C2C2C] transition hover:-translate-y-0.5">מתחילים לבחור <Arrow className="h-4 w-4" aria-hidden="true" /></a>
-            </aside>
           </div>
         </div>
       </section>
@@ -273,7 +269,8 @@ export function HomePage() {
 
       <section id="products" className="scroll-mt-36 bg-[#FAF6F0] py-16 sm:py-24">
         <div className="mx-auto max-w-6xl px-4">
-          <div className="mb-12 text-center">
+          <QuoteNotice />
+          <div className="mb-12 mt-10 text-center">
             <p className="text-[11px] font-bold uppercase tracking-[0.35em] text-[#B8860B]">Curated details</p>
             <h2 className="font-display mt-3 text-4xl font-black text-[#2C2C2C] sm:text-6xl">{copy.products}</h2>
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-[#6C625A]">בחרו פריטים קטנים, שנו כמויות וצרו שילוב שמרגיש בדיוק שלכם.</p>
@@ -368,6 +365,85 @@ export function HomePage() {
                 </section>
               );
             })}
+          </div>
+        </div>
+      </section>
+
+
+      <section id="design-details" className="scroll-mt-36 bg-[#FAF6F0] py-16 sm:py-24">
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="rounded-[2.5rem] border border-[#E8C5B8]/70 bg-white p-5 shadow-[0_30px_80px_rgba(184,134,11,0.08)] sm:p-8">
+            <div className="max-w-3xl">
+              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.3em] text-[#B8860B]"><Palette className="h-4 w-4" aria-hidden="true" /> Final color details</p>
+              <h2 className="font-display mt-3 text-3xl font-black text-[#2C2C2C] sm:text-5xl">{copy.designDetailsTitle}</h2>
+              <p className="mt-3 text-sm leading-relaxed text-[#6C625A]">{copy.designDetailsBody}</p>
+            </div>
+
+            <div className="mt-8 grid gap-5 lg:grid-cols-3">
+              {DESIGN_COLOR_GROUPS.map((group) => {
+                const selected = preferences[group.key];
+                const recommended = colorRelevance[group.key];
+                return (
+                  <fieldset key={group.key} className={`rounded-[2rem] border p-5 transition ${recommended ? 'border-[#D4AF37] bg-[#FFFDF7] shadow-[0_16px_35px_rgba(184,134,11,0.1)]' : 'border-[#E8C5B8]/70 bg-[#FDFBF7]'}`}>
+                    <legend className="w-full px-1">
+                      <span className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="font-display text-xl font-black text-[#2C2C2C]">{group.label[lang]}</span>
+                        {recommended && <span className="rounded-full bg-[#F6E8B7] px-2.5 py-1 text-[9px] font-extrabold text-[#795E08]"><Sparkles className="me-1 inline h-3 w-3" aria-hidden="true" />{copy.recommended}</span>}
+                      </span>
+                      <span className="mt-1 block text-xs font-normal leading-relaxed text-[#756B64]">{group.hint[lang]}</span>
+                    </legend>
+
+                    <div className="mt-4 grid grid-cols-2 gap-2">
+                      {group.options.map((option) => {
+                        const optionLabel = option.label[lang];
+                        const active = selected === optionLabel;
+                        return (
+                          <button
+                            key={option.label.he}
+                            type="button"
+                            onClick={() => setDesignColor(group.key, optionLabel)}
+                            aria-pressed={active}
+                            className={`rounded-2xl border p-3 text-start transition ${active ? 'border-[#B8860B] bg-white shadow-sm' : 'border-[#E8C5B8]/70 bg-white/70 hover:border-[#D4AF37]'}`}
+                          >
+                            <span className="flex h-5 overflow-hidden rounded-full border border-black/5" aria-hidden="true">
+                              {option.colors.map((color) => <span key={color} className="flex-1" style={{ backgroundColor: color }} />)}
+                            </span>
+                            <span className="mt-2 flex items-center justify-between gap-2 text-[11px] font-extrabold text-[#3F3935]">{optionLabel}{active && <Check className="h-3.5 w-3.5 text-[#B8860B]" aria-hidden="true" />}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <label className="mt-4 block text-xs font-extrabold text-[#2C2C2C]">
+                      {copy.customShade}
+                      <input
+                        value={selected}
+                        onChange={(event) => setDesignColor(group.key, event.target.value)}
+                        aria-label={`${copy.customShade} — ${group.label[lang]}`}
+                        placeholder={copy.customShadePlaceholder}
+                        className="mt-2 w-full rounded-2xl border border-[#E8C5B8] bg-white px-4 py-3 text-sm font-normal outline-none transition placeholder:text-[#A99B90] focus:border-[#B8860B] focus:ring-4 focus:ring-[#E8C5B8]/30"
+                      />
+                    </label>
+                  </fieldset>
+                );
+              })}
+            </div>
+
+            <div className="mt-7 grid gap-5 lg:grid-cols-[1fr_320px]">
+              <label className="text-sm font-extrabold text-[#2C2C2C]">
+                {copy.customRequest}
+                <textarea value={preferences.customRequest} onChange={(event) => setCustomRequest(event.target.value)} placeholder={copy.customRequestPlaceholder} rows={4} className="mt-2 w-full resize-y rounded-2xl border border-[#E8C5B8] bg-[#FDFBF7] px-4 py-3 font-normal outline-none transition placeholder:text-[#A99B90] focus:border-[#B8860B] focus:ring-4 focus:ring-[#E8C5B8]/30" />
+              </label>
+
+              <aside className="flex items-center justify-between gap-4 rounded-[2rem] bg-gradient-to-br from-[#2C2C2C] to-[#4A3C34] p-5 text-white lg:block">
+                <div>
+                  <Heart className="h-6 w-6 text-[#E8C5B8]" aria-hidden="true" />
+                  <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white/55">{copy.estimate}</p>
+                  <strong className="font-display mt-1 block text-3xl font-black text-[#E8C5B8]">{money(subtotal)}</strong>
+                </div>
+                <Link to="/cart" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-xs font-extrabold text-[#2C2C2C] transition hover:-translate-y-0.5 lg:mt-5 lg:w-full">{copy.viewCart}<Arrow className="h-4 w-4" aria-hidden="true" /></Link>
+              </aside>
+            </div>
           </div>
         </div>
       </section>
