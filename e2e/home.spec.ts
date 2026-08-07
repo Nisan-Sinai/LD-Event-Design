@@ -114,6 +114,7 @@ test.describe('Luxury quote storefront (guest)', () => {
 
   test('resets route navigation to the top and honors cross-page section links', async ({ page }) => {
     await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'האירוע שלכם. האמנות שלנו.' })).toBeVisible();
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(200);
 
