@@ -1,10 +1,9 @@
 name: Storefront exhaustive QA
 
 on:
-  pull_request:
+  push:
     branches:
-      - main
-    types: [opened, synchronize, reopened]
+      - feat/storefront-ordering-flow
   workflow_dispatch:
 
 permissions:
@@ -13,121 +12,68 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: storefront-exhaustive-qa-${{ github.event.pull_request.number || github.ref }}
+  group: storefront-exhaustive-qa
   cancel-in-progress: true
 
 jobs:
-  quality:
-    name: Audit · TypeScript · Unit · Coverage · Build
+  qa:
+    name: Full storefront QA
     runs-on: ubuntu-latest
-    outputs:
-      install: ${{ steps.install.outcome }}
-      audit: ${{ steps.audit.outcome }}
-      typecheck: ${{ steps.typecheck.outcome }}
-      coverage: ${{ steps.coverage.outcome }}
-      build: ${{ steps.build.outcome }}
-      typecheck_log: ${{ steps.typecheck.outputs.log }}
-      coverage_log: ${{ steps.coverage.outputs.log }}
-      build_log: ${{ steps.build.outputs.log }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
+
       - id: install
         name: npm ci
         continue-on-error: true
-        run: npm ci
+        shell: bash
+        run: npm ci > qa-install.log 2>&1
+
       - id: audit
         name: Production audit
         if: steps.install.outcome == 'success'
         continue-on-error: true
-        run: npm run audit:prod
+        shell: bash
+        run: npm run audit:prod > qa-audit.log 2>&1
+
       - id: typecheck
         name: TypeScript
         if: steps.install.outcome == 'success'
         continue-on-error: true
         shell: bash
-        run: |
-          set +e
-          npm run type-check > typecheck.log 2>&1
-          code=$?
-          echo 'log<<__TYPECHECK__' >> "$GITHUB_OUTPUT"
-          tail -n 80 typecheck.log >> "$GITHUB_OUTPUT"
-          echo '__TYPECHECK__' >> "$GITHUB_OUTPUT"
-          exit "$code"
+        run: npm run type-check > qa-typecheck.log 2>&1
+
       - id: coverage
         name: Unit tests and coverage
         if: steps.install.outcome == 'success'
         continue-on-error: true
         shell: bash
-        run: |
-          set +e
-          npm run test:coverage > coverage.log 2>&1
-          code=$?
-          echo 'log<<__COVERAGE__' >> "$GITHUB_OUTPUT"
-          tail -n 120 coverage.log >> "$GITHUB_OUTPUT"
-          echo '__COVERAGE__' >> "$GITHUB_OUTPUT"
-          exit "$code"
+        run: npm run test:coverage > qa-coverage.log 2>&1
+
       - id: build
         name: Production build
         if: steps.install.outcome == 'success'
         continue-on-error: true
         shell: bash
-        run: |
-          set +e
-          npm run build > build.log 2>&1
-          code=$?
-          echo 'log<<__BUILD__' >> "$GITHUB_OUTPUT"
-          tail -n 80 build.log >> "$GITHUB_OUTPUT"
-          echo '__BUILD__' >> "$GITHUB_OUTPUT"
-          exit "$code"
-      - name: Enforce quality gate
-        if: always()
-        run: |
-          test "${{ steps.install.outcome }}" = "success"
-          test "${{ steps.audit.outcome }}" = "success"
-          test "${{ steps.typecheck.outcome }}" = "success"
-          test "${{ steps.coverage.outcome }}" = "success"
-          test "${{ steps.build.outcome }}" = "success"
+        run: npm run build > qa-build.log 2>&1
 
-  e2e:
-    name: Playwright desktop and mobile
-    runs-on: ubuntu-latest
-    outputs:
-      install: ${{ steps.install.outcome }}
-      browser: ${{ steps.browser.outcome }}
-      playwright: ${{ steps.playwright.outcome }}
-      playwright_log: ${{ steps.playwright.outputs.log }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-      - id: install
-        name: npm ci
-        continue-on-error: true
-        run: npm ci
       - id: browser
         name: Install Chromium
         if: steps.install.outcome == 'success'
         continue-on-error: true
-        run: npx playwright install --with-deps chromium
+        shell: bash
+        run: npx playwright install --with-deps chromium > qa-browser.log 2>&1
+
       - id: playwright
         name: Playwright desktop and mobile
         if: steps.install.outcome == 'success' && steps.browser.outcome == 'success'
         continue-on-error: true
         shell: bash
-        run: |
-          set +e
-          npm run test:e2e > playwright.log 2>&1
-          code=$?
-          echo 'log<<__PLAYWRIGHT__' >> "$GITHUB_OUTPUT"
-          tail -n 140 playwright.log >> "$GITHUB_OUTPUT"
-          echo '__PLAYWRIGHT__' >> "$GITHUB_OUTPUT"
-          exit "$code"
+        run: npm run test:e2e > qa-playwright.log 2>&1
+
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
@@ -136,71 +82,68 @@ jobs:
           path: playwright-report
           if-no-files-found: ignore
           retention-days: 14
-      - name: Enforce E2E gate
-        if: always()
-        run: |
-          test "${{ steps.install.outcome }}" = "success"
-          test "${{ steps.browser.outcome }}" = "success"
-          test "${{ steps.playwright.outcome }}" = "success"
 
-  report:
-    name: Publish QA result
-    if: always()
-    needs: [quality, e2e]
-    runs-on: ubuntu-latest
-    env:
-      TYPECHECK_LOG: ${{ needs.quality.outputs.typecheck_log }}
-      COVERAGE_LOG: ${{ needs.quality.outputs.coverage_log }}
-      BUILD_LOG: ${{ needs.quality.outputs.build_log }}
-      PLAYWRIGHT_LOG: ${{ needs.e2e.outputs.playwright_log }}
-    steps:
-      - uses: actions/github-script@v7
+      - name: Publish detailed QA result
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          INSTALL: ${{ steps.install.outcome }}
+          AUDIT: ${{ steps.audit.outcome }}
+          TYPECHECK: ${{ steps.typecheck.outcome }}
+          COVERAGE: ${{ steps.coverage.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          BROWSER: ${{ steps.browser.outcome }}
+          PLAYWRIGHT: ${{ steps.playwright.outcome }}
         with:
           script: |
-            const quality = '${{ needs.quality.result }}';
-            const e2e = '${{ needs.e2e.result }}';
-            const ok = quality === 'success' && e2e === 'success';
+            const fs = require('fs');
+            const tail = (file, lines = 100) => {
+              if (!fs.existsSync(file)) return '';
+              return fs.readFileSync(file, 'utf8').split('\n').slice(-lines).join('\n').trim();
+            };
+            const gates = {
+              install: process.env.INSTALL,
+              audit: process.env.AUDIT,
+              typecheck: process.env.TYPECHECK,
+              coverage: process.env.COVERAGE,
+              build: process.env.BUILD,
+              browser: process.env.BROWSER,
+              playwright: process.env.PLAYWRIGHT
+            };
+            const ok = Object.values(gates).every(value => value === 'success');
             const details = [];
-            if ('${{ needs.quality.outputs.typecheck }}' !== 'success' && process.env.TYPECHECK_LOG) {
-              details.push('### TypeScript error tail', '```text', process.env.TYPECHECK_LOG, '```', '');
-            }
-            if ('${{ needs.quality.outputs.coverage }}' !== 'success' && process.env.COVERAGE_LOG) {
-              details.push('### Unit / coverage error tail', '```text', process.env.COVERAGE_LOG, '```', '');
-            }
-            if ('${{ needs.quality.outputs.build }}' !== 'success' && process.env.BUILD_LOG) {
-              details.push('### Build error tail', '```text', process.env.BUILD_LOG, '```', '');
-            }
-            if ('${{ needs.e2e.outputs.playwright }}' !== 'success' && process.env.PLAYWRIGHT_LOG) {
-              details.push('### Playwright error tail', '```text', process.env.PLAYWRIGHT_LOG, '```', '');
-            }
+            const addFailure = (label, outcome, file, lines) => {
+              if (outcome === 'success') return;
+              const log = tail(file, lines);
+              details.push(`### ${label}`, '```text', log || '(no log produced)', '```', '');
+            };
+            addFailure('npm ci error tail', gates.install, 'qa-install.log', 80);
+            addFailure('Production audit error tail', gates.audit, 'qa-audit.log', 80);
+            addFailure('TypeScript error tail', gates.typecheck, 'qa-typecheck.log', 120);
+            addFailure('Unit / coverage error tail', gates.coverage, 'qa-coverage.log', 160);
+            addFailure('Build error tail', gates.build, 'qa-build.log', 120);
+            addFailure('Chromium install error tail', gates.browser, 'qa-browser.log', 80);
+            addFailure('Playwright error tail', gates.playwright, 'qa-playwright.log', 180);
             const body = [
               '<!-- storefront-exhaustive-qa -->',
               `## ${ok ? '✅' : '❌'} Storefront exhaustive QA`,
               '',
-              '### Quality gates',
-              `- npm ci: **${{ needs.quality.outputs.install }}**`,
-              `- Production audit: **${{ needs.quality.outputs.audit }}**`,
-              `- TypeScript: **${{ needs.quality.outputs.typecheck }}**`,
-              `- Unit + coverage: **${{ needs.quality.outputs.coverage }}**`,
-              `- Production build: **${{ needs.quality.outputs.build }}**`,
-              '',
-              '### Playwright gates',
-              `- npm ci: **${{ needs.e2e.outputs.install }}**`,
-              `- Chromium install: **${{ needs.e2e.outputs.browser }}**`,
-              `- Desktop + mobile E2E: **${{ needs.e2e.outputs.playwright }}**`,
-              '',
-              `- Quality job: **${quality}**`,
-              `- E2E job: **${e2e}**`,
+              `- npm ci: **${gates.install}**`,
+              `- Production audit: **${gates.audit}**`,
+              `- TypeScript: **${gates.typecheck}**`,
+              `- Unit + coverage: **${gates.coverage}**`,
+              `- Production build: **${gates.build}**`,
+              `- Chromium install: **${gates.browser}**`,
+              `- Desktop + mobile E2E: **${gates.playwright}**`,
               `- Commit: \`${context.sha}\``,
               '',
               ...details,
               ok ? 'הבראנץ׳ עבר את כל שערי האיכות.' : 'יש כשל ממוקד שדורש תיקון לפני מיזוג.'
             ].join('\n');
-            const issueNumber = context.issue.number || 32;
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: issueNumber,
+              issue_number: 32,
               per_page: 100
             });
             const previous = comments.find(comment => comment.body?.includes('<!-- storefront-exhaustive-qa -->'));
@@ -215,7 +158,19 @@ jobs:
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: issueNumber,
+                issue_number: 32,
                 body
               });
             }
+
+      - name: Enforce QA gate
+        if: always()
+        shell: bash
+        run: |
+          test "${{ steps.install.outcome }}" = "success"
+          test "${{ steps.audit.outcome }}" = "success"
+          test "${{ steps.typecheck.outcome }}" = "success"
+          test "${{ steps.coverage.outcome }}" = "success"
+          test "${{ steps.build.outcome }}" = "success"
+          test "${{ steps.browser.outcome }}" = "success"
+          test "${{ steps.playwright.outcome }}" = "success"
