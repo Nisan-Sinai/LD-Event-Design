@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, fireEvent, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { I18nProvider } from '../i18n/i18n';
 import { AdminPage } from './AdminPage';
