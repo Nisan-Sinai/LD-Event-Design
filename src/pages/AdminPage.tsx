@@ -52,7 +52,7 @@ export function AdminPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:py-10">
+    <div className="mx-auto w-full min-w-0 max-w-6xl px-3 py-8 sm:px-4 sm:py-10">
       <div className="rounded-[2rem] border border-[#E8C5B8]/70 bg-gradient-to-br from-white via-[#FDFBF7] to-[#F4E3E3]/45 p-5 shadow-[0_24px_70px_rgba(140,109,63,0.10)] sm:p-7">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -113,16 +113,23 @@ export function AdminPage() {
       ) : orders.length === 0 ? (
         <div className="rounded-2xl border border-[#EAE3D2] bg-white p-6 text-center text-sm text-gray-500">{t('adminPage.empty')}</div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-[#EAE3D2] bg-white">
-          <div className="overflow-x-auto">
-            <table className="w-full text-start text-xs">
+        <div className="w-full max-w-full overflow-hidden rounded-2xl border border-[#EAE3D2] bg-white">
+          <div className="w-full max-w-full overflow-hidden">
+            <table className="w-full table-fixed text-start text-[10px] sm:text-xs">
+              <colgroup>
+                <col className="w-[17%]" />
+                <col className="w-[22%]" />
+                <col className="w-[18%]" />
+                <col className="w-[27%]" />
+                <col className="w-[16%]" />
+              </colgroup>
               <thead className="bg-[#FAF7F2] font-bold text-[#8C6D3F]">
                 <tr>
-                  <th className="p-3 text-start">{t('adminPage.colDate')}</th>
-                  <th className="p-3 text-start">{t('adminPage.colClient')}</th>
-                  <th className="p-3 text-start">{t('adminPage.colEvent')}</th>
-                  <th className="p-3 text-start">{t('adminPage.colPackage')}</th>
-                  <th className="p-3 text-start">{t('adminPage.colTotal')}</th>
+                  <th className="px-1 py-2 text-start leading-tight sm:p-3">{t('adminPage.colDate')}</th>
+                  <th className="px-1 py-2 text-start leading-tight sm:p-3">{t('adminPage.colClient')}</th>
+                  <th className="px-1 py-2 text-start leading-tight sm:p-3">{t('adminPage.colEvent')}</th>
+                  <th className="px-1 py-2 text-start leading-tight sm:p-3">{t('adminPage.colPackage')}</th>
+                  <th className="px-1 py-2 text-start leading-tight sm:p-3">{t('adminPage.colTotal')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -139,13 +146,13 @@ export function AdminPage() {
                     tabIndex={0}
                     role="button"
                     aria-label={`${t('adminPage.viewOrder')}: ${order.groom_name} & ${order.bride_name}`}
-                    className="cursor-pointer transition-colors hover:bg-[#FAF7F2] focus:bg-[#FAF7F2] focus:outline-none"
+                    className="cursor-pointer align-top transition-colors hover:bg-[#FAF7F2] focus:bg-[#FAF7F2] focus:outline-none"
                   >
-                    <td className="whitespace-nowrap p-3 text-gray-500">{new Date(order.created_at).toLocaleDateString()}</td>
-                    <td className="p-3 font-bold text-gray-800">{order.groom_name} &amp; {order.bride_name}</td>
-                    <td className="whitespace-nowrap p-3 text-gray-600">{order.event_date ?? '—'}</td>
-                    <td className="p-3 text-gray-600">{order.package_title}</td>
-                    <td className="whitespace-nowrap p-3 font-black text-[#8C6D3F]">₪{Number(order.total_price).toLocaleString()}</td>
+                    <td className="break-words px-1 py-2.5 leading-tight text-gray-500 sm:p-3 sm:leading-normal">{new Date(order.created_at).toLocaleDateString()}</td>
+                    <td className="break-words px-1 py-2.5 font-bold leading-tight text-gray-800 sm:p-3 sm:leading-normal">{order.groom_name} &amp; {order.bride_name}</td>
+                    <td className="break-words px-1 py-2.5 leading-tight text-gray-600 sm:p-3 sm:leading-normal">{order.event_date ?? '—'}</td>
+                    <td className="break-words px-1 py-2.5 leading-tight text-gray-600 sm:p-3 sm:leading-normal">{order.package_title}</td>
+                    <td className="whitespace-nowrap px-0.5 py-2.5 text-center font-black text-[#8C6D3F] sm:p-3 sm:text-start">₪{Number(order.total_price).toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>
