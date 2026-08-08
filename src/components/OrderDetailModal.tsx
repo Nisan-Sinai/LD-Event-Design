@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { X, User, Calendar, MapPin, Phone, Mail, Package, Gift, FileSignature, ClipboardList, Palette } from 'lucide-react';
+import { X, User, Calendar, MapPin, Phone, Mail, Package, Gift, ClipboardList, Palette } from 'lucide-react';
 import { useI18n } from '../i18n/i18n';
-import { fetchOrderById, signatureUrl, type OrderDetail } from '../lib/orders';
+import { fetchOrderById, type OrderDetail } from '../lib/orders';
 
 const WEBSITE_QUOTE_SOURCE = 'website-quote-builder';
 
@@ -59,25 +59,6 @@ function Row({ label, value }: { label: ReactNode; value: ReactNode }) {
   );
 }
 
-function SignatureImg({ url, label, fallback }: { url: string | null; label: string; fallback: string }) {
-  const [broken, setBroken] = useState(false);
-  if (url && !broken) {
-    return (
-      <img
-        src={url}
-        alt={label}
-        onError={() => setBroken(true)}
-        className="h-20 w-full rounded-lg border border-gray-200 bg-white object-contain"
-      />
-    );
-  }
-  return (
-    <div className="flex h-20 w-full items-center justify-center rounded-lg border border-dashed border-gray-200 bg-white px-2 text-center text-[10px] text-gray-400">
-      {fallback}
-    </div>
-  );
-}
-
 function Section({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
   return (
     <div className="min-w-0 overflow-hidden rounded-2xl border border-[#EAE3D2] bg-[#FAF7F2] p-3.5 sm:p-4">
@@ -95,7 +76,6 @@ export function OrderDetailModal({ orderId, onClose, showInternal = false }: { o
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
-  const [sigs, setSigs] = useState<{ groom: string | null; bride: string | null }>({ groom: null, bride: null });
 
   useEffect(() => {
     if (!orderId) return;
@@ -103,20 +83,12 @@ export function OrderDetailModal({ orderId, onClose, showInternal = false }: { o
     setOrder(null);
     setError(false);
     setLoading(true);
-    setSigs({ groom: null, bride: null });
 
     fetchOrderById(orderId)
-      .then(async (o) => {
+      .then((o) => {
         if (cancelled) return;
         setOrder(o);
         setLoading(false);
-        if (!o) return;
-
-        const [groom, bride] = await Promise.all([
-          o.groom_signature_path ? signatureUrl(o.groom_signature_path) : Promise.resolve(null),
-          o.bride_signature_path ? signatureUrl(o.bride_signature_path) : Promise.resolve(null)
-        ]);
-        if (!cancelled) setSigs({ groom, bride });
       })
       .catch(() => {
         if (cancelled) return;
@@ -183,13 +155,6 @@ export function OrderDetailModal({ orderId, onClose, showInternal = false }: { o
       ? localCopy.websiteQuote
       : labelOr(`admin.source_${order.order_source}`, order.order_source)
     : null;
-  const signatureEntries = order
-    ? ([
-        ['groom', order.groom_sign_date, order.groom_signature_path],
-        ['bride', order.bride_sign_date, order.bride_signature_path]
-      ] as const).filter(([, date, path]) => Boolean(date || path))
-    : [];
-
   return (
     <div
       className="fixed inset-0 z-[120] flex items-center justify-center overflow-x-hidden bg-black/50 p-2 sm:p-4"
@@ -292,23 +257,6 @@ export function OrderDetailModal({ orderId, onClose, showInternal = false }: { o
                 </Section>
               )}
 
-              {signatureEntries.length > 0 && (
-                <Section icon={<FileSignature className="h-4 w-4 shrink-0" aria-hidden="true" />} title={t('orderDetail.sectionSignatures')}>
-                  <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
-                    {signatureEntries.map(([who, date]) => (
-                      <div key={who} className="min-w-0">
-                        <p className="mb-1 break-words text-[11px] font-bold text-gray-600">{t(who === 'groom' ? 'orderDetail.groomSign' : 'orderDetail.brideSign')}</p>
-                        <SignatureImg
-                          url={sigs[who]}
-                          label={t(who === 'groom' ? 'orderDetail.groomSign' : 'orderDetail.brideSign')}
-                          fallback={t('orderDetail.signatureOnFile')}
-                        />
-                        {date && <p className="mt-1 break-words text-[10px] text-gray-400 [overflow-wrap:anywhere]">{t('orderDetail.signedOn')}: {date}</p>}
-                      </div>
-                    ))}
-                  </div>
-                </Section>
-              )}
             </>
           )}
         </div>
