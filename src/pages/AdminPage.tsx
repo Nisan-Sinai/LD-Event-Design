@@ -36,11 +36,13 @@ export function AdminPage() {
       type="button"
       onClick={() => setTab(key)}
       aria-pressed={tab === key}
-      className={`flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold transition-all ${
-        tab === key ? 'bg-[#B29259] text-white shadow-sm' : 'text-gray-600 hover:bg-[#FAF7F2] hover:text-[#B29259]'
+      className={`flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-3 text-[11px] font-extrabold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B29259]/50 focus-visible:ring-offset-2 sm:px-5 sm:text-xs ${
+        tab === key
+          ? 'border-[#B29259] bg-gradient-to-r from-[#A9854F] via-[#B29259] to-[#C7A769] text-white shadow-[0_8px_22px_rgba(178,146,89,0.24)]'
+          : 'border-[#E0D4C3] bg-[#FFFDF9] text-[#5F554D] shadow-sm hover:border-[#B29259]/70 hover:bg-[#FAF7F2] hover:text-[#8C6D3F]'
       }`}
     >
-      <Icon className="h-4 w-4" aria-hidden="true" />
+      <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
       {label}
     </button>
   );
@@ -52,7 +54,7 @@ export function AdminPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:py-10">
+    <div className="mx-auto w-full min-w-0 max-w-6xl px-3 py-8 sm:px-4 sm:py-10">
       <div className="rounded-[2rem] border border-[#E8C5B8]/70 bg-gradient-to-br from-white via-[#FDFBF7] to-[#F4E3E3]/45 p-5 shadow-[0_24px_70px_rgba(140,109,63,0.10)] sm:p-7">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -82,7 +84,7 @@ export function AdminPage() {
         </div>
       </div>
 
-      <div className="my-6 flex flex-wrap gap-1 rounded-2xl border border-[#EAE3D2] bg-white p-1.5 shadow-sm" role="tablist" aria-label={t('adminPage.adminArea')}>
+      <div className="mx-auto my-6 grid w-full max-w-xl grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] gap-2" role="group" aria-label={t('adminPage.adminArea')}>
         {tabBtn('catalog', t('adminPage.tabCatalogFull'), PackageIcon)}
         {tabBtn('orders', t('adminPage.tabOrders'), ClipboardList)}
       </div>
@@ -113,16 +115,23 @@ export function AdminPage() {
       ) : orders.length === 0 ? (
         <div className="rounded-2xl border border-[#EAE3D2] bg-white p-6 text-center text-sm text-gray-500">{t('adminPage.empty')}</div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-[#EAE3D2] bg-white">
-          <div className="overflow-x-auto">
-            <table className="w-full text-start text-xs">
+        <div className="w-full max-w-full overflow-hidden rounded-2xl border border-[#EAE3D2] bg-white">
+          <div className="w-full max-w-full overflow-hidden">
+            <table className="w-full table-fixed text-start text-[10px] sm:text-xs">
+              <colgroup>
+                <col className="w-[17%]" />
+                <col className="w-[22%]" />
+                <col className="w-[18%]" />
+                <col className="w-[27%]" />
+                <col className="w-[16%]" />
+              </colgroup>
               <thead className="bg-[#FAF7F2] font-bold text-[#8C6D3F]">
                 <tr>
-                  <th className="p-3 text-start">{t('adminPage.colDate')}</th>
-                  <th className="p-3 text-start">{t('adminPage.colClient')}</th>
-                  <th className="p-3 text-start">{t('adminPage.colEvent')}</th>
-                  <th className="p-3 text-start">{t('adminPage.colPackage')}</th>
-                  <th className="p-3 text-start">{t('adminPage.colTotal')}</th>
+                  <th className="px-1 py-2 text-start leading-tight sm:p-3">{t('adminPage.colDate')}</th>
+                  <th className="px-1 py-2 text-start leading-tight sm:p-3">{t('adminPage.colClient')}</th>
+                  <th className="px-1 py-2 text-start leading-tight sm:p-3">{t('adminPage.colEvent')}</th>
+                  <th className="px-1 py-2 text-start leading-tight sm:p-3">{t('adminPage.colPackage')}</th>
+                  <th className="px-1 py-2 text-start leading-tight sm:p-3">{t('adminPage.colTotal')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -139,13 +148,13 @@ export function AdminPage() {
                     tabIndex={0}
                     role="button"
                     aria-label={`${t('adminPage.viewOrder')}: ${order.groom_name} & ${order.bride_name}`}
-                    className="cursor-pointer transition-colors hover:bg-[#FAF7F2] focus:bg-[#FAF7F2] focus:outline-none"
+                    className="cursor-pointer align-top transition-colors hover:bg-[#FAF7F2] focus:bg-[#FAF7F2] focus:outline-none"
                   >
-                    <td className="whitespace-nowrap p-3 text-gray-500">{new Date(order.created_at).toLocaleDateString()}</td>
-                    <td className="p-3 font-bold text-gray-800">{order.groom_name} &amp; {order.bride_name}</td>
-                    <td className="whitespace-nowrap p-3 text-gray-600">{order.event_date ?? '—'}</td>
-                    <td className="p-3 text-gray-600">{order.package_title}</td>
-                    <td className="whitespace-nowrap p-3 font-black text-[#8C6D3F]">₪{Number(order.total_price).toLocaleString()}</td>
+                    <td className="break-words px-1 py-2.5 leading-tight text-gray-500 sm:p-3 sm:leading-normal">{new Date(order.created_at).toLocaleDateString()}</td>
+                    <td className="break-words px-1 py-2.5 font-bold leading-tight text-gray-800 sm:p-3 sm:leading-normal">{order.groom_name} &amp; {order.bride_name}</td>
+                    <td className="break-words px-1 py-2.5 leading-tight text-gray-600 sm:p-3 sm:leading-normal">{order.event_date ?? '—'}</td>
+                    <td className="break-words px-1 py-2.5 leading-tight text-gray-600 sm:p-3 sm:leading-normal">{order.package_title}</td>
+                    <td className="whitespace-nowrap px-0.5 py-2.5 text-center font-black text-[#8C6D3F] sm:p-3 sm:text-start">₪{Number(order.total_price).toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>

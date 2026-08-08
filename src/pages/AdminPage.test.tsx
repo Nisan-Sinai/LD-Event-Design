@@ -46,6 +46,24 @@ describe('AdminPage', () => {
     await waitFor(() => expect(fetchOrders).toHaveBeenCalledWith());
   });
 
+  it('presents the admin modes as a clear single-row switcher', () => {
+    renderAdmin();
+    const switcher = screen.getByRole('group', { name: 'אזור הניהול' });
+    const catalogTab = screen.getByRole('button', { name: 'תמונות, מוצרים וחבילות' });
+    const ordersTab = screen.getByRole('button', { name: 'ניהול הזמנות' });
+
+    expect(switcher).toHaveClass('grid', 'grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]');
+    expect(catalogTab).toHaveClass('rounded-full', 'bg-gradient-to-r');
+    expect(catalogTab).toHaveAttribute('aria-pressed', 'true');
+    expect(ordersTab).toHaveClass('rounded-full');
+    expect(ordersTab).toHaveAttribute('aria-pressed', 'false');
+
+    fireEvent.click(ordersTab);
+    expect(catalogTab).toHaveAttribute('aria-pressed', 'false');
+    expect(ordersTab).toHaveAttribute('aria-pressed', 'true');
+    expect(ordersTab).toHaveClass('bg-gradient-to-r');
+  });
+
   it('shows blocked orders state when Supabase is not configured', async () => {
     a.configured = false;
     renderAdmin();
@@ -71,6 +89,14 @@ describe('AdminPage', () => {
     expect(screen.getByText('בר מתוק')).toBeInTheDocument();
     expect(screen.getByText('₪2,500')).toBeInTheDocument();
     expect(screen.getByText('—')).toBeInTheDocument();
+
+    const table = screen.getByRole('table');
+    expect(table).toHaveClass('w-full', 'table-fixed');
+    expect(table.parentElement).toHaveClass('overflow-hidden');
+    expect(table.parentElement).not.toHaveClass('overflow-x-auto');
+    const eventDateCell = screen.getByText('2026-09-01').closest('td');
+    expect(eventDateCell).toHaveClass('break-words');
+    expect(eventDateCell).not.toHaveClass('whitespace-nowrap');
   });
 
   it('falls back to blocked when the orders query throws', async () => {

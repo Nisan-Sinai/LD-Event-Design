@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import { Facebook, Instagram, LogOut, Phone, ShoppingBag, Sparkles, User as UserIcon, X } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { useCart } from '../cart/CartProvider';
@@ -33,6 +33,7 @@ function money(value: number) {
 }
 
 export function SiteLayout({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
   const { t, tList, lang, dir, setLang } = useI18n();
   const { user, role, roleLoading, signOut } = useAuth();
   const { itemCount, subtotal } = useCart();
@@ -97,7 +98,19 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
     };
   }, [legalModal]);
 
-  const navLink = 'rounded-full px-3 py-2 text-xs font-bold text-[#4A4540] transition hover:bg-white/75 hover:text-[#B8860B]';
+  const buildPackageHashes = ['#products', '#packages', '#design-details'];
+  const isBuildPackageActive =
+    location.pathname === '/' &&
+    (buildPackageHashes.includes(location.hash) || location.hash.startsWith('#product-category-'));
+  const isHomeActive = location.pathname === '/' && !isBuildPackageActive;
+  const isAccountActive = location.pathname === '/account';
+  const isAdminActive = location.pathname === '/admin';
+  const navLinkClass = (active: boolean) =>
+    `rounded-full px-4 py-2 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8860B] focus-visible:ring-offset-2 ${
+      active
+        ? 'bg-gradient-to-r from-[#B8860B] to-[#D4AF37] text-white shadow-[0_7px_20px_rgba(184,134,11,0.24)] hover:brightness-105'
+        : 'text-[#4A4540] hover:bg-white/75 hover:text-[#B8860B]'
+    }`;
   const cartText = t('nav.cart');
 
   return (
@@ -119,10 +132,10 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
           </Link>
 
           <nav className="order-last flex w-full items-center justify-center gap-1 border-t border-[#E8C5B8]/55 pt-2 sm:order-none sm:w-auto sm:border-0 sm:pt-0" aria-label={t('nav.menu')}>
-            <Link to="/" className={navLink}>{t('nav.home')}</Link>
-            <a href="/#packages" className={navLink}>{t('nav.buildPackage')}</a>
-            {!roleLoading && role === 'customer' && <Link to="/account" className={navLink}>{t('nav.account')}</Link>}
-            {!roleLoading && role === 'admin' && <Link to="/admin" className={navLink}>{t('nav.admin')}</Link>}
+            <Link to="/" aria-current={isHomeActive ? 'page' : undefined} className={navLinkClass(isHomeActive)}>{t('nav.home')}</Link>
+            <Link to="/#packages" aria-current={isBuildPackageActive ? 'location' : undefined} className={navLinkClass(isBuildPackageActive)}>{t('nav.buildPackage')}</Link>
+            {!roleLoading && role === 'customer' && <Link to="/account" aria-current={isAccountActive ? 'page' : undefined} className={navLinkClass(isAccountActive)}>{t('nav.account')}</Link>}
+            {!roleLoading && role === 'admin' && <Link to="/admin" aria-current={isAdminActive ? 'page' : undefined} className={navLinkClass(isAdminActive)}>{t('nav.admin')}</Link>}
           </nav>
 
           <div className="flex items-center gap-2">
