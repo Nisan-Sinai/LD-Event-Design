@@ -1,5 +1,5 @@
 // Supabase Edge Function — על כל הזמנה חדשה:
-//   1) שולחת מייל ללירון (בעלת האתר) — כל פרטי ההזמנה + קישורים לחתימות
+//   1) שולחת מייל ללירון (בעלת האתר) — כל פרטי ההזמנה
 //   2) שולחת מייל אישור ללקוח
 //   3) מוסיפה את האירוע ליומן Google של לירון (אם הוגדרו סודות Google)
 //
@@ -9,7 +9,6 @@
 // סודות:  GMAIL_USER, GMAIL_APP_PASSWORD, OWNER_EMAIL
 //         (אופציונלי ליומן) GOOGLE_SA_EMAIL, GOOGLE_SA_PRIVATE_KEY, GOOGLE_CALENDAR_ID
 
-import { createClient } from 'jsr:@supabase/supabase-js@2';
 import nodemailer from 'npm:nodemailer@6.9.16';
 
 interface OrderRecord {
@@ -34,10 +33,6 @@ interface OrderRecord {
   coupon_code: string | null;
   coupon_discount: number;
   total_price: number;
-  groom_sign_date: string | null;
-  bride_sign_date: string | null;
-  groom_signature_path: string | null;
-  bride_signature_path: string | null;
 }
 
 const GMAIL_USER = Deno.env.get('GMAIL_USER')!;
@@ -51,11 +46,6 @@ const GOOGLE_SA_EMAIL = Deno.env.get('GOOGLE_SA_EMAIL') ?? '';
 const GOOGLE_SA_PRIVATE_KEY = (Deno.env.get('GOOGLE_SA_PRIVATE_KEY') ?? '').replace(/\\n/g, '\n');
 const GOOGLE_CALENDAR_ID = Deno.env.get('GOOGLE_CALENDAR_ID') ?? '';
 
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL')!,
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-);
-
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 465,
@@ -64,14 +54,6 @@ const transporter = nodemailer.createTransport({
 });
 
 const ils = (n: number) => `₪${Number(n || 0).toLocaleString('he-IL')}`;
-
-async function signedUrl(path: string | null): Promise<string | null> {
-  if (!path) return null;
-  const { data } = await supabase.storage
-    .from('signatures')
-    .createSignedUrl(path, 60 * 60 * 24 * 30); // 30 ימים
-  return data?.signedUrl ?? null;
-}
 
 async function sendEmail(to: string, subject: string, html: string) {
   await transporter.sendMail({ from: FROM, to, subject, html });
@@ -197,9 +179,6 @@ Deno.serve(async (req) => {
     const o: OrderRecord = payload.record;
     if (!o) return new Response('no record', { status: 400 });
 
-    const groomSig = await signedUrl(o.groom_signature_path);
-    const brideSig = await signedUrl(o.bride_signature_path);
-
     const wrap = (title: string, body: string) => `
       <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;border:1px solid #EAE3D2;border-radius:12px;overflow:hidden" dir="rtl">
         <div style="background:#B29259;color:#fff;padding:16px 20px">
@@ -213,15 +192,10 @@ Deno.serve(async (req) => {
       </div>`;
 
     // 1) מייל ללירון (בעלת האתר)
-    const sigLinks = `
-      <p style="font-size:13px">חתימות:
-        ${groomSig ? `<a href="${groomSig}">חתימת בעל האירוע</a>` : 'בעל האירוע: -'} |
-        ${brideSig ? `<a href="${brideSig}">חתימת בעלת האירוע</a>` : 'בעלת האירוע: -'}
-      </p>`;
     await sendEmail(
       OWNER_EMAIL,
       `הזמנה חדשה: ${o.groom_name} & ${o.bride_name} — ${ils(o.total_price)}`,
-      wrap('התקבלה הזמנה חדשה 🎉', orderRows(o) + sigLinks)
+      wrap('התקבלה הזמנה חדשה 🎉', orderRows(o))
     );
 
     // 2) מייל אישור ללקוח — רק אם קיים אימייל תקין (הזמנת מנהל יכולה להיות בלי),
