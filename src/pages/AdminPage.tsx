@@ -1,21 +1,46 @@
 import { useEffect, useState } from 'react';
-import { ClipboardList, EyeOff, ImagePlus, LayoutDashboard, Package as PackageIcon, Pencil, ShoppingBag } from 'lucide-react';
+import { AlertTriangle, ClipboardList, EyeOff, ImagePlus, LayoutDashboard, Package as PackageIcon, Pencil, ShoppingBag, Trash2 } from 'lucide-react';
 import { OrderDetailModal } from '../components/OrderDetailModal';
 import { PackageManager } from '../components/PackageManager';
 import { ProductManager } from '../components/ProductManager';
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/i18n';
-import { fetchOrders, type OrderRow } from '../lib/orders';
+import { deleteOrder, fetchOrders, type OrderRow } from '../lib/orders';
 
 type AdminTab = 'catalog' | 'orders';
 
+const DELETE_COPY = {
+  he: {
+    action: 'מחיקת הזמנה',
+    title: 'למחוק את ההזמנה?',
+    warning: 'הפעולה תמחק את ההזמנה לצמיתות ולא ניתן לבטל אותה.',
+    cancel: 'ביטול',
+    confirm: 'כן, למחוק',
+    deleting: 'מוחק…',
+    error: 'לא הצלחנו למחוק את ההזמנה. נסו שוב.'
+  },
+  en: {
+    action: 'Delete order',
+    title: 'Delete this order?',
+    warning: 'This permanently deletes the order and cannot be undone.',
+    cancel: 'Cancel',
+    confirm: 'Yes, delete',
+    deleting: 'Deleting…',
+    error: 'We could not delete the order. Please try again.'
+  }
+} as const;
+
 export function AdminPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const deleteCopy = DELETE_COPY[lang];
   const { configured, user } = useAuth();
   const [tab, setTab] = useState<AdminTab>('catalog');
   const [orders, setOrders] = useState<OrderRow[] | null>(null);
   const [blocked, setBlocked] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<OrderRow | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => {
     if (!configured) {
@@ -30,6 +55,26 @@ export function AdminPage() {
         setOrders([]);
       });
   }, [configured]);
+
+  const openDelete = (order: OrderRow) => {
+    setDeleteError('');
+    setPendingDelete(order);
+  };
+
+  const confirmDelete = async (order: OrderRow) => {
+    const orderId = order.id;
+    setDeletingId(orderId);
+    setDeleteError('');
+    try {
+      await deleteOrder(orderId);
+      setOrders((current) => current!.filter((item) => item.id !== orderId));
+      setPendingDelete(null);
+    } catch {
+      setDeleteError(deleteCopy.error);
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const tabBtn = (key: AdminTab, label: string, Icon: typeof ClipboardList) => (
     <button
@@ -139,22 +184,41 @@ export function AdminPage() {
                   <tr
                     key={order.id}
                     onClick={() => setSelectedId(order.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        setSelectedId(order.id);
-                      }
-                    }}
-                    tabIndex={0}
-                    role="button"
-                    aria-label={`${t('adminPage.viewOrder')}: ${order.groom_name} & ${order.bride_name}`}
-                    className="cursor-pointer align-top transition-colors hover:bg-[#FAF7F2] focus:bg-[#FAF7F2] focus:outline-none"
+                    className="cursor-pointer align-top transition-colors hover:bg-[#FAF7F2]"
                   >
                     <td className="break-words px-1 py-2.5 leading-tight text-gray-500 sm:p-3 sm:leading-normal">{new Date(order.created_at).toLocaleDateString()}</td>
-                    <td className="break-words px-1 py-2.5 font-bold leading-tight text-gray-800 sm:p-3 sm:leading-normal">{order.groom_name} &amp; {order.bride_name}</td>
+                    <td className="break-words px-1 py-2.5 font-bold leading-tight text-gray-800 sm:p-3 sm:leading-normal">
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setSelectedId(order.id);
+                        }}
+                        aria-label={`${t('adminPage.viewOrder')}: ${order.groom_name} & ${order.bride_name}`}
+                        className="w-full break-words text-start font-bold text-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B29259]/50"
+                      >
+                        {order.groom_name} &amp; {order.bride_name}
+                      </button>
+                    </td>
                     <td className="break-words px-1 py-2.5 leading-tight text-gray-600 sm:p-3 sm:leading-normal">{order.event_date ?? '—'}</td>
                     <td className="break-words px-1 py-2.5 leading-tight text-gray-600 sm:p-3 sm:leading-normal">{order.package_title}</td>
-                    <td className="whitespace-nowrap px-0.5 py-2.5 text-center font-black text-[#8C6D3F] sm:p-3 sm:text-start">₪{Number(order.total_price).toLocaleString()}</td>
+                    <td className="px-0.5 py-2.5 text-center text-[#8C6D3F] sm:p-3 sm:text-start">
+                      <div className="flex flex-col items-center gap-1 sm:items-start">
+                        <span className="whitespace-nowrap font-black">₪{Number(order.total_price).toLocaleString()}</span>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            openDelete(order);
+                          }}
+                          aria-label={`${deleteCopy.action}: ${order.groom_name} & ${order.bride_name}`}
+                          title={deleteCopy.action}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-full text-red-500 transition-colors hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -162,6 +226,59 @@ export function AdminPage() {
           </div>
         </div>
       ))}
+
+      {pendingDelete && (
+        <div
+          className="fixed inset-0 z-[140] flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !deletingId) {
+              setDeleteError('');
+              setPendingDelete(null);
+            }
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-order-title"
+            className="w-full max-w-sm rounded-[2rem] border border-red-100 bg-white p-5 text-center shadow-[0_24px_80px_rgba(44,44,44,0.24)] sm:p-6"
+          >
+            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
+              <AlertTriangle className="h-6 w-6" aria-hidden="true" />
+            </span>
+            <h2 id="delete-order-title" className="mt-4 text-xl font-black text-[#3F352F]">{deleteCopy.title}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-gray-600">{deleteCopy.warning}</p>
+            <div className="mt-4 rounded-2xl bg-[#FAF7F2] px-4 py-3 text-sm">
+              <p className="font-black text-[#4D4037]">{pendingDelete.groom_name} &amp; {pendingDelete.bride_name}</p>
+              <p className="mt-1 text-xs text-gray-500">{pendingDelete.event_date ?? '—'} · {pendingDelete.package_title ?? '—'}</p>
+            </div>
+            {deleteError && <p role="alert" className="mt-3 text-xs font-bold text-red-600">{deleteError}</p>}
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                autoFocus
+                disabled={Boolean(deletingId)}
+                onClick={() => {
+                  setDeleteError('');
+                  setPendingDelete(null);
+                }}
+                className="rounded-full border border-[#DED5C7] px-4 py-3 text-sm font-extrabold text-[#5F554D] disabled:opacity-50"
+              >
+                {deleteCopy.cancel}
+              </button>
+              <button
+                type="button"
+                disabled={Boolean(deletingId)}
+                onClick={() => void confirmDelete(pendingDelete)}
+                className="inline-flex items-center justify-center gap-1.5 rounded-full bg-red-600 px-4 py-3 text-sm font-extrabold text-white shadow-sm transition-colors hover:bg-red-700 disabled:cursor-wait disabled:opacity-60"
+              >
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
+                {deletingId ? deleteCopy.deleting : deleteCopy.confirm}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <OrderDetailModal orderId={selectedId} onClose={() => setSelectedId(null)} showInternal />
     </div>
