@@ -10,10 +10,10 @@ const auth = vi.hoisted(() => ({
 
 vi.mock('../auth/AuthProvider', () => ({ useAuth: () => auth.value }));
 
-const renderLayout = () =>
+const renderLayout = (initialEntry = '/') =>
   render(
     <I18nProvider>
-      <MemoryRouter><SiteLayout><div>CHILD</div></SiteLayout></MemoryRouter>
+      <MemoryRouter initialEntries={[initialEntry]}><SiteLayout><div>CHILD</div></SiteLayout></MemoryRouter>
     </I18nProvider>
   );
 
@@ -30,6 +30,37 @@ describe('SiteLayout', () => {
     expect(screen.getAllByText('LD Event Design').length).toBeGreaterThan(0);
     expect(screen.getByRole('banner')).toBeInTheDocument();
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
+  });
+
+  it('highlights the active header destination with the brand color', () => {
+    const homeRender = renderLayout('/');
+    let header = within(screen.getByRole('banner'));
+    let homeLink = header.getByRole('link', { name: 'בית' });
+    let buildLink = header.getByRole('link', { name: 'בניית חבילה' });
+
+    expect(homeLink).toHaveAttribute('aria-current', 'page');
+    expect(homeLink).toHaveClass('bg-gradient-to-r', 'text-white');
+    expect(buildLink).not.toHaveAttribute('aria-current');
+    homeRender.unmount();
+
+    const buildRender = renderLayout('/#packages');
+    header = within(screen.getByRole('banner'));
+    homeLink = header.getByRole('link', { name: 'בית' });
+    buildLink = header.getByRole('link', { name: 'בניית חבילה' });
+
+    expect(buildLink).toHaveAttribute('aria-current', 'location');
+    expect(buildLink).toHaveClass('bg-gradient-to-r', 'text-white');
+    expect(homeLink).not.toHaveAttribute('aria-current');
+    buildRender.unmount();
+
+    auth.value = { user: { email: 'admin@example.com' }, role: 'admin', signOut: vi.fn() };
+    renderLayout('/admin');
+    header = within(screen.getByRole('banner'));
+    const adminLink = header.getByRole('link', { name: 'ניהול' });
+
+    expect(adminLink).toHaveAttribute('aria-current', 'page');
+    expect(adminLink).toHaveClass('bg-gradient-to-r', 'text-white');
+    expect(header.getByRole('link', { name: 'בית' })).not.toHaveAttribute('aria-current');
   });
 
   it('keeps customer authentication quiet and exposes a dedicated manager login', () => {
