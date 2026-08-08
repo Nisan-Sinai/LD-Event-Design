@@ -42,7 +42,7 @@ export function RegisterPage() {
     const login = await signIn(email.trim(), password);
     setBusy(false);
     if (!login.error) {
-      navigate('/order', { replace: true });
+      navigate('/#packages', { replace: true });
       return;
     }
     setSuccess(true);

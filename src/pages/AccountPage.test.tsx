@@ -8,7 +8,7 @@ const a = vi.hoisted(() => ({ configured: true, user: { id: 'u1' } as { id: stri
 const fetchOrders = vi.hoisted(() => vi.fn());
 const fetchOrderById = vi.hoisted(() => vi.fn());
 vi.mock('../auth/AuthProvider', () => ({ useAuth: () => ({ configured: a.configured, user: a.user }) }));
-vi.mock('../lib/orders', () => ({ fetchOrders, fetchOrderById, signatureUrl: vi.fn(async () => null) }));
+vi.mock('../lib/orders', () => ({ fetchOrders, fetchOrderById }));
 
 const renderAccount = () =>
   render(
@@ -38,6 +38,7 @@ describe('AccountPage', () => {
     renderAccount();
     await waitFor(() => expect(screen.getByText('אין לך עדיין הזמנות.')).toBeInTheDocument());
     expect(fetchOrders).toHaveBeenCalledWith({ userId: 'u1' });
+    expect(screen.getByRole('link', { name: 'הזמנה חדשה' })).toHaveAttribute('href', '/#packages');
   });
 
   it('renders the customer orders (with and without event date/location)', async () => {

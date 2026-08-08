@@ -323,7 +323,7 @@ export function HomePage() {
       <section id="packages" className="scroll-mt-36 bg-[#FDFBF7] py-16 sm:py-24">
         <div className="mx-auto max-w-6xl px-4">
           <div className="mb-12 text-center">
-            <p className="text-[11px] font-bold uppercase tracking-[0.35em] text-[#B8860B]">Signature collections</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.35em] text-[#B8860B]">Curated collections</p>
             <h2 className="font-display mt-3 text-4xl font-black text-[#2C2C2C] sm:text-6xl">{copy.packages}</h2>
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-[#6C625A]">{copy.mediaHint}</p>
           </div>

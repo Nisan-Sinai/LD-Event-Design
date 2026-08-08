@@ -7,7 +7,7 @@ import { SiteLayout } from './components/SiteLayout';
 import { Spinner } from './components/Spinner';
 import { PackagesProvider } from './packages/PackagesProvider';
 
-// כל מסלול נטען עצלה כדי שהצ'אנק הראשי לא יישא את אזור הניהול והטופס הישן.
+// כל מסלול נטען עצלה כדי שהצ'אנק הראשי יישאר קטן ומהיר.
 // העמודים מיוצאים בשם, ולכן ממופים ל-default שעליו React.lazy מסתמך.
 const AdminPage = lazy(() => import('./pages/AdminPage').then((m) => ({ default: m.AdminPage })));
 const AccountPage = lazy(() => import('./pages/AccountPage').then((m) => ({ default: m.AccountPage })));
@@ -17,7 +17,6 @@ const HomePage = lazy(() => import('./pages/HomePage').then((m) => ({ default: m
 const LoginPage = lazy(() => import('./pages/LoginPage').then((m) => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import('./pages/RegisterPage').then((m) => ({ default: m.RegisterPage })));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage })));
-const OrderPage = lazy(() => import('./App'));
 
 // גבול ה-Suspense יושב בתוך ה-layout כדי שהכותרת והניווט יישארו על המסך
 // בזמן הורדת הצ'אנק, במקום שהעמוד כולו יוחלף בספינר.
@@ -107,15 +106,8 @@ export function Root() {
               <Route path="/login" element={<Page><LoginPage /></Page>} />
               <Route path="/register" element={<Page><RegisterPage /></Page>} />
               <Route path="/reset-password" element={<Page><ResetPasswordPage /></Page>} />
-              {/* הטופס הישן נשאר זמין למנהל ולהזמנות חוזה מורכבות. */}
-              <Route
-                path="/order"
-                element={
-                  <Suspense fallback={<Spinner />}>
-                    <OrderPage />
-                  </Suspense>
-                }
-              />
+              {/* קישור ישן: שולחים תמיד לבונה החבילה הפעיל. */}
+              <Route path="/order" element={<Navigate to="/#packages" replace />} />
               <Route
                 path="/account"
                 element={

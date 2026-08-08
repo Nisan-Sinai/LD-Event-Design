@@ -1,16 +1,28 @@
-// Supabase Edge Function — על כל הזמנה חדשה:
-//   1) שולחת מייל ללירון (בעלת האתר) — כל פרטי ההזמנה + קישורים לחתימות
-//   2) שולחת מייל אישור ללקוח
-//   3) מוסיפה את האירוע ליומן Google של לירון (אם הוגדרו סודות Google)
-//
-// מופעלת ע"י Database Webhook על INSERT לטבלת public.orders.
-//
-// פריסה:  node scripts/deploy-function.cjs send-order-emails supabase/functions/send-order-emails/index.ts
-// סודות:  GMAIL_USER, GMAIL_APP_PASSWORD, OWNER_EMAIL
-//         (אופציונלי ליומן) GOOGLE_SA_EMAIL, GOOGLE_SA_PRIVATE_KEY, GOOGLE_CALENDAR_ID
+// Supabase Edge Function — order and quote notifications.
+// Triggered by public.notify_new_order() after INSERT into public.orders.
+// Sends a styled summary document to the manager and, when supplied, to the customer.
 
-import { createClient } from 'jsr:@supabase/supabase-js@2';
 import nodemailer from 'npm:nodemailer@6.9.16';
+
+interface UpgradeLine {
+  description: string;
+  price: number;
+  quantity?: number;
+}
+
+interface QuoteMetadata {
+  palette?: string;
+  customColors?: string;
+  flowerColor?: string;
+  balloonColor?: string;
+  tableclothColor?: string;
+  customRequest?: string;
+  customerNotes?: string;
+  quoteOnly?: boolean;
+  noPaymentCollected?: boolean;
+  policyAcceptedAt?: string;
+  policyVersion?: string;
+}
 
 interface OrderRecord {
   id: string;
@@ -27,34 +39,26 @@ interface OrderRecord {
   composites_count: string | null;
   sponge_count: string | null;
   include_delivery: boolean;
-  upgrades: { description: string; price: number }[];
+  upgrades: UpgradeLine[] | null;
   base_price: number;
   upgrades_total: number;
   delivery_price: number;
   coupon_code: string | null;
   coupon_discount: number;
   total_price: number;
-  groom_sign_date: string | null;
-  bride_sign_date: string | null;
-  groom_signature_path: string | null;
-  bride_signature_path: string | null;
+  order_source?: string | null;
+  referral_detail?: string | null;
+  internal_notes?: string | null;
 }
 
-const GMAIL_USER = Deno.env.get('GMAIL_USER')!;
-const GMAIL_APP_PASSWORD = Deno.env.get('GMAIL_APP_PASSWORD')!;
+const GMAIL_USER = Deno.env.get('GMAIL_USER') ?? '';
+const GMAIL_APP_PASSWORD = Deno.env.get('GMAIL_APP_PASSWORD') ?? '';
 const OWNER_EMAIL = Deno.env.get('OWNER_EMAIL') ?? GMAIL_USER;
 const FROM = `LD Event Design <${GMAIL_USER}>`;
 
-// סודות יומן Google (אופציונלי) — חשבון שירות שמשתף את היומן של לירון
 const GOOGLE_SA_EMAIL = Deno.env.get('GOOGLE_SA_EMAIL') ?? '';
-// המפתח הפרטי נשמר לרוב עם "\n" טקסטואלי — ממירים לשורות אמיתיות
 const GOOGLE_SA_PRIVATE_KEY = (Deno.env.get('GOOGLE_SA_PRIVATE_KEY') ?? '').replace(/\\n/g, '\n');
 const GOOGLE_CALENDAR_ID = Deno.env.get('GOOGLE_CALENDAR_ID') ?? '';
-
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL')!,
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-);
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
@@ -63,61 +67,182 @@ const transporter = nodemailer.createTransport({
   auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD }
 });
 
-const ils = (n: number) => `₪${Number(n || 0).toLocaleString('he-IL')}`;
+const POLICY = [
+  'במקרה של ביטול כוח עליון — מלחמה או מגפה — הסכום ששולם יועבר לזיכוי לתאריך חלופי על בסיס זמינות. במידה ולא יימצא תאריך מוסכם, לא יוחזרו ללקוח/ה 50% מסכום העסקה הכולל.',
+  'במקרה של כל ביטול אחר לא יוחזר ללקוח כל תשלום והלקוח יחויב במלוא תשלום העסקה.',
+  'במידה ולא יימצא תאריך חלופי, הלקוח/ה יוכל להגיע לקחת את הציוד שהוזמן לאירוע בתשלום מלא של העסקה, ללא הובלה והרכבה ובכפוף להשארת פיקדון עד להחזרת הציוד.',
+  'ניתן לעדכן תוספות קלות בכמויות ההזמנה עד 30 ימי עסקים לפני מועד האירוע.',
+  'האחריות על הציוד בזמן האירוע היא על הלקוח/ה.',
+  'יתרת התשלום תועבר בהעברה בנקאית כאישור, כשבוע לפני מועד האירוע.'
+];
 
-async function signedUrl(path: string | null): Promise<string | null> {
-  if (!path) return null;
-  const { data } = await supabase.storage
-    .from('signatures')
-    .createSignedUrl(path, 60 * 60 * 24 * 30); // 30 ימים
-  return data?.signedUrl ?? null;
+const ils = (value: number) => `₪${Number(value || 0).toLocaleString('he-IL')}`;
+
+function escapeHtml(value: unknown): string {
+  return String(value ?? '').replace(/[&<>'"]/g, (character) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    "'": '&#39;',
+    '"': '&quot;'
+  })[character] ?? character);
 }
 
-async function sendEmail(to: string, subject: string, html: string) {
-  await transporter.sendMail({ from: FROM, to, subject, html });
+function parseMetadata(order: OrderRecord): QuoteMetadata {
+  for (const raw of [order.internal_notes, order.referral_detail]) {
+    if (!raw) continue;
+    try {
+      const parsed = JSON.parse(raw) as QuoteMetadata;
+      if (parsed && typeof parsed === 'object') return parsed;
+    } catch {
+      // Older records may contain plain text. Ignore it and continue.
+    }
+  }
+  return {};
 }
 
-function orderRows(o: OrderRecord): string {
-  const upgrades = (o.upgrades ?? [])
-    .map(u => `<tr><td>${u.description}</td><td style="text-align:left">${ils(u.price)}</td></tr>`)
+function isQuoteRequest(order: OrderRecord, metadata: QuoteMetadata): boolean {
+  return order.order_source === 'website-quote-builder' || metadata.quoteOnly === true;
+}
+
+async function sendEmail(
+  to: string,
+  subject: string,
+  html: string,
+  attachments: Array<{ filename: string; content: string; contentType: string }> = []
+) {
+  await transporter.sendMail({ from: FROM, to, subject, html, attachments });
+}
+
+function detailRow(label: string, value: string, emphasis = false): string {
+  return `<tr>
+    <td style="padding:10px 8px;border-bottom:1px solid #F0E6DF;color:#76695F">${escapeHtml(label)}</td>
+    <td style="padding:10px 8px;border-bottom:1px solid #F0E6DF;text-align:left;color:#2C2C2C;${emphasis ? 'font-weight:800;font-size:17px;color:#B8860B' : ''}">${value}</td>
+  </tr>`;
+}
+
+function orderRows(order: OrderRecord, metadata: QuoteMetadata, quoteOnly: boolean): string {
+  const upgrades = (order.upgrades ?? [])
+    .map((line) => {
+      const quantity = Math.max(1, Number(line.quantity ?? 1));
+      const lineTotal = Number(line.price || 0) * quantity;
+      const description = `${escapeHtml(line.description)}${quantity > 1 ? ` × ${quantity}` : ''}`;
+      return detailRow(description, escapeHtml(ils(lineTotal)));
+    })
     .join('');
+
+  const people = order.bride_name && order.bride_name !== '-'
+    ? `${escapeHtml(order.groom_name)} &amp; ${escapeHtml(order.bride_name)}`
+    : escapeHtml(order.groom_name);
+
+  const paletteRows = quoteOnly
+    ? [
+        metadata.palette ? detailRow('פלטת צבעים', escapeHtml(metadata.palette)) : '',
+        metadata.customColors ? detailRow('גוונים מדויקים', escapeHtml(metadata.customColors)) : '',
+        metadata.flowerColor ? detailRow('גוון לפרחים', escapeHtml(metadata.flowerColor)) : '',
+        metadata.balloonColor ? detailRow('גוון לבלונים', escapeHtml(metadata.balloonColor)) : '',
+        metadata.tableclothColor ? detailRow('גוון למפות וטקסטיל', escapeHtml(metadata.tableclothColor)) : '',
+        metadata.customRequest ? detailRow('בקשה עיצובית אישית', escapeHtml(metadata.customRequest)) : '',
+        metadata.customerNotes ? detailRow('הערות נוספות', escapeHtml(metadata.customerNotes)) : ''
+      ].join('')
+    : '';
+
+  const couponRow = order.coupon_code
+    ? detailRow(
+        'קוד קופון',
+        order.coupon_code === 'מתנה'
+          ? '<b style="color:#18794E">מתנה — מתנה מפתיעה מחכה בשיחת ההתאמה :)</b>'
+          : escapeHtml(order.coupon_code)
+      )
+    : '';
+
   return `
     <table style="width:100%;border-collapse:collapse;font-size:14px" dir="rtl">
-      <tr><td>בעל האירוע</td><td style="text-align:left"><b>${o.groom_name}</b> (${o.groom_phone})</td></tr>
-      <tr><td>בעלת האירוע</td><td style="text-align:left"><b>${o.bride_name}</b> (${o.bride_phone})</td></tr>
-      <tr><td>אימייל</td><td style="text-align:left">${o.email}</td></tr>
-      <tr><td>תאריך אירוע</td><td style="text-align:left">${o.event_date ?? '-'}</td></tr>
-      <tr><td>מיקום</td><td style="text-align:left">${o.event_location ?? '-'}</td></tr>
-      <tr><td>חבילה</td><td style="text-align:left">${o.package_title ?? '-'}${o.table_tier ? ` (${o.table_tier} שולחנות)` : ''}</td></tr>
-      <tr><td>מחיר בסיס</td><td style="text-align:left">${ils(o.base_price)}</td></tr>
+      ${detailRow('שם הלקוח/ה', `<b>${people}</b>`)}
+      ${detailRow('טלפון', escapeHtml(order.groom_phone || order.bride_phone || '-'))}
+      ${detailRow('אימייל', escapeHtml(order.email || '-'))}
+      ${detailRow('תאריך אירוע', escapeHtml(order.event_date ?? '-'))}
+      ${detailRow('מיקום האירוע', escapeHtml(order.event_location ?? '-'))}
+      ${detailRow(quoteOnly ? 'הבחירות שנוספו להצעה' : 'חבילה', escapeHtml(order.package_title ?? '-'))}
       ${upgrades}
-      ${o.include_delivery ? `<tr><td>הובלה והרכבה</td><td style="text-align:left">${ils(o.delivery_price)}</td></tr>` : ''}
-      ${o.coupon_discount ? `<tr><td>הטבת קופון (${o.coupon_code ?? ''})</td><td style="text-align:left">−${ils(o.coupon_discount)}</td></tr>` : ''}
-      <tr style="border-top:2px solid #B29259"><td><b>סה"כ לתשלום</b></td><td style="text-align:left"><b>${ils(o.total_price)}</b></td></tr>
+      ${paletteRows}
+      ${couponRow}
+      ${!quoteOnly && order.include_delivery ? detailRow('הובלה והרכבה', escapeHtml(ils(order.delivery_price))) : ''}
+      ${!quoteOnly && order.coupon_discount ? detailRow(`הטבת קופון (${order.coupon_code ?? ''})`, `−${escapeHtml(ils(order.coupon_discount))}`) : ''}
+      ${detailRow(quoteOnly ? 'אומדן נוכחי להצעת המחיר' : 'סה״כ לתשלום', escapeHtml(ils(order.total_price)), true)}
     </table>`;
 }
 
-// ---------- יומן Google (חשבון שירות + JWT) ----------
+function policySection(): string {
+  return `
+    <div style="margin-top:24px;padding:18px;border-radius:18px;background:#FAF6F0;border:1px solid #E8C5B8">
+      <h3 style="margin:0 0 12px;color:#2C2C2C;font-size:16px">מדיניות ביטולים, שינויים ואחריות</h3>
+      <ol style="margin:0;padding-right:20px;color:#5E5752;font-size:12px;line-height:1.75">
+        ${POLICY.map((item) => `<li style="margin-bottom:7px">${escapeHtml(item)}</li>`).join('')}
+      </ol>
+    </div>`;
+}
+
+function quoteNotice(): string {
+  return `
+    <div style="margin:18px 0;padding:16px;border-radius:18px;background:linear-gradient(135deg,#FFFDFC,#F4E3E3);border:1px solid #E8C5B8;color:#2C2C2C;line-height:1.7">
+      <b>✨ הרכבת החבילה באתר היא לקבלת הצעת מחיר בלבד ללא שום תשלום או התחייבות.</b><br>
+      לאחר שליחת הפרטים ניפגש לשיחת התאמה אישית, ונרכיב יחד את עיצוב החלומות שלכם!
+    </div>`;
+}
+
+function wrap(title: string, body: string, quoteOnly: boolean): string {
+  return `<!doctype html>
+    <html lang="he" dir="rtl">
+      <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+      <body style="margin:0;padding:24px;background:#F5F1EC;font-family:Arial,Helvetica,sans-serif;color:#2C2C2C">
+        <div style="max-width:680px;margin:0 auto;border:1px solid #E8C5B8;border-radius:26px;overflow:hidden;background:#FDFBF7;box-shadow:0 20px 60px rgba(44,44,44,.12)">
+          <div style="background:linear-gradient(135deg,#2C2C2C,#604C3F);color:#fff;padding:26px 28px">
+            <div style="font-size:11px;letter-spacing:3px;color:#E8C5B8">LD EVENT DESIGN</div>
+            <h1 style="margin:8px 0 0;font-size:26px">${escapeHtml(title)}</h1>
+            <div style="margin-top:5px;font-size:12px;color:rgba(255,255,255,.65)">Making all dreams come true</div>
+          </div>
+          <div style="padding:26px 28px">
+            ${quoteOnly ? quoteNotice() : ''}
+            ${body}
+          </div>
+        </div>
+      </body>
+    </html>`;
+}
+
+function summaryDocument(order: OrderRecord, metadata: QuoteMetadata, quoteOnly: boolean): string {
+  const title = quoteOnly ? 'סיכום בקשה להצעת מחיר' : 'סיכום הזמנה';
+  return wrap(
+    title,
+    `<p style="font-size:13px;color:#76695F">מספר פנייה: ${escapeHtml(order.id)}</p>
+     ${orderRows(order, metadata, quoteOnly)}
+     ${policySection()}
+     <p style="margin-top:20px;font-size:12px;color:#8A817A">לכל שאלה: 054-5740423</p>`,
+    quoteOnly
+  );
+}
+
+// ---------- Google Calendar (optional service account integration) ----------
 const textEncoder = new TextEncoder();
 
 function b64url(bytes: Uint8Array): string {
-  let bin = '';
-  for (const b of bytes) bin += String.fromCharCode(b);
-  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 function pemToArrayBuffer(pem: string): ArrayBuffer {
-  const b64 = pem
+  const base64 = pem
     .replace(/-----BEGIN PRIVATE KEY-----/, '')
     .replace(/-----END PRIVATE KEY-----/, '')
     .replace(/\s+/g, '');
-  const bin = atob(b64);
-  const buf = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
-  return buf.buffer;
+  const binary = atob(base64);
+  const buffer = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) buffer[index] = binary.charCodeAt(index);
+  return buffer.buffer;
 }
 
-// מחליף את ה-JWT של חשבון השירות ב-access token עם הרשאת כתיבה ליומן
 async function getGoogleAccessToken(): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const header = { alg: 'RS256', typ: 'JWT' };
@@ -128,10 +253,7 @@ async function getGoogleAccessToken(): Promise<string> {
     iat: now,
     exp: now + 3600
   };
-  const unsigned =
-    `${b64url(textEncoder.encode(JSON.stringify(header)))}.` +
-    `${b64url(textEncoder.encode(JSON.stringify(claim)))}`;
-
+  const unsigned = `${b64url(textEncoder.encode(JSON.stringify(header)))}.${b64url(textEncoder.encode(JSON.stringify(claim)))}`;
   const key = await crypto.subtle.importKey(
     'pkcs8',
     pemToArrayBuffer(GOOGLE_SA_PRIVATE_KEY),
@@ -139,121 +261,117 @@ async function getGoogleAccessToken(): Promise<string> {
     false,
     ['sign']
   );
-  const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, textEncoder.encode(unsigned));
-  const jwt = `${unsigned}.${b64url(new Uint8Array(sig))}`;
-
-  const res = await fetch('https://oauth2.googleapis.com/token', {
+  const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, textEncoder.encode(unsigned));
+  const assertion = `${unsigned}.${b64url(new Uint8Array(signature))}`;
+  const response = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      assertion: jwt
+      assertion
     })
   });
-  const data = await res.json();
-  if (!data.access_token) throw new Error('Google token error: ' + JSON.stringify(data));
+  const data = await response.json();
+  if (!data.access_token) throw new Error(`Google token error: ${JSON.stringify(data)}`);
   return data.access_token as string;
 }
 
-// מוסיף את האירוע ליומן של לירון (אירוע "כל היום" בתאריך האירוע)
-async function createCalendarEvent(o: OrderRecord): Promise<void> {
-  if (!GOOGLE_SA_EMAIL || !GOOGLE_SA_PRIVATE_KEY || !GOOGLE_CALENDAR_ID) return; // לא הוגדר — דילוג
-  if (!o.event_date) return;
+async function createCalendarEvent(order: OrderRecord, quoteOnly: boolean): Promise<void> {
+  if (!GOOGLE_SA_EMAIL || !GOOGLE_SA_PRIVATE_KEY || !GOOGLE_CALENDAR_ID || !order.event_date) return;
 
   const token = await getGoogleAccessToken();
-  const start = o.event_date; // YYYY-MM-DD
-  const end = new Date(new Date(o.event_date).getTime() + 24 * 60 * 60 * 1000)
-    .toISOString()
-    .split('T')[0];
-
+  const start = order.event_date;
+  const end = new Date(new Date(order.event_date).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const description = [
-    `בעל האירוע: ${o.groom_name} (${o.groom_phone})`,
-    `בעלת האירוע: ${o.bride_name} (${o.bride_phone})`,
-    `אימייל: ${o.email}`,
-    o.package_title ? `חבילה: ${o.package_title}${o.table_tier ? ` (${o.table_tier} שולחנות)` : ''}` : '',
-    `סה"כ לתשלום: ${ils(o.total_price)}`
+    `לקוח/ה: ${order.groom_name}${order.bride_name && order.bride_name !== '-' ? ` & ${order.bride_name}` : ''}`,
+    `טלפון: ${order.groom_phone || order.bride_phone}`,
+    `אימייל: ${order.email}`,
+    order.package_title ? `${quoteOnly ? 'בחירות להצעה' : 'חבילה'}: ${order.package_title}` : '',
+    `${quoteOnly ? 'אומדן' : 'סה״כ לתשלום'}: ${ils(order.total_price)}`
   ].filter(Boolean).join('\n');
 
-  const res = await fetch(
+  const response = await fetch(
     `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(GOOGLE_CALENDAR_ID)}/events`,
     {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        summary: `אירוע: ${o.groom_name} ו${o.bride_name}${o.package_title ? ` — ${o.package_title}` : ''}`,
+        summary: `${quoteOnly ? 'פניית הצעת מחיר' : 'אירוע'}: ${order.groom_name}${order.package_title ? ` — ${order.package_title}` : ''}`,
         description,
-        location: o.event_location ?? undefined,
+        location: order.event_location ?? undefined,
         start: { date: start },
         end: { date: end }
       })
     }
   );
-  if (!res.ok) throw new Error('Google Calendar insert failed: ' + (await res.text()));
+  if (!response.ok) throw new Error(`Google Calendar insert failed: ${await response.text()}`);
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (request) => {
   try {
-    const payload = await req.json();
-    const o: OrderRecord = payload.record;
-    if (!o) return new Response('no record', { status: 400 });
+    if (!GMAIL_USER || !GMAIL_APP_PASSWORD || !OWNER_EMAIL) {
+      throw new Error('Email secrets are not configured');
+    }
 
-    const groomSig = await signedUrl(o.groom_signature_path);
-    const brideSig = await signedUrl(o.bride_signature_path);
+    const payload = await request.json();
+    const order = payload?.record as OrderRecord | undefined;
+    if (!order?.id) return new Response('no record', { status: 400 });
 
-    const wrap = (title: string, body: string) => `
-      <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;border:1px solid #EAE3D2;border-radius:12px;overflow:hidden" dir="rtl">
-        <div style="background:#B29259;color:#fff;padding:16px 20px">
-          <h2 style="margin:0">LD Event Design</h2>
-          <div style="font-size:12px;opacity:.9">Making all dreams come true</div>
-        </div>
-        <div style="padding:20px;color:#333">
-          <h3 style="color:#8C6D3F">${title}</h3>
-          ${body}
-        </div>
-      </div>`;
+    const metadata = parseMetadata(order);
+    const quoteOnly = isQuoteRequest(order, metadata);
+    const document = summaryDocument(order, metadata, quoteOnly);
+    const attachment = [{
+      filename: `${quoteOnly ? 'ld-event-design-quote' : 'ld-event-design-order'}-${order.id}.html`,
+      content: document,
+      contentType: 'text/html; charset=utf-8'
+    }];
 
-    // 1) מייל ללירון (בעלת האתר)
-    const sigLinks = `
-      <p style="font-size:13px">חתימות:
-        ${groomSig ? `<a href="${groomSig}">חתימת בעל האירוע</a>` : 'בעל האירוע: -'} |
-        ${brideSig ? `<a href="${brideSig}">חתימת בעלת האירוע</a>` : 'בעלת האירוע: -'}
-      </p>`;
     await sendEmail(
       OWNER_EMAIL,
-      `הזמנה חדשה: ${o.groom_name} & ${o.bride_name} — ${ils(o.total_price)}`,
-      wrap('התקבלה הזמנה חדשה 🎉', orderRows(o) + sigLinks)
+      quoteOnly
+        ? `בקשה חדשה להצעת מחיר: ${order.groom_name} — ${ils(order.total_price)}`
+        : `הזמנה חדשה: ${order.groom_name} & ${order.bride_name} — ${ils(order.total_price)}`,
+      wrap(
+        quoteOnly ? 'התקבלה בקשה חדשה להצעת מחיר ✨' : 'התקבלה הזמנה חדשה 🎉',
+        `${orderRows(order, metadata, quoteOnly)}${policySection()}`,
+        quoteOnly
+      ),
+      attachment
     );
 
-    // 2) מייל אישור ללקוח — רק אם קיים אימייל תקין (הזמנת מנהל יכולה להיות בלי),
-    //    וכשל בשליחה לא מפיל את הפונקציה ולא חוסם את סנכרון היומן.
-    if (o.email && o.email.includes('@')) {
+    if (order.email && order.email.includes('@')) {
       try {
         await sendEmail(
-          o.email,
-          'אישור הזמנה — LD Event Design',
+          order.email,
+          quoteOnly ? 'קיבלנו את בקשת הצעת המחיר — LD Event Design' : 'אישור הזמנה — LD Event Design',
           wrap(
-            `שלום ${o.groom_name} ו${o.bride_name}, תודה על הזמנתכם! 💐`,
-            `<p>קיבלנו את ההזמנה שלכם ונחזור אליכם בהקדם. להלן סיכום:</p>${orderRows(o)}
-             <p style="font-size:13px;color:#888">לכל שאלה ניתן לפנות אלינו בטלפון 054-5740423.</p>`
-          )
+            quoteOnly ? `שלום ${order.groom_name}, הבקשה שלכם התקבלה באהבה` : `שלום ${order.groom_name} ו${order.bride_name}, תודה על הזמנתכם!`,
+            quoteOnly
+              ? `<p style="line-height:1.7">קיבלנו את הבחירות והפרטים שלכם. מצורף מסמך סיכום מעוצב, וניצור איתכם קשר לשיחת התאמה אישית.</p>${orderRows(order, metadata, true)}${policySection()}<p style="font-size:13px;color:#76695F">לכל שאלה: 054-5740423</p>`
+              : `<p>קיבלנו את ההזמנה ונחזור אליכם בהקדם. להלן הסיכום:</p>${orderRows(order, metadata, false)}${policySection()}<p style="font-size:13px;color:#76695F">לכל שאלה: 054-5740423</p>`,
+            quoteOnly
+          ),
+          attachment
         );
-      } catch (mailErr) {
-        console.error('customer confirmation email failed:', mailErr);
+      } catch (mailError) {
+        console.error('customer confirmation email failed:', mailError);
       }
     }
 
-    // 3) הוספת האירוע ליומן Google של לירון (לא מפיל את הפונקציה אם נכשל)
     try {
-      await createCalendarEvent(o);
-    } catch (calErr) {
-      console.error('Google Calendar sync failed:', calErr);
+      await createCalendarEvent(order, quoteOnly);
+    } catch (calendarError) {
+      console.error('Google Calendar sync failed:', calendarError);
     }
 
-    return new Response(JSON.stringify({ ok: true }), {
+    return new Response(JSON.stringify({ ok: true, quoteOnly }), {
       headers: { 'Content-Type': 'application/json' }
     });
-  } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify({ error: String(err) }), { status: 500 });
+  } catch (error) {
+    console.error('send-order-emails failed:', error instanceof Error ? error.message : String(error));
+    return new Response(JSON.stringify({ error: 'notification_failed' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 });

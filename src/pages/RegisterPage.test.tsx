@@ -20,7 +20,7 @@ function renderReg() {
       <MemoryRouter initialEntries={['/register']}>
         <Routes>
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/order" element={<div>ORDER PAGE</div>} />
+          <Route path="/" element={<div>PACKAGE BUILDER</div>} />
         </Routes>
       </MemoryRouter>
     </I18nProvider>
@@ -72,10 +72,10 @@ describe('RegisterPage', () => {
     await waitFor(() => expect(screen.getByText('הסיסמה חייבת לכלול לפחות 6 תווים')).toBeInTheDocument());
   });
 
-  it('signs up then logs in and navigates to /order', async () => {
+  it('signs up then logs in and navigates to the current package builder', async () => {
     renderReg();
     fill('a@b.com', '123456');
-    await waitFor(() => expect(screen.getByText('ORDER PAGE')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('PACKAGE BUILDER')).toBeInTheDocument());
     expect(a.signUp).toHaveBeenCalledWith('a@b.com', '123456');
     expect(a.signIn).toHaveBeenCalledWith('a@b.com', '123456');
   });
