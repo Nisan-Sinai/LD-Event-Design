@@ -61,6 +61,14 @@ export async function fetchOrderById(id: string): Promise<OrderDetail | null> {
   return data as OrderDetail;
 }
 
+/** מוחק הזמנה לפי מזהה. מדיניות RLS מאפשרת את הפעולה למנהל בלבד. */
+export async function deleteOrder(id: string): Promise<void> {
+  if (!isSupabaseConfigured) throw new Error('Supabase is not configured');
+  if (!id.trim()) throw new Error('Order id is required');
+  const { error } = await supabase.from('orders').delete().eq('id', id);
+  if (error) throw error;
+}
+
 /** מפיק כתובת חתומה זמנית לתמונת חתימה (bucket פרטי). מחזיר null אם אין גישה. */
 export async function signatureUrl(path: string | null): Promise<string | null> {
   if (!isSupabaseConfigured || !path) return null;
