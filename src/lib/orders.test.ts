@@ -5,14 +5,18 @@ const mockState: {
   result: { data: unknown; error: unknown };
   single: { data: unknown; error: unknown };
   signed: { data: unknown; error: unknown };
+  deleteResult: { data: unknown; error: unknown };
   eqCalls: unknown[][];
+  deleteEqCalls: unknown[][];
   fromCalls: number;
 } = {
   configured: true,
   result: { data: [], error: null },
   single: { data: null, error: null },
   signed: { data: null, error: null },
+  deleteResult: { data: null, error: null },
   eqCalls: [],
+  deleteEqCalls: [],
   fromCalls: 0
 };
 
@@ -38,6 +42,12 @@ vi.mock('./supabase', () => {
           select: () => ({
             order: () => makeListQuery(),
             eq: () => ({ single: () => Promise.resolve(mockState.single) })
+          }),
+          delete: () => ({
+            eq: (...args: unknown[]) => {
+              mockState.deleteEqCalls.push(args);
+              return Promise.resolve(mockState.deleteResult);
+            }
           })
         };
       },
@@ -48,14 +58,16 @@ vi.mock('./supabase', () => {
   };
 });
 
-import { fetchOrders, fetchOrderById, signatureUrl } from './orders';
+import { deleteOrder, fetchOrders, fetchOrderById, signatureUrl } from './orders';
 
 beforeEach(() => {
   mockState.configured = true;
   mockState.result = { data: [], error: null };
   mockState.single = { data: null, error: null };
   mockState.signed = { data: null, error: null };
+  mockState.deleteResult = { data: null, error: null };
   mockState.eqCalls = [];
+  mockState.deleteEqCalls = [];
   mockState.fromCalls = 0;
 });
 
@@ -104,6 +116,29 @@ describe('fetchOrderById', () => {
   it('throws on error', async () => {
     mockState.single = { data: null, error: new Error('not found') };
     await expect(fetchOrderById('o1')).rejects.toThrow('not found');
+  });
+});
+
+describe('deleteOrder', () => {
+  it('refuses to delete when Supabase is not configured', async () => {
+    mockState.configured = false;
+    await expect(deleteOrder('o1')).rejects.toThrow('Supabase is not configured');
+    expect(mockState.fromCalls).toBe(0);
+  });
+
+  it('deletes only the exact order id', async () => {
+    await deleteOrder('o1');
+    expect(mockState.deleteEqCalls).toEqual([['id', 'o1']]);
+  });
+
+  it('refuses an empty order id before touching the DB', async () => {
+    await expect(deleteOrder('   ')).rejects.toThrow('Order id is required');
+    expect(mockState.fromCalls).toBe(0);
+  });
+
+  it('throws when Supabase rejects the delete', async () => {
+    mockState.deleteResult = { data: null, error: new Error('delete denied') };
+    await expect(deleteOrder('o1')).rejects.toThrow('delete denied');
   });
 });
 
