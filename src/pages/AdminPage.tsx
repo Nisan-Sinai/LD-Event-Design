@@ -69,7 +69,6 @@ export function AdminPage() {
     try {
       await deleteOrder(orderId);
       setOrders((current) => current?.filter((order) => order.id !== orderId) ?? current);
-      if (selectedId === orderId) setSelectedId(null);
       setPendingDelete(null);
     } catch {
       setDeleteError(deleteCopy.error);
