@@ -71,6 +71,14 @@ describe('AdminPage', () => {
     expect(screen.getByText('בר מתוק')).toBeInTheDocument();
     expect(screen.getByText('₪2,500')).toBeInTheDocument();
     expect(screen.getByText('—')).toBeInTheDocument();
+
+    const table = screen.getByRole('table');
+    expect(table).toHaveClass('w-full', 'table-fixed');
+    expect(table.parentElement).toHaveClass('overflow-hidden');
+    expect(table.parentElement).not.toHaveClass('overflow-x-auto');
+    const eventDateCell = screen.getByText('2026-09-01').closest('td');
+    expect(eventDateCell).toHaveClass('break-words');
+    expect(eventDateCell).not.toHaveClass('whitespace-nowrap');
   });
 
   it('falls back to blocked when the orders query throws', async () => {
