@@ -265,7 +265,7 @@ export function HomePage() {
           {productCategories.map((category, index) => (
             <a key={category} href={`#product-category-${index}`} className="shrink-0 rounded-full border border-[#E8C5B8] bg-white px-4 py-2 text-xs font-bold text-[#7A5A46] transition hover:border-[#B8860B] hover:text-[#B8860B]">{productCategoryLabel(category, lang)}</a>
           ))}
-          <a href="#packages" className="shrink-0 rounded-full bg-gradient-to-r from-[#B8860B] to-[#D4AF37] px-4 py-2 text-xs font-bold text-white">{copy.packages}</a>
+          <a href="#packages" className="shrink-0 rounded-full border border-[#E8C5B8] bg-white px-4 py-2 text-xs font-bold text-[#7A5A46] transition hover:border-[#B8860B] hover:text-[#B8860B]">{copy.packages}</a>
         </div>
       </nav>
 
