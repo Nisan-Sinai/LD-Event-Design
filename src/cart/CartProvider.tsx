@@ -19,9 +19,15 @@ export interface CartItem extends CartProduct {
   quantity: number;
 }
 
+export type DesignColorField = 'flowerColor' | 'balloonColor' | 'tableclothColor';
+
 export interface DesignPreferences {
+  // Legacy palette fields stay in storage so existing saved quote drafts keep their data.
   palette: string;
   customColors: string;
+  flowerColor: string;
+  balloonColor: string;
+  tableclothColor: string;
   customRequest: string;
   couponCode: string;
   couponApplied: boolean;
@@ -38,6 +44,7 @@ interface CartValue {
   clearCart: () => void;
   setPalette: (palette: string) => void;
   setCustomColors: (customColors: string) => void;
+  setDesignColor: (field: DesignColorField, color: string) => void;
   setCustomRequest: (customRequest: string) => void;
   applyCoupon: (couponCode: string) => boolean;
   clearCoupon: () => void;
@@ -46,6 +53,9 @@ interface CartValue {
 const EMPTY_PREFERENCES: DesignPreferences = {
   palette: 'לבן וזהב',
   customColors: '',
+  flowerColor: '',
+  balloonColor: '',
+  tableclothColor: '',
   customRequest: '',
   couponCode: '',
   couponApplied: false
@@ -62,6 +72,7 @@ const EMPTY_CART: CartValue = {
   clearCart: () => {},
   setPalette: () => {},
   setCustomColors: () => {},
+  setDesignColor: () => {},
   setCustomRequest: () => {},
   applyCoupon: () => false,
   clearCoupon: () => {}
@@ -110,6 +121,9 @@ function readStoredPreferences(): DesignPreferences {
     return {
       palette: typeof parsed.palette === 'string' && parsed.palette.trim() ? parsed.palette : EMPTY_PREFERENCES.palette,
       customColors: typeof parsed.customColors === 'string' ? parsed.customColors : '',
+      flowerColor: typeof parsed.flowerColor === 'string' ? parsed.flowerColor : '',
+      balloonColor: typeof parsed.balloonColor === 'string' ? parsed.balloonColor : '',
+      tableclothColor: typeof parsed.tableclothColor === 'string' ? parsed.tableclothColor : '',
       customRequest: typeof parsed.customRequest === 'string' ? parsed.customRequest : '',
       couponCode: parsed.couponApplied === true ? GIFT_COUPON : '',
       couponApplied: parsed.couponApplied === true
@@ -169,6 +183,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setPreferences((current) => ({ ...current, customColors }));
   }, []);
 
+  const setDesignColor = useCallback((field: DesignColorField, color: string) => {
+    setPreferences((current) => ({ ...current, [field]: color }));
+  }, []);
+
   const setCustomRequest = useCallback((customRequest: string) => {
     setPreferences((current) => ({ ...current, customRequest }));
   }, []);
@@ -201,11 +219,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       clearCart,
       setPalette,
       setCustomColors,
+      setDesignColor,
       setCustomRequest,
       applyCoupon,
       clearCoupon
     };
-  }, [items, preferences, addItem, updateQuantity, removeItem, clearCart, setPalette, setCustomColors, setCustomRequest, applyCoupon, clearCoupon]);
+  }, [items, preferences, addItem, updateQuantity, removeItem, clearCart, setPalette, setCustomColors, setDesignColor, setCustomRequest, applyCoupon, clearCoupon]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

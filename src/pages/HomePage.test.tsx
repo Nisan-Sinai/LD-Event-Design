@@ -53,9 +53,10 @@ describe('HomePage', () => {
     renderHome();
 
     expect(screen.getByText('האירוע שלכם. האמנות שלנו.')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /הרכבת חבילה אישית/ })).toHaveAttribute('href', '#builder');
+    expect(screen.getByRole('link', { name: /הרכבת חבילה אישית/ })).toHaveAttribute('href', '#products');
     expect(screen.getAllByText(/הרכבת החבילה באתר היא לקבלת הצעת מחיר בלבד/).length).toBeGreaterThan(0);
-    expect(screen.getByRole('heading', { name: 'בואו נרכיב את שפת העיצוב שלכם' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'עכשיו מדייקים את הגוונים' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'בואו נרכיב את שפת העיצוב שלכם' })).not.toBeInTheDocument();
   });
 
   it('critically removes delivery and minimum-order messaging from the homepage', () => {
@@ -66,17 +67,19 @@ describe('HomePage', () => {
     expect(screen.queryByText(/מינימום הזמנה.*2,500/)).not.toBeInTheDocument();
   });
 
-  it('stores palette, precise colors and a custom design request', () => {
+  it('stores separate flower, balloon and table-linen shades plus a custom design request', () => {
     renderHome();
 
-    fireEvent.click(screen.getByRole('button', { name: /בורדו וזהב/ }));
-    fireEvent.change(screen.getByLabelText('גוונים מדויקים שתרצו לשלב'), { target: { value: 'בורדו עמוק וזהב מט' } });
+    fireEvent.click(screen.getByRole('button', { name: 'בורדו' }));
+    fireEvent.click(screen.getByRole('button', { name: 'שמפניה וזהב' }));
+    fireEvent.change(screen.getByLabelText('גוון מדויק / מותאם אישית — מפות וטקסטיל'), { target: { value: 'ירוק זית' } });
     fireEvent.change(screen.getByLabelText(/יש משהו ספציפי/), { target: { value: 'קיר צילום עם פרחים' } });
 
     const stored = JSON.parse(window.localStorage.getItem(CART_DESIGN_STORAGE_KEY) ?? '{}') as Record<string, unknown>;
     expect(stored).toMatchObject({
-      palette: 'בורדו וזהב',
-      customColors: 'בורדו עמוק וזהב מט',
+      flowerColor: 'בורדו',
+      balloonColor: 'שמפניה וזהב',
+      tableclothColor: 'ירוק זית',
       customRequest: 'קיר צילום עם פרחים'
     });
   });
@@ -90,6 +93,7 @@ describe('HomePage', () => {
     fireEvent.click(screen.getByRole('button', { name: `הוספה לסל: ${first.title}` }));
 
     expect(screen.getByText('עגלת קניות: 1 פריט')).toBeInTheDocument();
+    expect(screen.getAllByText('רלוונטי לפי הסל').length).toBeGreaterThan(0);
     expect(screen.getByRole('link', { name: /לצפייה בעגלה/ })).toHaveAttribute('href', '/cart');
   });
 

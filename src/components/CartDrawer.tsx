@@ -100,10 +100,12 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
               <section className="rounded-3xl border border-[#E8C5B8]/70 bg-[#FAF6F0] p-4">
                 <h3 className="flex items-center gap-2 text-sm font-extrabold text-[#2C2C2C]"><Sparkles className="h-4 w-4 text-[#B8860B]" aria-hidden="true" />הבחירות העיצוביות שלכם</h3>
                 <dl className="mt-3 space-y-2 text-xs leading-relaxed text-[#6C625A]">
-                  <div><dt className="inline font-bold text-[#2C2C2C]">פלטה: </dt><dd className="inline">{preferences.palette}</dd></div>
-                  {preferences.customColors && <div><dt className="inline font-bold text-[#2C2C2C]">גוונים מדויקים: </dt><dd className="inline">{preferences.customColors}</dd></div>}
+                  <div><dt className="inline font-bold text-[#2C2C2C]">פרחים: </dt><dd className="inline">{preferences.flowerColor || 'טרם נבחר'}</dd></div>
+                  <div><dt className="inline font-bold text-[#2C2C2C]">בלונים: </dt><dd className="inline">{preferences.balloonColor || 'טרם נבחר'}</dd></div>
+                  <div><dt className="inline font-bold text-[#2C2C2C]">מפות וטקסטיל: </dt><dd className="inline">{preferences.tableclothColor || 'טרם נבחר'}</dd></div>
                   {preferences.customRequest && <div><dt className="inline font-bold text-[#2C2C2C]">בקשה אישית: </dt><dd className="inline">{preferences.customRequest}</dd></div>}
                 </dl>
+                <Link to="/#design-details" onClick={onClose} className="mt-3 inline-flex text-xs font-extrabold text-[#B8860B] underline-offset-4 hover:underline">עדכון גוונים</Link>
               </section>
 
               <section className="rounded-3xl border border-[#E8C5B8]/70 bg-white p-4">

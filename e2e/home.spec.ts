@@ -39,16 +39,18 @@ test.describe('Luxury quote storefront (guest)', () => {
     await expect(page.getByText(/מינימום הזמנה.*2,500/)).toHaveCount(0);
   });
 
-  test('stores design palette, exact shades and custom request', async ({ page }) => {
+  test('stores separate flower, balloon and table-linen shades plus a custom request', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('button', { name: /בורדו וזהב/ }).click();
-    await page.getByLabel('גוונים מדויקים שתרצו לשלב').fill('בורדו עמוק וזהב מט');
+    await page.getByRole('button', { name: 'בורדו' }).click();
+    await page.getByRole('button', { name: 'שמפניה וזהב' }).click();
+    await page.getByLabel('גוון מדויק / מותאם אישית — מפות וטקסטיל').fill('ירוק זית');
     await page.getByLabel(/יש משהו ספציפי/).fill('קיר צילום פרחוני');
 
     const preferences = await page.evaluate(() => JSON.parse(window.localStorage.getItem('ld-event-design-design-v1') ?? '{}'));
     expect(preferences).toMatchObject({
-      palette: 'בורדו וזהב',
-      customColors: 'בורדו עמוק וזהב מט',
+      flowerColor: 'בורדו',
+      balloonColor: 'שמפניה וזהב',
+      tableclothColor: 'ירוק זית',
       customRequest: 'קיר צילום פרחוני'
     });
   });
@@ -109,6 +111,24 @@ test.describe('Luxury quote storefront (guest)', () => {
       expect(productLayout.lefts[0]).not.toBe(productLayout.lefts[1]);
     });
   }
+
+  test('resets route navigation to the top and honors cross-page section links', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'האירוע שלכם. האמנות שלנו.' })).toBeVisible();
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(200);
+
+    await page.getByRole('link', { name: 'כניסת מנהלת' }).click();
+    await expect(page).toHaveURL(/\/login$/);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThanOrEqual(2);
+
+    await page.goto('/cart');
+    await page.getByRole('link', { name: 'חזרה לחנות' }).click();
+    await expect(page).toHaveURL(/\/#packages$/);
+    await expect.poll(() => page.locator('#packages').evaluate((element) => element.getBoundingClientRect().top)).toBeLessThan(190);
+    const packagesTop = await page.locator('#packages').evaluate((element) => element.getBoundingClientRect().top);
+    expect(packagesTop).toBeGreaterThanOrEqual(0);
+  });
 
   test('switches language to English and back', async ({ page }) => {
     await page.goto('/');

@@ -43,8 +43,10 @@ const COPY = {
     genericError: 'לא הצלחנו לשלוח את הבקשה. נסו שוב או פנו אלינו בוואטסאפ.',
     empty: 'העגלה ריקה או שטרם הגעתם למינימום ההזמנה. יש לעדכן את הסל לפני השליחה.',
     policyTitle: 'מדיניות ביטולים, שינויים ואחריות',
-    palette: 'פלטת צבעים',
-    colors: 'גוונים מדויקים',
+    flowerColor: 'גוון לפרחים',
+    balloonColor: 'גוון לבלונים',
+    tableclothColor: 'גוון למפות וטקסטיל',
+    notSelected: 'טרם נבחר',
     request: 'בקשה אישית',
     coupon: 'קופון'
   },
@@ -75,8 +77,10 @@ const COPY = {
     genericError: 'We could not submit the request. Please try again or contact us on WhatsApp.',
     empty: 'The cart is empty or below the minimum. Please update it before submitting.',
     policyTitle: 'Cancellation, changes and responsibility policy',
-    palette: 'Color palette',
-    colors: 'Exact shades',
+    flowerColor: 'Flower shade',
+    balloonColor: 'Balloon shade',
+    tableclothColor: 'Table linen shade',
+    notSelected: 'Not selected',
     request: 'Custom request',
     coupon: 'Coupon'
   }
@@ -268,8 +272,9 @@ export function CheckoutPage() {
             <h3 className="font-display text-2xl font-black text-[#2C2C2C]">{copy.summary}</h3>
             <p className="mt-3 text-xs leading-relaxed text-[#6C625A]">{itemSummary}</p>
             <dl className="mt-5 space-y-3 text-sm">
-              <div className="rounded-2xl bg-[#FAF6F0] p-4"><dt className="font-extrabold text-[#2C2C2C]">{copy.palette}</dt><dd className="mt-1 text-[#6C625A]">{preferences.palette}</dd></div>
-              {preferences.customColors && <div className="rounded-2xl bg-[#FAF6F0] p-4"><dt className="font-extrabold text-[#2C2C2C]">{copy.colors}</dt><dd className="mt-1 text-[#6C625A]">{preferences.customColors}</dd></div>}
+              <div className="rounded-2xl bg-[#FAF6F0] p-4"><dt className="font-extrabold text-[#2C2C2C]">{copy.flowerColor}</dt><dd className="mt-1 text-[#6C625A]">{preferences.flowerColor || copy.notSelected}</dd></div>
+              <div className="rounded-2xl bg-[#FAF6F0] p-4"><dt className="font-extrabold text-[#2C2C2C]">{copy.balloonColor}</dt><dd className="mt-1 text-[#6C625A]">{preferences.balloonColor || copy.notSelected}</dd></div>
+              <div className="rounded-2xl bg-[#FAF6F0] p-4"><dt className="font-extrabold text-[#2C2C2C]">{copy.tableclothColor}</dt><dd className="mt-1 text-[#6C625A]">{preferences.tableclothColor || copy.notSelected}</dd></div>
               {preferences.customRequest && <div className="rounded-2xl bg-[#FAF6F0] p-4"><dt className="font-extrabold text-[#2C2C2C]">{copy.request}</dt><dd className="mt-1 whitespace-pre-wrap text-[#6C625A]">{preferences.customRequest}</dd></div>}
               {preferences.couponApplied && <div className="rounded-2xl bg-emerald-50 p-4"><dt className="font-extrabold text-emerald-800">{copy.coupon}</dt><dd className="mt-1 flex items-center gap-1.5 text-emerald-800"><Sparkles className="h-4 w-4" aria-hidden="true" />{preferences.couponCode}</dd></div>}
               <div className="flex items-center justify-between gap-3 border-t border-[#E8C5B8]/60 pt-5"><dt className="font-extrabold text-[#2C2C2C]">{copy.total}</dt><dd className="font-display text-2xl font-black text-[#B8860B]">{money(subtotal)}</dd></div>

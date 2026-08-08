@@ -20,6 +20,9 @@ export interface CartCustomerDetails {
 export interface QuotePreferences {
   palette: string;
   customColors: string;
+  flowerColor: string;
+  balloonColor: string;
+  tableclothColor: string;
   customRequest: string;
   couponCode: string;
   couponApplied: boolean;
@@ -45,6 +48,9 @@ export async function submitCartOrder(input: CartOrderInput): Promise<{ id: stri
   const quoteMetadata = {
     palette: input.preferences.palette,
     customColors: input.preferences.customColors,
+    flowerColor: input.preferences.flowerColor,
+    balloonColor: input.preferences.balloonColor,
+    tableclothColor: input.preferences.tableclothColor,
     customRequest: input.preferences.customRequest,
     customerNotes: input.customer.notes,
     quoteOnly: true,

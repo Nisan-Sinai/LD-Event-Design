@@ -20,8 +20,9 @@ const item: CartItem = {
 function renderCheckout(items: CartItem[] = [item]) {
   window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
   window.localStorage.setItem(CART_DESIGN_STORAGE_KEY, JSON.stringify({
-    palette: 'לבן וזהב',
-    customColors: 'שמנת וזהב מט',
+    flowerColor: 'לבן ושמנת',
+    balloonColor: 'שמפניה וזהב',
+    tableclothColor: 'שמנת',
     customRequest: 'קיר צילום',
     couponCode: 'מתנה',
     couponApplied: true
@@ -65,8 +66,9 @@ describe('CheckoutPage', () => {
 
   it('shows the selected design preferences and coupon', () => {
     renderCheckout();
-    expect(screen.getByText('לבן וזהב')).toBeInTheDocument();
-    expect(screen.getByText('שמנת וזהב מט')).toBeInTheDocument();
+    expect(screen.getByText('לבן ושמנת')).toBeInTheDocument();
+    expect(screen.getByText('שמפניה וזהב')).toBeInTheDocument();
+    expect(screen.getByText('שמנת')).toBeInTheDocument();
     expect(screen.getByText('קיר צילום')).toBeInTheDocument();
     expect(screen.getByText('מתנה')).toBeInTheDocument();
   });

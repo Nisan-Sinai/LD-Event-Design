@@ -22,8 +22,10 @@ const COPY = {
     clear: 'ריקון העגלה',
     guest: 'אין צורך בהרשמה. בוחרים, ממלאים פרטים ושולחים בקשה להצעת מחיר בלבד.',
     cartLabel: 'עגלת קניות',
-    palette: 'פלטת צבעים',
-    colors: 'גוונים מדויקים',
+    flowerColor: 'גוון לפרחים',
+    balloonColor: 'גוון לבלונים',
+    tableclothColor: 'גוון למפות וטקסטיל',
+    notSelected: 'טרם נבחר — נסגור יחד בהמשך',
     request: 'בקשה עיצובית אישית',
     coupon: 'קוד קופון',
     apply: 'הפעלת קופון'
@@ -43,8 +45,10 @@ const COPY = {
     clear: 'Clear cart',
     guest: 'No registration required. Choose, enter details and request a quote with no payment.',
     cartLabel: 'Shopping cart',
-    palette: 'Color palette',
-    colors: 'Exact shades',
+    flowerColor: 'Flower shade',
+    balloonColor: 'Balloon shade',
+    tableclothColor: 'Table linen shade',
+    notSelected: 'Not selected yet — we can refine it together',
     request: 'Custom design request',
     coupon: 'Promo code',
     apply: 'Apply code'
@@ -157,12 +161,13 @@ export function CartPage() {
 
             <section className="rounded-[2rem] border border-[#E8C5B8]/70 bg-white p-5 sm:p-6">
               <h3 className="flex items-center gap-2 font-display text-xl font-black text-[#2C2C2C]"><Palette className="h-5 w-5 text-[#B8860B]" aria-hidden="true" />הבחירות העיצוביות שלכם</h3>
-              <dl className="mt-4 grid gap-3 text-sm text-[#6C625A] sm:grid-cols-2">
-                <div className="rounded-2xl bg-[#FAF6F0] p-4"><dt className="font-extrabold text-[#2C2C2C]">{copy.palette}</dt><dd className="mt-1">{preferences.palette}</dd></div>
-                <div className="rounded-2xl bg-[#FAF6F0] p-4"><dt className="font-extrabold text-[#2C2C2C]">{copy.colors}</dt><dd className="mt-1">{preferences.customColors || 'טרם נבחרו גוונים מדויקים'}</dd></div>
-                <div className="rounded-2xl bg-[#FAF6F0] p-4 sm:col-span-2"><dt className="font-extrabold text-[#2C2C2C]">{copy.request}</dt><dd className="mt-1 whitespace-pre-wrap">{preferences.customRequest || 'לא נוספה בקשה מיוחדת'}</dd></div>
+              <dl className="mt-4 grid gap-3 text-sm text-[#6C625A] sm:grid-cols-3">
+                <div className="rounded-2xl bg-[#FAF6F0] p-4"><dt className="font-extrabold text-[#2C2C2C]">{copy.flowerColor}</dt><dd className="mt-1">{preferences.flowerColor || copy.notSelected}</dd></div>
+                <div className="rounded-2xl bg-[#FAF6F0] p-4"><dt className="font-extrabold text-[#2C2C2C]">{copy.balloonColor}</dt><dd className="mt-1">{preferences.balloonColor || copy.notSelected}</dd></div>
+                <div className="rounded-2xl bg-[#FAF6F0] p-4"><dt className="font-extrabold text-[#2C2C2C]">{copy.tableclothColor}</dt><dd className="mt-1">{preferences.tableclothColor || copy.notSelected}</dd></div>
+                <div className="rounded-2xl bg-[#FAF6F0] p-4 sm:col-span-3"><dt className="font-extrabold text-[#2C2C2C]">{copy.request}</dt><dd className="mt-1 whitespace-pre-wrap">{preferences.customRequest || 'לא נוספה בקשה מיוחדת'}</dd></div>
               </dl>
-              <Link to="/#builder" className="mt-4 inline-flex items-center gap-2 text-xs font-extrabold text-[#B8860B] hover:underline"><Sparkles className="h-4 w-4" aria-hidden="true" />עדכון בחירות העיצוב</Link>
+              <Link to="/#design-details" className="mt-4 inline-flex items-center gap-2 text-xs font-extrabold text-[#B8860B] hover:underline"><Sparkles className="h-4 w-4" aria-hidden="true" />עדכון בחירות העיצוב</Link>
             </section>
           </div>
 
