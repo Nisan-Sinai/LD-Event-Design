@@ -230,14 +230,14 @@
     "accessibility": "Accessibility Statement",
     "close": "Close",
     "privacyBody": [
-      "At LD Event Design we respect your privacy. The details you provide in the form (name, phone, email, event details and digital signature) are used solely to process the order, contact you and provide the service.",
+      "At LD Event Design we respect your privacy. The details you provide in the form (name, phone, email and event details) are used solely to handle your request, contact you and provide the service.",
       "We do not share your details with third parties that are not required to provide the service, and we store them securely.",
       "You may contact us at any time to review, correct or delete your information at 054-5740423."
     ],
     "termsBody": [
-      "The order is subject to the engagement terms and the cancellation policy detailed in the agreement document.",
-      "Confirming the order and the digital signature constitute acceptance of the terms. Prices are in ILS and include the components detailed in the order.",
-      "Changes, add-ons and cancellations are handled according to the policy detailed in the agreement."
+      "Submitting a quote request on the site does not create a charge, payment or commitment.",
+      "Accepting the terms in the form confirms that you have read the terms and the cancellation and change policy.",
+      "The displayed price is an estimate for the request; the final quote and engagement terms are provided after personal coordination."
     ],
     "accessibilityBody": [
       "This site was built with a commitment to accessibility for all users, following the WCAG 2.1 AA guidelines.",
