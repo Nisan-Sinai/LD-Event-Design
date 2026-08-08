@@ -67,6 +67,18 @@ describe('HomePage', () => {
     expect(screen.queryByText(/מינימום הזמנה.*2,500/)).not.toBeInTheDocument();
   });
 
+  it('keeps every storefront category chip visually uniform', () => {
+    renderHome();
+    const nav = screen.getByRole('navigation', { name: 'קטגוריות החנות' });
+    const links = within(nav).getAllByRole('link');
+    const packagesLink = within(nav).getByRole('link', { name: 'חבילות עיצוב' });
+
+    expect(links.length).toBeGreaterThan(1);
+    expect(packagesLink.className).toBe(links[0].className);
+    expect(packagesLink).toHaveClass('border', 'bg-white', 'text-[#7A5A46]');
+    expect(packagesLink).not.toHaveClass('bg-gradient-to-r', 'text-white');
+  });
+
   it('stores separate flower, balloon and table-linen shades plus a custom design request', () => {
     renderHome();
 
