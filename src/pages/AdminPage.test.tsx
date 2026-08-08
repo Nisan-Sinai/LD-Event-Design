@@ -158,7 +158,7 @@ describe('AdminPage', () => {
     fetchOrders.mockResolvedValue([
       { id: 'o1', created_at: '2026-06-02T10:00:00Z', groom_name: 'דנה', bride_name: 'יוסי', event_date: null, package_title: null, total_price: 2500 }
     ]);
-    let finishDelete = () => undefined;
+    let finishDelete: () => void = () => undefined;
     deleteOrder.mockImplementation(() => new Promise<void>((resolve) => {
       finishDelete = () => resolve();
     }));
