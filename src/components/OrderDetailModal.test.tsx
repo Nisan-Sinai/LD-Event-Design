@@ -5,8 +5,7 @@ import { OrderDetailModal } from './OrderDetailModal';
 import type { OrderDetail } from '../lib/orders';
 
 const fetchOrderById = vi.hoisted(() => vi.fn());
-const signatureUrl = vi.hoisted(() => vi.fn());
-vi.mock('../lib/orders', () => ({ fetchOrderById, signatureUrl }));
+vi.mock('../lib/orders', () => ({ fetchOrderById }));
 
 const baseOrder: OrderDetail = {
   id: 'o1',
@@ -53,7 +52,6 @@ const renderModal = (props: Partial<React.ComponentProps<typeof OrderDetailModal
 
 beforeEach(() => {
   fetchOrderById.mockReset();
-  signatureUrl.mockReset().mockResolvedValue(null);
 });
 
 describe('OrderDetailModal', () => {
@@ -80,7 +78,6 @@ describe('OrderDetailModal', () => {
 
   it('renders a full order with internal admin metadata when showInternal is set', async () => {
     fetchOrderById.mockResolvedValue(baseOrder);
-    signatureUrl.mockResolvedValue('https://x/sig.png');
     renderModal({ showInternal: true });
 
     await waitFor(() => expect(screen.getByText('a@b.com')).toBeInTheDocument());
@@ -88,10 +85,9 @@ describe('OrderDetailModal', () => {
     expect(screen.getByText('תוספת פרחים')).toBeInTheDocument();
     // internal note (admin-only) is visible
     expect(screen.getByText('לקוח חוזר')).toBeInTheDocument();
-    // signature images rendered with an accessible alt
-    const sigImgs = screen.getAllByRole('img');
-    expect(sigImgs.length).toBe(2);
-    expect(sigImgs[0]).toHaveAttribute('alt');
+    // Legacy signature columns may exist on historic rows, but signatures are not part of the product.
+    expect(screen.queryByText('חתימות')).not.toBeInTheDocument();
+    expect(screen.queryAllByRole('img')).toHaveLength(0);
   });
 
   it('hides admin-only metadata when showInternal is false', async () => {
@@ -137,7 +133,6 @@ describe('OrderDetailModal', () => {
     expect(screen.queryByText(quoteMetadata)).not.toBeInTheDocument();
     expect(screen.queryByText('הגעה דרך')).not.toBeInTheDocument();
     expect(screen.queryByText('חתימות')).not.toBeInTheDocument();
-    expect(signatureUrl).not.toHaveBeenCalled();
 
     const dialogSurface = screen.getByRole('dialog').firstElementChild;
     expect(dialogSurface).toHaveClass('min-w-0', 'overflow-x-hidden');
@@ -170,17 +165,8 @@ describe('OrderDetailModal', () => {
     });
     renderModal({ showInternal: true });
     await waitFor(() => expect(screen.getByText('a@b.com')).toBeInTheDocument());
-    // signatures unavailable -> textual fallback (no <img>)
+    // No signature UI is rendered.
     expect(screen.queryAllByRole('img')).toHaveLength(0);
-  });
-
-  it('falls back to a textual placeholder when a signature image fails to load', async () => {
-    fetchOrderById.mockResolvedValue(baseOrder);
-    signatureUrl.mockResolvedValue('https://x/broken.png');
-    renderModal({ showInternal: true });
-    await waitFor(() => expect(screen.getAllByRole('img').length).toBe(2));
-    fireEvent.error(screen.getAllByRole('img')[0]);
-    await waitFor(() => expect(screen.getAllByRole('img').length).toBe(1));
   });
 
   it('renders the raw status string when no translation key matches', async () => {
@@ -209,10 +195,9 @@ describe('OrderDetailModal', () => {
   it('renders the empty dialog body when the order is not found (null)', async () => {
     fetchOrderById.mockResolvedValue(null);
     renderModal();
-    // הדיאלוג קיים אך ללא תוכן הזמנה, וללא קריאה ל-signatureUrl
+    // הדיאלוג קיים אך ללא תוכן הזמנה.
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByText('טוען…')).not.toBeInTheDocument());
-    expect(signatureUrl).not.toHaveBeenCalled();
   });
 
   it('renders the admin section with only a source (other admin rows fall back to null)', async () => {
