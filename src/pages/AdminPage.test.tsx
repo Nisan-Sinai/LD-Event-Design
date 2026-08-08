@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { I18nProvider } from '../i18n/i18n';
 import { AdminPage } from './AdminPage';
@@ -156,8 +156,12 @@ describe('AdminPage', () => {
 
   it('keeps delete compact in the existing total column and requires confirmation', async () => {
     fetchOrders.mockResolvedValue([
-      { id: 'o1', created_at: '2026-06-02T10:00:00Z', groom_name: 'דנה', bride_name: 'יוסי', event_date: '2026-09-01', package_title: 'בר מתוק', total_price: 2500 }
+      { id: 'o1', created_at: '2026-06-02T10:00:00Z', groom_name: 'דנה', bride_name: 'יוסי', event_date: null, package_title: null, total_price: 2500 }
     ]);
+    let finishDelete = () => undefined;
+    deleteOrder.mockImplementation(() => new Promise<void>((resolve) => {
+      finishDelete = () => resolve();
+    }));
     renderAdmin();
     fireEvent.click(screen.getByRole('button', { name: 'ניהול הזמנות' }));
 
@@ -168,6 +172,7 @@ describe('AdminPage', () => {
     fireEvent.click(deleteButton);
     expect(screen.getByRole('dialog', { name: 'למחוק את ההזמנה?' })).toBeInTheDocument();
     expect(screen.getByText(/לא ניתן לבטל אותה/)).toBeInTheDocument();
+    expect(screen.getByText('— · —')).toBeInTheDocument();
     expect(deleteOrder).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: 'ביטול' }));
@@ -178,11 +183,24 @@ describe('AdminPage', () => {
     const deleteDialog = screen.getByRole('dialog', { name: 'למחוק את ההזמנה?' });
     const backdrop = deleteDialog.parentElement;
     expect(backdrop).not.toBeNull();
+    fireEvent.mouseDown(deleteDialog);
+    expect(screen.getByRole('dialog', { name: 'למחוק את ההזמנה?' })).toBeInTheDocument();
     fireEvent.mouseDown(backdrop!);
     expect(screen.queryByRole('dialog', { name: 'למחוק את ההזמנה?' })).not.toBeInTheDocument();
 
     fireEvent.click(deleteButton);
+    const activeDialog = screen.getByRole('dialog', { name: 'למחוק את ההזמנה?' });
+    const activeBackdrop = activeDialog.parentElement;
+    expect(activeBackdrop).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'כן, למחוק' }));
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'מוחק…' })).toBeDisabled());
+    fireEvent.mouseDown(activeBackdrop!);
+    expect(screen.getByRole('dialog', { name: 'למחוק את ההזמנה?' })).toBeInTheDocument();
+
+    await act(async () => {
+      finishDelete();
+    });
     await waitFor(() => expect(deleteOrder).toHaveBeenCalledWith('o1'));
     await waitFor(() => expect(screen.getByText('אין הזמנות עדיין.')).toBeInTheDocument());
   });
