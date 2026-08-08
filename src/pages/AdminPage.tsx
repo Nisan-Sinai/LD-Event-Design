@@ -61,14 +61,13 @@ export function AdminPage() {
     setPendingDelete(order);
   };
 
-  const confirmDelete = async () => {
-    if (!pendingDelete || deletingId) return;
-    const orderId = pendingDelete.id;
+  const confirmDelete = async (order: OrderRow) => {
+    const orderId = order.id;
     setDeletingId(orderId);
     setDeleteError('');
     try {
       await deleteOrder(orderId);
-      setOrders((current) => current?.filter((order) => order.id !== orderId) ?? current);
+      setOrders((current) => current!.filter((item) => item.id !== orderId));
       setPendingDelete(null);
     } catch {
       setDeleteError(deleteCopy.error);
@@ -270,7 +269,7 @@ export function AdminPage() {
               <button
                 type="button"
                 disabled={Boolean(deletingId)}
-                onClick={() => void confirmDelete()}
+                onClick={() => void confirmDelete(pendingDelete)}
                 className="inline-flex items-center justify-center gap-1.5 rounded-full bg-red-600 px-4 py-3 text-sm font-extrabold text-white shadow-sm transition-colors hover:bg-red-700 disabled:cursor-wait disabled:opacity-60"
               >
                 <Trash2 className="h-4 w-4" aria-hidden="true" />
