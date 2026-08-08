@@ -106,10 +106,8 @@ describe('OrderDetailModal', () => {
       flowerColor: 'לבן וזהב',
       balloonColor: 'ורוד פודרה',
       tableclothColor: 'שמפניה',
-      customColors: 'שמנת עדינה',
       customRequest: 'לשמור על מראה נקי',
       customerNotes: 'שולחן קבלת פנים ליד הכניסה',
-      quoteOnly: true,
       policyAcceptedAt: '2026-08-09T00:00:00.000Z'
     });
     fetchOrderById.mockResolvedValue({
