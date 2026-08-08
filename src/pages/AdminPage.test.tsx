@@ -150,6 +150,7 @@ describe('AdminPage', () => {
     await waitFor(() => expect(screen.getByRole('dialog', { name: 'פרטי הזמנה מלאים' })).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: 'סגירה' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
 
   it('keeps delete compact in the existing total column and requires confirmation', async () => {
     fetchOrders.mockResolvedValue([
@@ -191,6 +192,5 @@ describe('AdminPage', () => {
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('לא הצלחנו למחוק את ההזמנה'));
     expect(screen.getByText('בר מתוק')).toBeInTheDocument();
     expect(screen.getByRole('dialog', { name: 'למחוק את ההזמנה?' })).toBeInTheDocument();
-  });
   });
 });
