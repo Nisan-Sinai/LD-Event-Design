@@ -101,6 +101,50 @@ describe('OrderDetailModal', () => {
     expect(screen.queryByText('לקוח חוזר')).not.toBeInTheDocument();
   });
 
+  it('renders website quote metadata as readable fields without technical overflow or fake signatures', async () => {
+    const quoteMetadata = JSON.stringify({
+      flowerColor: 'לבן וזהב',
+      balloonColor: 'ורוד פודרה',
+      tableclothColor: 'שמפניה',
+      customColors: 'שמנת עדינה',
+      customRequest: 'לשמור על מראה נקי',
+      customerNotes: 'שולחן קבלת פנים ליד הכניסה',
+      quoteOnly: true,
+      policyAcceptedAt: '2026-08-09T00:00:00.000Z'
+    });
+    fetchOrderById.mockResolvedValue({
+      ...baseOrder,
+      referral_source: 'website-quote-builder',
+      referral_detail: quoteMetadata,
+      order_source: 'website-quote-builder',
+      received_by: null,
+      internal_notes: quoteMetadata,
+      groom_sign_date: null,
+      bride_sign_date: null,
+      groom_signature_path: null,
+      bride_signature_path: null
+    });
+
+    renderModal({ showInternal: true });
+
+    await waitFor(() => expect(screen.getByText('העדפות עיצוב ובקשות')).toBeInTheDocument());
+    expect(screen.getByText('לבן וזהב')).toBeInTheDocument();
+    expect(screen.getByText('ורוד פודרה')).toBeInTheDocument();
+    expect(screen.getByText('שמפניה')).toBeInTheDocument();
+    expect(screen.getByText('לשמור על מראה נקי')).toBeInTheDocument();
+    expect(screen.getByText('שולחן קבלת פנים ליד הכניסה')).toBeInTheDocument();
+    expect(screen.getByText('בקשת הצעת מחיר מהאתר')).toBeInTheDocument();
+
+    expect(screen.queryByText('website-quote-builder')).not.toBeInTheDocument();
+    expect(screen.queryByText(quoteMetadata)).not.toBeInTheDocument();
+    expect(screen.queryByText('הגעה דרך')).not.toBeInTheDocument();
+    expect(screen.queryByText('חתימות')).not.toBeInTheDocument();
+    expect(signatureUrl).not.toHaveBeenCalled();
+
+    const dialogSurface = screen.getByRole('dialog').firstElementChild;
+    expect(dialogSurface).toHaveClass('min-w-0', 'overflow-x-hidden');
+  });
+
   it('renders a minimal order (no upgrades / coupons / referral / signatures) using the empty fallbacks', async () => {
     fetchOrderById.mockResolvedValue({
       ...baseOrder,
