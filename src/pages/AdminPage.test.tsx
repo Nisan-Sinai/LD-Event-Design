@@ -136,17 +136,19 @@ describe('AdminPage', () => {
     renderAdmin();
     fireEvent.click(screen.getByRole('button', { name: 'ניהול הזמנות' }));
     await waitFor(() => expect(screen.getByText('בר מתוק')).toBeInTheDocument());
-    const row = screen.getByRole('button', { name: /צפייה בהזמנה/ });
+    const viewButton = screen.getByRole('button', { name: /צפייה בהזמנה/ });
+    const orderRow = viewButton.closest('tr');
+    expect(orderRow).not.toBeNull();
 
-    fireEvent.click(row);
+    fireEvent.click(orderRow!);
     await waitFor(() => expect(screen.getByRole('dialog', { name: 'פרטי הזמנה מלאים' })).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: 'סגירה' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 
-    row.focus();
-    expect(row).toHaveFocus();
+    viewButton.focus();
+    expect(viewButton).toHaveFocus();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    fireEvent.click(row);
+    fireEvent.click(viewButton);
     await waitFor(() => expect(screen.getByRole('dialog', { name: 'פרטי הזמנה מלאים' })).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: 'סגירה' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
@@ -173,6 +175,13 @@ describe('AdminPage', () => {
     expect(deleteOrder).not.toHaveBeenCalled();
 
     fireEvent.click(deleteButton);
+    const deleteDialog = screen.getByRole('dialog', { name: 'למחוק את ההזמנה?' });
+    const backdrop = deleteDialog.parentElement;
+    expect(backdrop).not.toBeNull();
+    fireEvent.mouseDown(backdrop!);
+    expect(screen.queryByRole('dialog', { name: 'למחוק את ההזמנה?' })).not.toBeInTheDocument();
+
+    fireEvent.click(deleteButton);
     fireEvent.click(screen.getByRole('button', { name: 'כן, למחוק' }));
     await waitFor(() => expect(deleteOrder).toHaveBeenCalledWith('o1'));
     await waitFor(() => expect(screen.getByText('אין הזמנות עדיין.')).toBeInTheDocument());
@@ -190,7 +199,7 @@ describe('AdminPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'כן, למחוק' }));
 
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('לא הצלחנו למחוק את ההזמנה'));
-    expect(screen.getByText('בר מתוק')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'מחיקת הזמנה: דנה & יוסי' })).toBeInTheDocument();
     expect(screen.getByRole('dialog', { name: 'למחוק את ההזמנה?' })).toBeInTheDocument();
   });
 });
