@@ -31,7 +31,7 @@ export function AccountPage() {
     <div className="max-w-3xl mx-auto px-4 py-10">
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-xl font-bold text-[#8C6D3F]">{t('account.title')}</h2>
-        <Link to="/order" className="bg-[#B29259] hover:bg-[#8C6D3F] text-white px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5">
+        <Link to="/#packages" className="bg-[#B29259] hover:bg-[#8C6D3F] text-white px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5">
           <Plus className="w-4 h-4" aria-hidden="true" />
           {t('account.newOrder')}
         </Link>
