@@ -10,12 +10,13 @@ const a = vi.hoisted(() => ({
 }));
 const fetchOrders = vi.hoisted(() => vi.fn());
 const fetchOrderById = vi.hoisted(() => vi.fn());
+const deleteOrder = vi.hoisted(() => vi.fn());
 const signatureUrl = vi.hoisted(() => vi.fn(async () => null));
 
 vi.mock('../auth/AuthProvider', () => ({
   useAuth: () => ({ configured: a.configured, user: a.user })
 }));
-vi.mock('../lib/orders', () => ({ fetchOrders, fetchOrderById, signatureUrl }));
+vi.mock('../lib/orders', () => ({ fetchOrders, fetchOrderById, deleteOrder, signatureUrl }));
 vi.mock('../components/ProductManager', () => ({ ProductManager: () => <section>PRODUCT MEDIA MANAGER</section> }));
 vi.mock('../components/PackageManager', () => ({ PackageManager: () => <section>PACKAGE MEDIA MANAGER</section> }));
 
@@ -31,6 +32,7 @@ beforeEach(() => {
   a.user = { email: 'admin@example.com' };
   fetchOrders.mockReset().mockResolvedValue([]);
   fetchOrderById.mockReset();
+  deleteOrder.mockReset().mockResolvedValue(undefined);
   signatureUrl.mockReset().mockResolvedValue(null);
 });
 
@@ -141,11 +143,54 @@ describe('AdminPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'סגירה' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 
-    fireEvent.keyDown(row, { key: 'Tab' });
+    row.focus();
+    expect(row).toHaveFocus();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    fireEvent.keyDown(row, { key: 'Enter' });
+    fireEvent.click(row);
     await waitFor(() => expect(screen.getByRole('dialog', { name: 'פרטי הזמנה מלאים' })).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: 'סגירה' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+  it('keeps delete compact in the existing total column and requires confirmation', async () => {
+    fetchOrders.mockResolvedValue([
+      { id: 'o1', created_at: '2026-06-02T10:00:00Z', groom_name: 'דנה', bride_name: 'יוסי', event_date: '2026-09-01', package_title: 'בר מתוק', total_price: 2500 }
+    ]);
+    renderAdmin();
+    fireEvent.click(screen.getByRole('button', { name: 'ניהול הזמנות' }));
+
+    const deleteButton = await screen.findByRole('button', { name: 'מחיקת הזמנה: דנה & יוסי' });
+    expect(deleteButton).toHaveClass('h-7', 'w-7');
+    expect(screen.getAllByRole('columnheader')).toHaveLength(5);
+
+    fireEvent.click(deleteButton);
+    expect(screen.getByRole('dialog', { name: 'למחוק את ההזמנה?' })).toBeInTheDocument();
+    expect(screen.getByText(/לא ניתן לבטל אותה/)).toBeInTheDocument();
+    expect(deleteOrder).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'ביטול' }));
+    expect(screen.queryByRole('dialog', { name: 'למחוק את ההזמנה?' })).not.toBeInTheDocument();
+    expect(deleteOrder).not.toHaveBeenCalled();
+
+    fireEvent.click(deleteButton);
+    fireEvent.click(screen.getByRole('button', { name: 'כן, למחוק' }));
+    await waitFor(() => expect(deleteOrder).toHaveBeenCalledWith('o1'));
+    await waitFor(() => expect(screen.getByText('אין הזמנות עדיין.')).toBeInTheDocument());
+  });
+
+  it('keeps the order visible and reports an error when deletion fails', async () => {
+    fetchOrders.mockResolvedValue([
+      { id: 'o1', created_at: '2026-06-02T10:00:00Z', groom_name: 'דנה', bride_name: 'יוסי', event_date: '2026-09-01', package_title: 'בר מתוק', total_price: 2500 }
+    ]);
+    deleteOrder.mockRejectedValue(new Error('delete denied'));
+    renderAdmin();
+    fireEvent.click(screen.getByRole('button', { name: 'ניהול הזמנות' }));
+
+    fireEvent.click(await screen.findByRole('button', { name: 'מחיקת הזמנה: דנה & יוסי' }));
+    fireEvent.click(screen.getByRole('button', { name: 'כן, למחוק' }));
+
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('לא הצלחנו למחוק את ההזמנה'));
+    expect(screen.getByText('בר מתוק')).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'למחוק את ההזמנה?' })).toBeInTheDocument();
+  });
   });
 });
