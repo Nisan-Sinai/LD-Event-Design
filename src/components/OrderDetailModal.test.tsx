@@ -52,6 +52,7 @@ const renderModal = (props: Partial<React.ComponentProps<typeof OrderDetailModal
 
 beforeEach(() => {
   fetchOrderById.mockReset();
+  window.localStorage.setItem('ld-lang', 'he');
 });
 
 describe('OrderDetailModal', () => {
@@ -74,6 +75,41 @@ describe('OrderDetailModal', () => {
     fetchOrderById.mockRejectedValue(new Error('rls'));
     renderModal();
     await waitFor(() => expect(screen.getByText(/נדרשת הגדרת Supabase/)).toBeInTheDocument());
+  });
+
+  it('ignores fetch results that settle after the modal is unmounted', async () => {
+    let resolveOrder!: (value: OrderDetail | null) => void;
+    fetchOrderById.mockReturnValue(new Promise<OrderDetail | null>((resolve) => {
+      resolveOrder = resolve;
+    }));
+    const first = renderModal();
+    first.unmount();
+    resolveOrder(baseOrder);
+    await Promise.resolve();
+
+    let rejectOrder!: (reason?: unknown) => void;
+    fetchOrderById.mockReturnValue(new Promise<OrderDetail | null>((_, reject) => {
+      rejectOrder = reject;
+    }));
+    const second = renderModal();
+    second.unmount();
+    rejectOrder(new Error('late failure'));
+    await Promise.resolve();
+
+    expect(fetchOrderById).toHaveBeenCalledTimes(2);
+  });
+
+  it('ignores JSON that is not quote metadata', async () => {
+    fetchOrderById.mockResolvedValue({
+      ...baseOrder,
+      referral_source: null,
+      referral_detail: JSON.stringify({ legacy: true }),
+      internal_notes: 'null'
+    });
+    renderModal({ showInternal: true });
+
+    await waitFor(() => expect(screen.getByText('a@b.com')).toBeInTheDocument());
+    expect(screen.queryByText('העדפות עיצוב ובקשות')).not.toBeInTheDocument();
   });
 
   it('renders a full order with internal admin metadata when showInternal is set', async () => {
@@ -136,6 +172,24 @@ describe('OrderDetailModal', () => {
 
     const dialogSurface = screen.getByRole('dialog').firstElementChild;
     expect(dialogSurface).toHaveClass('min-w-0', 'overflow-x-hidden');
+  });
+
+  it('renders website quote labels in English', async () => {
+    window.localStorage.setItem('ld-lang', 'en');
+    const quoteMetadata = JSON.stringify({ quoteOnly: true, flowerColor: 'Ivory' });
+    fetchOrderById.mockResolvedValue({
+      ...baseOrder,
+      referral_source: 'website-quote-builder',
+      referral_detail: null,
+      order_source: 'website-quote-builder',
+      internal_notes: quoteMetadata
+    });
+    renderModal({ showInternal: true });
+
+    await waitFor(() => expect(screen.getByText('Design preferences & requests')).toBeInTheDocument());
+    expect(screen.getByText('Flower shade')).toBeInTheDocument();
+    expect(screen.getByText('Ivory')).toBeInTheDocument();
+    expect(screen.getByText('Website quote request')).toBeInTheDocument();
   });
 
   it('renders a minimal order (no upgrades / coupons / referral / signatures) using the empty fallbacks', async () => {
