@@ -17,6 +17,11 @@ export interface PackageOverride {
   sort_order: number | null;
 }
 
+export interface SaveOverrideOptions {
+  /** Only creation flows should include image_url in a full-row upsert. */
+  includeImage?: boolean;
+}
+
 export type OverrideMap = Record<string, PackageOverride>;
 
 const COLS =
@@ -150,11 +155,31 @@ export async function fetchPackageOverrides(): Promise<OverrideMap> {
   return map;
 }
 
-export async function savePackageOverride(o: PackageOverride): Promise<void> {
+export async function savePackageOverride(
+  o: PackageOverride,
+  options: SaveOverrideOptions = {}
+): Promise<void> {
+  if (!isSupabaseConfigured) return;
+
+  // Images are auto-saved separately. Excluding image_url from ordinary edits prevents
+  // a stale admin tab/session from overwriting a newer image with null or an old URL.
+  const payload: Record<string, unknown> = { ...o };
+  if (!options.includeImage) delete payload.image_url;
+
+  const { error } = await supabase
+    .from('package_overrides')
+    .upsert({ ...payload, updated_at: new Date().toISOString() }, { onConflict: 'package_id' });
+  if (error) throw error;
+}
+
+export async function savePackageImage(packageId: string, imageUrl: string | null): Promise<void> {
   if (!isSupabaseConfigured) return;
   const { error } = await supabase
     .from('package_overrides')
-    .upsert({ ...o, updated_at: new Date().toISOString() }, { onConflict: 'package_id' });
+    .upsert(
+      { package_id: packageId, image_url: imageUrl, updated_at: new Date().toISOString() },
+      { onConflict: 'package_id' }
+    );
   if (error) throw error;
 }
 
