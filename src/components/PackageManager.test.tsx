@@ -113,13 +113,18 @@ describe('PackageManager', () => {
     expect(p.saveOverride).not.toHaveBeenCalled();
   });
 
-  it('uploads an image and shows a preview', async () => {
+  it('uploads an image, shows a preview and saves it immediately', async () => {
     renderPM();
     const row = rowFor(CLASSIC_S);
     const fileInput = row.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(fileInput, { target: { files: [new File(['x'], 'p.png', { type: 'image/png' })] } });
     await waitFor(() => expect(p.upload).toHaveBeenCalled());
     await waitFor(() => expect(row.querySelector('img')).toBeTruthy());
+    await waitFor(() => expect(p.saveOverride).toHaveBeenCalled());
+    expect(p.saveOverride.mock.calls[0][0]).toMatchObject({
+      package_id: 'classic-s',
+      image_url: 'https://cdn.example/x.png'
+    });
   });
 
   it('deletes a custom package', async () => {
@@ -160,13 +165,15 @@ describe('PackageManager', () => {
     expect(p.saveOverride.mock.calls[0][0]).toMatchObject({ hidden: false });
   });
 
-  it('removes an attached image preview', async () => {
+  it('removes an attached image and saves the removal immediately', async () => {
     p.overrides = { 'classic-s': ov({ package_id: 'classic-s', image_url: 'https://cdn.example/old.png' }) };
     renderPM();
     const row = rowFor(CLASSIC_S);
     expect(row.querySelector('img')).toBeTruthy();
     fireEvent.click(within(row).getByRole('button', { name: 'הסרת תמונה' }));
     expect(row.querySelector('img')).toBeFalsy();
+    await waitFor(() => expect(p.saveOverride).toHaveBeenCalled());
+    expect(p.saveOverride.mock.calls[0][0]).toMatchObject({ package_id: 'classic-s', image_url: null });
   });
 
   it('ignores an image change with no file selected', () => {

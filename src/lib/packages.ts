@@ -22,20 +22,122 @@ export type OverrideMap = Record<string, PackageOverride>;
 const COLS =
   'package_id,price,title,subtitle,description,benefits,image_url,category,svg_type,pricing_tiers,hidden,is_custom,sort_order';
 
-const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const MAX_SOURCE_IMAGE_BYTES = 30 * 1024 * 1024;
+const MAX_UPLOAD_IMAGE_BYTES = 6 * 1024 * 1024;
+const MAX_IMAGE_DIMENSION = 2400;
+
 const IMAGE_EXTENSIONS: Record<string, string> = {
   'image/jpeg': 'jpg',
+  'image/jpg': 'jpg',
+  'image/pjpeg': 'jpg',
   'image/png': 'png',
   'image/webp': 'webp',
-  'image/avif': 'avif'
+  'image/avif': 'avif',
+  'image/heic': 'heic',
+  'image/heif': 'heif',
+  'image/heic-sequence': 'heic',
+  'image/heif-sequence': 'heif'
 };
+
+const FILE_EXTENSIONS: Record<string, string> = {
+  jpg: 'jpg',
+  jpeg: 'jpg',
+  png: 'png',
+  webp: 'webp',
+  avif: 'avif',
+  heic: 'heic',
+  heif: 'heif'
+};
+
+const UPLOAD_CONTENT_TYPES: Record<string, string> = {
+  jpg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+  avif: 'image/avif'
+};
+
+interface PreparedPackageImage {
+  body: Blob;
+  extension: string;
+  contentType: string;
+}
+
+function extensionFromFileName(name: string): string | undefined {
+  const candidate = name.split('.').pop()?.trim().toLowerCase();
+  return candidate ? FILE_EXTENSIONS[candidate] : undefined;
+}
 
 export function validatePackageImage(file: File): string {
   if (file.size <= 0) throw new Error('Image file is empty');
-  if (file.size > MAX_IMAGE_BYTES) throw new Error('Image file is larger than 8 MB');
-  const extension = IMAGE_EXTENSIONS[file.type];
+  if (file.size > MAX_SOURCE_IMAGE_BYTES) throw new Error('Image file is larger than 30 MB');
+
+  const mimeType = file.type.trim().toLowerCase();
+  const extension = IMAGE_EXTENSIONS[mimeType] ?? extensionFromFileName(file.name);
   if (!extension) throw new Error('Unsupported image format');
   return extension;
+}
+
+function encodeCanvas(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error('Image conversion failed'))),
+      'image/webp',
+      quality
+    );
+  });
+}
+
+async function preparePackageImage(file: File): Promise<PreparedPackageImage> {
+  const extension = validatePackageImage(file);
+  const needsConversion =
+    file.size > MAX_UPLOAD_IMAGE_BYTES || extension === 'heic' || extension === 'heif';
+
+  if (!needsConversion) {
+    return {
+      body: file,
+      extension,
+      contentType: UPLOAD_CONTENT_TYPES[extension]
+    };
+  }
+
+  if (typeof createImageBitmap !== 'function') {
+    throw new Error('This browser cannot resize the selected image');
+  }
+
+  let bitmap: ImageBitmap | undefined;
+  try {
+    bitmap = await createImageBitmap(file);
+    const largestSide = Math.max(bitmap.width, bitmap.height);
+    if (largestSide <= 0) throw new Error('Image dimensions are invalid');
+
+    const scale = Math.min(1, MAX_IMAGE_DIMENSION / largestSide);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('Image conversion is unavailable');
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+    let quality = 0.86;
+    let body = await encodeCanvas(canvas, quality);
+    while (body.size > MAX_UPLOAD_IMAGE_BYTES && quality > 0.46) {
+      quality -= 0.1;
+      body = await encodeCanvas(canvas, quality);
+    }
+    if (body.size > MAX_UPLOAD_IMAGE_BYTES) {
+      throw new Error('Image is still too large after resizing');
+    }
+
+    const convertedExtension = IMAGE_EXTENSIONS[body.type] ?? 'webp';
+    return {
+      body,
+      extension: convertedExtension,
+      contentType: UPLOAD_CONTENT_TYPES[convertedExtension] ?? 'image/webp'
+    };
+  } finally {
+    bitmap?.close();
+  }
 }
 
 export async function fetchPackageOverrides(): Promise<OverrideMap> {
@@ -63,12 +165,12 @@ export async function deletePackageOverride(packageId: string): Promise<void> {
 
 export async function uploadPackageImage(file: File): Promise<string> {
   if (!isSupabaseConfigured) throw new Error('Supabase not configured');
-  const extension = validatePackageImage(file);
-  const path = `${crypto.randomUUID()}.${extension}`;
+  const prepared = await preparePackageImage(file);
+  const path = `${crypto.randomUUID()}.${prepared.extension}`;
   const { error } = await supabase.storage
     .from('package-images')
-    .upload(path, file, {
-      contentType: file.type,
+    .upload(path, prepared.body, {
+      contentType: prepared.contentType,
       cacheControl: '31536000',
       upsert: false
     });

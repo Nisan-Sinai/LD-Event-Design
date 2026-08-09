@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { Check, Minus, Plus, ShoppingBag, Sparkles, Trash2, X } from 'lucide-react';
-import { GIFT_COUPON, MINIMUM_ORDER, useCart } from '../cart/CartProvider';
+import { MINIMUM_ORDER, useCart } from '../cart/CartProvider';
 import { QuoteNotice } from './QuoteNotice';
 
 function money(value: number) {
@@ -49,7 +49,7 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
       setCouponError('');
       return;
     }
-    setCouponError(`הקוד אינו תקין. נסו את הקוד “${GIFT_COUPON}”.`);
+    setCouponError('הקוד אינו תקין.');
   };
 
   return (

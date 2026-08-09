@@ -75,6 +75,7 @@ describe('CartPage', () => {
     fireEvent.change(input, { target: { value: 'לא תקין' } });
     fireEvent.click(screen.getByRole('button', { name: 'הפעלת קופון' }));
     expect(screen.getByRole('alert')).toHaveTextContent(/אינו תקין/);
+    expect(screen.getByRole('alert')).not.toHaveTextContent('מתנה');
 
     fireEvent.change(input, { target: { value: 'מתנה' } });
     fireEvent.click(screen.getByRole('button', { name: 'הפעלת קופון' }));
