@@ -39,7 +39,7 @@ const input: CartOrderInput = {
     balloonColor: '',
     tableclothColor: '',
     customRequest: 'פרחים עדינים',
-    couponCode: 'מתנה',
+    couponCode: 'server-approved-code',
     couponApplied: true
   },
   subtotal: 7900,
@@ -61,7 +61,7 @@ beforeEach(() => {
 });
 
 describe('submitCartOrder', () => {
-  it('inserts a signed order selection with normalized fields and free-text colors', async () => {
+  it('inserts a signed order selection with normalized fields and no secret coupon value', async () => {
     s.insert.mockResolvedValue({ error: null });
 
     await expect(submitCartOrder(input)).resolves.toEqual({ id: '00000000-0000-4000-8000-000000000001' });
@@ -79,12 +79,13 @@ describe('submitCartOrder', () => {
       delivery_price: 0,
       total_price: 7900,
       include_delivery: false,
-      coupon_code: 'מתנה',
+      coupon_code: 'validated',
       order_source: 'website-order-selection',
       groom_sign_date: '2026-08-09',
       groom_signature_path: null,
       bride_signature_path: null
     }));
+    expect(s.insert.mock.calls[0][0]).not.toMatchObject({ coupon_code: input.preferences.couponCode });
 
     const payload = s.insert.mock.calls[0][0] as { referral_detail: string; internal_notes: string };
     expect(JSON.parse(payload.referral_detail)).toMatchObject({
@@ -184,4 +185,3 @@ describe('submitCartOrder', () => {
     await expect(submitCartOrder(input)).rejects.toBe(insertError);
   });
 });
-
