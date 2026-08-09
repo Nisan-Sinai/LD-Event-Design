@@ -337,12 +337,12 @@ export function CheckoutPage() {
               )}
               <label className="text-sm font-extrabold text-[#2C2C2C]">
                 {copy.phone} *
-                <input value={form.phone} onChange={(event) => setField('phone', event.target.value)} type="tel" inputMode="tel" autoComplete="tel" className={inputClass} />
+                <input value={form.phone} onChange={(event) => setField('phone', event.target.value)} type="tel" inputMode="tel" autoComplete="tel" dir="ltr" className={`${inputClass} text-right`} />
               </label>
               {requiresTwoHosts && (
                 <label className="text-sm font-extrabold text-[#2C2C2C]">
                   {copy.additionalPhone} *
-                  <input value={form.additionalPhone} onChange={(event) => setField('additionalPhone', event.target.value)} type="tel" inputMode="tel" autoComplete="tel" className={inputClass} />
+                  <input value={form.additionalPhone} onChange={(event) => setField('additionalPhone', event.target.value)} type="tel" inputMode="tel" autoComplete="tel" dir="ltr" className={`${inputClass} text-right`} />
                 </label>
               )}
               <label className="text-sm font-extrabold text-[#2C2C2C]">
@@ -442,4 +442,3 @@ export function CheckoutPage() {
     </section>
   );
 }
-
