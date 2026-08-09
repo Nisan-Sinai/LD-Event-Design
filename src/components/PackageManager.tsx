@@ -38,7 +38,7 @@ const numOrNull = (v: string) => (v.trim() === '' ? null : Math.max(0, Number(v)
  */
 export function PackageManager() {
   const { t, lang } = useI18n();
-  const { overrides, saveOverride, removeOverride } = usePackages();
+  const { overrides, saveOverride, saveImage, removeOverride } = usePackages();
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
@@ -142,9 +142,7 @@ export function PackageManager() {
   const removeItem = (item: Item) => run(item.id, () => removeOverride(item.id));
 
   const persistImage = (item: Item, imageUrl: string) =>
-    run(item.id, () =>
-      saveOverride(buildOverride(item, { ...draftFor(item), image_url: imageUrl }, item.hidden))
-    );
+    run(item.id, () => saveImage(item.id, strOrNull(imageUrl)));
 
   const pickImage = async (
     id: string,
@@ -187,7 +185,7 @@ export function PackageManager() {
         hidden: false,
         is_custom: true,
         sort_order: Date.now()
-      })
+      }, { includeImage: true })
     );
     setNewDraft(EMPTY_NEW);
     setShowAdd(false);
@@ -219,7 +217,7 @@ export function PackageManager() {
         <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-[#8C6D3F] border border-dashed border-[#B29259]/50 hover:border-[#B29259] rounded-lg px-2.5 py-2 transition-colors">
           <ImagePlus className="w-3.5 h-3.5" aria-hidden="true" />
           {uploadingId === id ? t('packageManager.uploading') : t('packageManager.uploadImage')}
-          <input type="file" accept="image/*,.heic,.heif" className="sr-only" onChange={(e) => { void pickImage(id, e.target.files?.[0], onUrl, item); e.target.value = ''; }} />
+          <input type="file" accept="image/*,.heic,.heif" className="sr-only" disabled={uploadingId === id || busyId === id} onChange={(e) => { void pickImage(id, e.target.files?.[0], onUrl, item); e.target.value = ''; }} />
         </label>
       </div>
     </div>
@@ -245,7 +243,6 @@ export function PackageManager() {
         </button>
       </div>
 
-      {/* טופס הוספת חבילה חדשה */}
       {showAdd && (
         <div className="mt-4 rounded-xl border border-[#B29259]/40 bg-[#FAF7F2] p-4 space-y-3 animate-fadeIn">
           <p className="text-sm font-bold text-[#8C6D3F]">{t('packageManager.newPackage')}</p>
@@ -302,11 +299,10 @@ export function PackageManager() {
         </div>
       )}
 
-      {/* רשימת החבילות לעריכה */}
       <div className="mt-4 space-y-3">
         {items.map((item) => {
           const d = draftFor(item);
-          const busy = busyId === item.id;
+          const busy = busyId === item.id || uploadingId === item.id;
           const aria = (field: string) => `${field} — ${item.current.title || item.id}`;
           return (
             <div key={item.id} className={`rounded-xl border p-3 ${item.hidden ? 'border-gray-200 bg-gray-50 opacity-80' : 'border-[#EAE3D2] bg-white'}`}>

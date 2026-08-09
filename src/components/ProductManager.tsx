@@ -103,7 +103,7 @@ function toDraft(product: ShopProduct): ProductDraft {
 export function ProductManager() {
   const { lang } = useI18n();
   const copy = COPY[lang];
-  const { overrides, saveOverride, removeOverride } = usePackages();
+  const { overrides, saveOverride, saveImage, removeOverride } = usePackages();
   const [drafts, setDrafts] = useState<Record<string, ProductDraft>>({});
   const [newDraft, setNewDraft] = useState<ProductDraft>(EMPTY_DRAFT);
   const [showAdd, setShowAdd] = useState(false);
@@ -194,9 +194,7 @@ export function ProductManager() {
   });
 
   const persistImage = (product: ManagedProduct, imageUrl: string) =>
-    run(product.id, () =>
-      saveOverride(toOverride(product, { ...draftFor(product), image: imageUrl }, product.hidden))
-    );
+    run(product.id, () => saveImage(product.id, imageUrl.trim() || null));
 
   const saveProduct = (product: ManagedProduct) => {
     const draft = draftFor(product);
@@ -252,7 +250,7 @@ export function ProductManager() {
       hidden: false,
       is_custom: true,
       sort_order: Date.now()
-    }));
+    }, { includeImage: true }));
     setNewDraft(EMPTY_DRAFT);
     setShowAdd(false);
   };
@@ -294,7 +292,7 @@ export function ProductManager() {
               type="file"
               accept="image/*,.heic,.heif"
               className="sr-only"
-              disabled={uploadingId === id}
+              disabled={uploadingId === id || busyId === id}
               onChange={(event) => {
                 void uploadImage(id, event.target.files?.[0], apply, product);
                 event.target.value = '';
@@ -344,7 +342,7 @@ export function ProductManager() {
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         {products.map((product) => {
           const draft = draftFor(product);
-          const busy = busyId === product.id;
+          const busy = busyId === product.id || uploadingId === product.id;
           return (
             <article key={product.id} className={`rounded-2xl border p-4 ${product.hidden ? 'border-gray-200 bg-gray-50 opacity-75' : 'border-[#EAE3D2] bg-white'}`}>
               <div className="mb-4 flex flex-wrap items-center justify-between gap-2">

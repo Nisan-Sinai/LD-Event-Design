@@ -7,7 +7,8 @@ import type { PackageOverride } from '../lib/packages';
 const state = vi.hoisted(() => ({
   configured: true,
   overrides: {} as Record<string, PackageOverride>,
-  saveOverride: vi.fn(async (_override: PackageOverride) => {}),
+  saveOverride: vi.fn(async (_override: PackageOverride, _options?: unknown) => {}),
+  saveImage: vi.fn(async (_id: string, _url: string | null) => {}),
   removeOverride: vi.fn(async (_id: string) => {}),
   upload: vi.fn(async (_file: File) => 'https://cdn.example/product.webp')
 }));
@@ -23,6 +24,7 @@ vi.mock('../packages/PackagesProvider', () => ({
   usePackages: () => ({
     overrides: state.overrides,
     saveOverride: state.saveOverride,
+    saveImage: state.saveImage,
     removeOverride: state.removeOverride,
     refresh: vi.fn(),
     loading: false
@@ -65,6 +67,7 @@ beforeEach(() => {
   state.configured = true;
   state.overrides = {};
   state.saveOverride.mockReset().mockResolvedValue(undefined);
+  state.saveImage.mockReset().mockResolvedValue(undefined);
   state.removeOverride.mockReset().mockResolvedValue(undefined);
   state.upload.mockReset().mockResolvedValue('https://cdn.example/product.webp');
 });
@@ -84,7 +87,7 @@ describe('ProductManager', () => {
     expect(screen.getAllByDisplayValue(String(firstProduct.price)).length).toBeGreaterThan(0);
   });
 
-  it('changes product text, category and price and saves the override', async () => {
+  it('changes product text, category and price without touching image persistence', async () => {
     renderManager();
     const card = productCard();
     const inputs = within(card).getAllByRole('textbox');
@@ -106,20 +109,21 @@ describe('ProductManager', () => {
       price: 777,
       is_custom: false
     });
+    expect(state.saveImage).not.toHaveBeenCalled();
   });
 
-  it('uploads and saves a product image immediately', async () => {
+  it('uploads and saves only the product image immediately', async () => {
     renderManager();
     const card = productCard();
     const fileInput = card.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(fileInput, { target: { files: [new File(['image'], 'product.png', { type: 'image/png' })] } });
 
     await waitFor(() => expect(state.upload).toHaveBeenCalled());
-    await waitFor(() => expect(state.saveOverride).toHaveBeenCalled());
-    expect(state.saveOverride.mock.calls[0][0]).toMatchObject({ image_url: 'https://cdn.example/product.webp' });
+    await waitFor(() => expect(state.saveImage).toHaveBeenCalledWith(firstProduct.id, 'https://cdn.example/product.webp'));
+    expect(state.saveOverride).not.toHaveBeenCalled();
   });
 
-  it('removes an existing image and saves the removal immediately', async () => {
+  it('removes an existing image using only image persistence', async () => {
     state.overrides = {
       [firstProduct.id]: override({ package_id: firstProduct.id, image_url: 'https://cdn.example/old.webp' })
     };
@@ -128,8 +132,8 @@ describe('ProductManager', () => {
     expect(card.querySelector('img')).toBeInTheDocument();
     fireEvent.click(within(card).getByRole('button', { name: 'הסרת תמונה' }));
     expect(card.querySelector('img')).not.toBeInTheDocument();
-    await waitFor(() => expect(state.saveOverride).toHaveBeenCalled());
-    expect(state.saveOverride.mock.calls[0][0]).toMatchObject({ image_url: null });
+    await waitFor(() => expect(state.saveImage).toHaveBeenCalledWith(firstProduct.id, null));
+    expect(state.saveOverride).not.toHaveBeenCalled();
   });
 
   it('hides a product in the public shop', async () => {
@@ -183,6 +187,7 @@ describe('ProductManager', () => {
       image_url: 'https://cdn.example/product.webp',
       is_custom: true
     });
+    expect(state.saveOverride.mock.calls[0][1]).toEqual({ includeImage: true });
   });
 
   it('validates required fields and supports cancelling a new product', () => {

@@ -2,9 +2,11 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import {
   fetchPackageOverrides,
   savePackageOverride,
+  savePackageImage,
   deletePackageOverride,
   type OverrideMap,
-  type PackageOverride
+  type PackageOverride,
+  type SaveOverrideOptions
 } from '../lib/packages';
 
 interface PackagesValue {
@@ -12,7 +14,8 @@ interface PackagesValue {
   overrides: OverrideMap;
   loading: boolean;
   refresh: () => Promise<void>;
-  saveOverride: (o: PackageOverride) => Promise<void>;
+  saveOverride: (o: PackageOverride, options?: SaveOverrideOptions) => Promise<void>;
+  saveImage: (packageId: string, imageUrl: string | null) => Promise<void>;
   removeOverride: (packageId: string) => Promise<void>;
 }
 
@@ -22,6 +25,7 @@ const PackagesContext = createContext<PackagesValue>({
   loading: false,
   refresh: async () => {},
   saveOverride: async () => {},
+  saveImage: async () => {},
   removeOverride: async () => {}
 });
 
@@ -43,22 +47,23 @@ export function PackagesProvider({ children }: { children: React.ReactNode }) {
     void refresh();
   }, [refresh]);
 
-  const saveOverride = useCallback(async (o: PackageOverride) => {
-    await savePackageOverride(o);
-    setOverrides((prev) => ({ ...prev, [o.package_id]: o }));
-  }, []);
+  const saveOverride = useCallback(async (o: PackageOverride, options?: SaveOverrideOptions) => {
+    await savePackageOverride(o, options);
+    await refresh();
+  }, [refresh]);
+
+  const saveImage = useCallback(async (packageId: string, imageUrl: string | null) => {
+    await savePackageImage(packageId, imageUrl);
+    await refresh();
+  }, [refresh]);
 
   const removeOverride = useCallback(async (packageId: string) => {
     await deletePackageOverride(packageId);
-    setOverrides((prev) => {
-      const next = { ...prev };
-      delete next[packageId];
-      return next;
-    });
-  }, []);
+    await refresh();
+  }, [refresh]);
 
   return (
-    <PackagesContext.Provider value={{ overrides, loading, refresh, saveOverride, removeOverride }}>
+    <PackagesContext.Provider value={{ overrides, loading, refresh, saveOverride, saveImage, removeOverride }}>
       {children}
     </PackagesContext.Provider>
   );
