@@ -1,0 +1,65 @@
+/* Final storefront refinement: cleaner social CTA, one hero video, less pink. */
+
+/* Keep the Instagram area as a simple profile CTA — no faux image gallery. */
+section[aria-labelledby="instagram-title"] {
+  padding-block: 3.5rem !important;
+  background: #f8f5ee !important;
+}
+
+section[aria-labelledby="instagram-title"] > div > .mt-8.grid {
+  display: none !important;
+}
+
+/* The opening hero is the only video experience on the storefront. */
+section[aria-labelledby="event-video-title"] {
+  display: none !important;
+}
+
+/* Replace the rose-heavy accents with warm ivory, sand and champagne. */
+[class*="bg-[#FAF6F0]"] {
+  background-color: #f8f5ee !important;
+}
+
+[class*="bg-[#F4E3E3]"] {
+  background-color: #f0eadf !important;
+}
+
+[class*="bg-[#FDFBF7]"] {
+  background-color: #fcfaf5 !important;
+}
+
+[class*="border-[#E8C5B8]"] {
+  border-color: #dfd2bd !important;
+}
+
+[class*="text-[#E8C5B8]"] {
+  color: #d7c39e !important;
+}
+
+[class*="text-[#9B7762]"] {
+  color: #8f795d !important;
+}
+
+[class*="text-[#9B8A7D]"] {
+  color: #85796b !important;
+}
+
+/* Tailwind arbitrary gradients: neutralize the pink/peach stops. */
+[class*="from-[#F4E3E3]"] {
+  --tw-gradient-from: #f0eadf !important;
+}
+
+[class*="via-[#E8C5B8]"] {
+  --tw-gradient-via: #dfd2bd !important;
+}
+
+[class*="to-[#C69A71]"] {
+  --tw-gradient-to: #b99a67 !important;
+}
+
+/* Keep Instagram CTA visually clear after removing the gallery. */
+section[aria-labelledby="instagram-title"] a[href*="instagram.com"] {
+  background: #fffdf8;
+  border-color: #b8860b !important;
+  box-shadow: 0 10px 28px rgba(140, 109, 63, 0.08);
+}
