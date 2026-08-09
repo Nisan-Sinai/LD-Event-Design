@@ -1,8 +1,11 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import { fireEvent, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { CART_DESIGN_STORAGE_KEY, CART_STORAGE_KEY, CartProvider, type CartItem } from '../cart/CartProvider';
 import { renderWithProviders } from '../test/render';
 import { CartPage } from './CartPage';
+
+const coupon = vi.hoisted(() => ({ validate: vi.fn() }));
+vi.mock('../lib/coupons', () => ({ validateCouponCode: coupon.validate }));
 
 const item: CartItem = {
   id: 'classic-s',
@@ -22,6 +25,7 @@ function renderCart(items: CartItem[] = []) {
 beforeEach(() => {
   window.localStorage.clear();
   window.localStorage.removeItem('ld-lang');
+  coupon.validate.mockReset().mockResolvedValue(false);
 });
 
 describe('CartPage', () => {
@@ -68,23 +72,41 @@ describe('CartPage', () => {
     expect(screen.getByRole('button', { name: 'המשך להשלמת בחירת ההזמנה' })).toBeDisabled();
   });
 
-  it('accepts only the gift coupon, persists it and can clear it', () => {
+  it('shows a generic rejection and accepts only a server-approved coupon', async () => {
+    coupon.validate.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
     renderCart([item]);
     const input = screen.getByLabelText('קוד קופון');
 
     fireEvent.change(input, { target: { value: 'לא תקין' } });
     fireEvent.click(screen.getByRole('button', { name: 'הפעלת קופון' }));
-    expect(screen.getByRole('alert')).toHaveTextContent(/אינו תקין/);
-    expect(screen.getByRole('alert')).not.toHaveTextContent('מתנה');
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/אינו תקין/));
+    expect(screen.getByRole('alert')).not.toHaveTextContent(/קוד.*תקין/i);
 
-    fireEvent.change(input, { target: { value: 'מתנה' } });
+    fireEvent.change(input, { target: { value: 'server-approved-code' } });
     fireEvent.click(screen.getByRole('button', { name: 'הפעלת קופון' }));
-    expect(screen.getByRole('status')).toHaveTextContent(/מתנה מפתיעה/);
-    expect(JSON.parse(window.localStorage.getItem(CART_DESIGN_STORAGE_KEY) ?? '{}')).toMatchObject({ couponApplied: true, couponCode: 'מתנה' });
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(/מתנה מפתיעה/));
+    expect(coupon.validate).toHaveBeenLastCalledWith('server-approved-code');
+    await waitFor(() => expect(JSON.parse(window.localStorage.getItem(CART_DESIGN_STORAGE_KEY) ?? '{}')).toMatchObject({ couponApplied: true, couponCode: 'server-approved-code' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'ביטול' }));
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
     expect(input).toHaveValue('');
+  });
+
+  it('prevents duplicate coupon requests while validation is pending', async () => {
+    let resolveValidation: (value: boolean) => void = () => {};
+    coupon.validate.mockImplementationOnce(() => new Promise<boolean>((resolve) => { resolveValidation = resolve; }));
+    renderCart([item]);
+    fireEvent.change(screen.getByLabelText('קוד קופון'), { target: { value: 'candidate' } });
+
+    const apply = screen.getByRole('button', { name: 'הפעלת קופון' });
+    fireEvent.click(apply);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'בודק…' })).toBeDisabled());
+    fireEvent.click(screen.getByRole('button', { name: 'בודק…' }));
+    expect(coupon.validate).toHaveBeenCalledTimes(1);
+
+    resolveValidation(false);
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
   });
 
   it('renders English quote cart content', () => {
