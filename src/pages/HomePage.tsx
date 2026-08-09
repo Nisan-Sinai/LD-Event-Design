@@ -7,8 +7,10 @@ import {
   Heart,
   Instagram,
   MessageCircle,
+  Minus,
   Palette,
   Play,
+  Plus,
   ShoppingBag,
   Sparkles
 } from 'lucide-react';
@@ -44,11 +46,11 @@ const COPY = {
     reviewCart: 'לסיכום בעגלה',
     item: 'פריט',
     items: 'פריטים',
-    designDetailsTitle: 'עכשיו מדייקים את הגוונים',
-    designDetailsBody: 'אחרי שבחרתם פריטים וחבילות, בחרו גוון נפרד לפרחים, לבלונים ולמפות. סימנו עבורכם מה רלוונטי לפי הסל — ואפשר להשאיר כל בחירה פתוחה לשיחה איתנו.',
-    customShade: 'גוון מדויק / מותאם אישית',
-    customShadePlaceholder: 'אפשר לכתוב כאן גוון שלא מופיע באפשרויות',
-    recommended: 'רלוונטי לפי הסל',
+    designDetailsTitle: 'בוחרים צבעים במילים שלכם',
+    designDetailsBody: 'כתבו בחופשיות אילו צבעים תרצו לאקססוריז, לפרחים או לבלונים. אפשר לציין שילובים, סגנון ודוגמאות — ונחזור אליכם כדי לדייק הכול יחד.',
+    colorsLabel: 'צבעי האקססוריז, הפרחים או הבלונים',
+    colorsPlaceholder: 'לדוגמה: פרחים לבנים ושמנת, נגיעות זהב באקססוריז ובלונים בגוון ורוד פודרה…',
+    quantity: 'כמות',
     customRequest: 'יש משהו ספציפי שתרצו באירוע ולא מופיע בחבילות?',
     customRequestPlaceholder: 'ספרו לנו עליו כאן ונשמח להגשים לכם אותו!',
     estimate: 'אומדן החבילה שלכם כרגע',
@@ -70,11 +72,11 @@ const COPY = {
     reviewCart: 'Review in cart',
     item: 'item',
     items: 'items',
-    designDetailsTitle: 'Now refine the shades',
-    designDetailsBody: 'Once you have chosen your pieces and packages, set separate shades for flowers, balloons and table linens. We highlight what is relevant to your cart, and you can leave any choice open for our consultation.',
-    customShade: 'Exact / custom shade',
-    customShadePlaceholder: 'Type a shade that is not listed',
-    recommended: 'Relevant to your cart',
+    designDetailsTitle: 'Describe your colors in your own words',
+    designDetailsBody: 'Tell us which colors you would like for accessories, flowers or balloons. Add combinations, style references and examples, and we will refine everything with you.',
+    colorsLabel: 'Accessory, flower or balloon colors',
+    colorsPlaceholder: 'For example: white and ivory flowers, gold accessories and powder-pink balloons…',
+    quantity: 'Quantity',
     customRequest: 'Is there something special that is not included in the packages?',
     customRequestPlaceholder: 'Tell us about it and we will be happy to make it happen.',
     estimate: 'Your current package estimate',
@@ -83,45 +85,33 @@ const COPY = {
   }
 } as const;
 
-const DESIGN_COLOR_GROUPS = [
-  {
-    key: 'flowerColor' as const,
-    label: { he: 'פרחים', en: 'Flowers' },
-    hint: { he: 'לסידורי שולחן, חופה ואלמנטים פרחוניים', en: 'For centerpieces, chuppah and floral elements' },
-    options: [
-      { label: { he: 'לבן ושמנת', en: 'White & ivory' }, colors: ['#FDFBF7', '#EFE7D8'] },
-      { label: { he: 'ורוד פודרה', en: 'Powder pink' }, colors: ['#F4E3E3', '#D8AAA4'] },
-      { label: { he: 'בורדו', en: 'Burgundy' }, colors: ['#6E1F2A', '#E7CFC8'] },
-      { label: { he: 'צבעוני עדין', en: 'Soft multicolor' }, colors: ['#D7B7C9', '#E6C98D', '#A8B89A'] }
-    ]
-  },
-  {
-    key: 'balloonColor' as const,
-    label: { he: 'בלונים', en: 'Balloons' },
-    hint: { he: 'לשערים, עמודים וקירות בלונים', en: 'For arches, columns and balloon walls' },
-    options: [
-      { label: { he: 'לבן פנינה', en: 'Pearl white' }, colors: ['#FDFBF7', '#E8E1D8'] },
-      { label: { he: 'שמפניה וזהב', en: 'Champagne & gold' }, colors: ['#DFC99F', '#D4AF37'] },
-      { label: { he: 'ורוד פודרה', en: 'Powder pink' }, colors: ['#F4E3E3', '#D8AAA4'] },
-      { label: { he: 'שחור וזהב', en: 'Black & gold' }, colors: ['#2C2C2C', '#D4AF37'] }
-    ]
-  },
-  {
-    key: 'tableclothColor' as const,
-    label: { he: 'מפות וטקסטיל', en: 'Table linens' },
-    hint: { he: 'למפות, בדים וטקסטיל משלים', en: 'For tablecloths, draping and complementary textiles' },
-    options: [
-      { label: { he: 'לבן', en: 'White' }, colors: ['#FDFBF7'] },
-      { label: { he: 'שמנת', en: 'Ivory' }, colors: ['#F3EBDD'] },
-      { label: { he: 'שמפניה', en: 'Champagne' }, colors: ['#D8C09C'] },
-      { label: { he: 'ורוד עתיק', en: 'Antique pink' }, colors: ['#CFA59E'] },
-      { label: { he: 'שחור', en: 'Black' }, colors: ['#2C2C2C'] }
-    ]
-  }
-] as const;
-
 function money(value: number) {
   return `₪${value.toLocaleString('he-IL')}`;
+}
+
+interface QuantityStepperProps {
+  title: string;
+  quantity: number;
+  label: string;
+  onIncrease: () => void;
+  onDecrease: () => void;
+}
+
+function QuantityStepper({ title, quantity, label, onIncrease, onDecrease }: QuantityStepperProps) {
+  return (
+    <div className="mt-4 flex items-center justify-between gap-3">
+      <span className="text-[11px] font-extrabold text-[#6C625A]">{label}</span>
+      <div className="inline-flex items-center rounded-full border border-[#E8C5B8] bg-[#FAF6F0]" role="group" aria-label={`${label}: ${title}`}>
+        <button type="button" onClick={onDecrease} disabled={quantity === 0} aria-label={`הפחתת כמות ${title}`} className="p-2 text-[#B8860B] disabled:cursor-not-allowed disabled:opacity-30">
+          <Minus className="h-3.5 w-3.5" aria-hidden="true" />
+        </button>
+        <span className="min-w-8 text-center text-xs font-black" aria-live="polite">{quantity}</span>
+        <button type="button" onClick={onIncrease} aria-label={`הגדלת כמות ${title}`} className="p-2 text-[#B8860B]">
+          <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function productCategoryLabel(category: string, lang: 'he' | 'en') {
@@ -145,7 +135,8 @@ export function HomePage() {
     itemCount,
     subtotal,
     preferences,
-    setDesignColor,
+    updateQuantity,
+    setCustomColors,
     setCustomRequest
   } = useCart();
   const [addedId, setAddedId] = useState('');
@@ -154,11 +145,12 @@ export function HomePage() {
 
   const products = useMemo(() => buildShopProducts(overrides), [overrides]);
   const packages = useMemo(() => buildCatalog(PACKAGES, overrides), [overrides]);
+  const quantityById = useMemo(() => new Map(items.map((item) => [item.id, item.quantity])), [items]);
   const productCategories = Object.values(SHOP_PRODUCT_CATEGORIES);
   const packageCategories = Object.values(CATEGORIES);
   const heroVideo =
     (import.meta.env.VITE_HERO_VIDEO_URL as string | undefined) ??
-    'https://videos.pexels.com/video-files/31501465/13430839_1920_1080_60fps.mp4';
+    'https://videos.pexels.com/video-files/36546020/15496436_1920_1080_50fps.mp4';
 
   const packageText = (pkg: Package) =>
     lang === 'en' && PACKAGE_EN[pkg.id]
@@ -197,16 +189,6 @@ export function HomePage() {
   };
 
   const cartCount = `${itemCount} ${itemCount === 1 ? copy.item : copy.items}`;
-  const cartDesignText = items
-    .map((item) => `${item.title} ${item.subtitle} ${item.category}`)
-    .join(' ')
-    .toLocaleLowerCase(lang === 'he' ? 'he-IL' : 'en-US');
-  const colorRelevance = {
-    flowerColor: /פרח|גיבס|flower|floral/.test(cartDesignText),
-    balloonColor: /בלונ|balloon/.test(cartDesignText),
-    tableclothColor: /מפה|מפות|שולחן|table|linen|cloth/.test(cartDesignText)
-  };
-
   return (
     <>
       <ArtDefsHost />
@@ -305,6 +287,13 @@ export function HomePage() {
                           <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#B8860B]">{productCategoryLabel(product.category, lang)}</p>
                           <h4 className="mt-2 text-sm font-extrabold leading-snug text-[#2C2C2C] sm:text-base">{product.title}</h4>
                           <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-[#7A7069] sm:text-xs">{product.subtitle}</p>
+                          <QuantityStepper
+                            title={product.title}
+                            quantity={quantityById.get(product.id) ?? 0}
+                            label={copy.quantity}
+                            onIncrease={() => addProduct(product)}
+                            onDecrease={() => updateQuantity(product.id, (quantityById.get(product.id) ?? 0) - 1)}
+                          />
                           <div className="mt-auto flex items-center justify-between gap-2 pt-4">
                             <strong className="text-base font-black text-[#B8860B]">{money(product.price)}</strong>
                             <button type="button" onClick={() => addProduct(product)} className="text-[10px] font-extrabold text-[#7A5A46] underline-offset-4 hover:underline">{addedId === product.id ? copy.added : copy.add}</button>
@@ -352,6 +341,13 @@ export function HomePage() {
                                 <ul className="mt-3 space-y-2">{details.map((detail, index) => <li key={`${pkg.id}-${index}`} className="flex gap-2"><Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#B8860B]" aria-hidden="true" />{detail}</li>)}</ul>
                               </details>
                             )}
+                            <QuantityStepper
+                              title={text.title}
+                              quantity={quantityById.get(pkg.id) ?? 0}
+                              label={copy.quantity}
+                              onIncrease={() => addPackage(pkg)}
+                              onDecrease={() => updateQuantity(pkg.id, (quantityById.get(pkg.id) ?? 0) - 1)}
+                            />
                             <div className="mt-auto flex items-end justify-between gap-3 pt-6">
                               <div><span className="block text-[10px] font-bold text-[#9B8A7D]">{copy.from}</span><strong className="font-display text-2xl font-black text-[#B8860B]">{money(pkg.price)}</strong></div>
                               <button type="button" onClick={() => addPackage(pkg)} aria-label={`${copy.add}: ${text.title}`} className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#B8860B] to-[#D4AF37] px-5 py-3 text-xs font-extrabold text-white shadow-lg transition hover:-translate-y-0.5">
@@ -372,70 +368,45 @@ export function HomePage() {
       </section>
 
 
+      <section className="bg-[#2C2C2C] py-16 text-white sm:py-24" aria-labelledby="event-video-title">
+        <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 lg:grid-cols-[0.8fr_1.2fr]">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.35em] text-[#E8C5B8]">Floral stories</p>
+            <h2 id="event-video-title" className="font-display mt-3 text-4xl font-black sm:text-5xl">כך נראה אירוע שפורח לחיים</h2>
+            <p className="mt-4 text-sm leading-relaxed text-white/70">הצצה לעיצוב אירוע אלגנטי עם סידורי פרחים, תאורה רכה ואווירה מרגשת.</p>
+          </div>
+          <div className="overflow-hidden rounded-[2.25rem] border border-white/10 bg-black shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
+            <video src={heroVideo} controls playsInline preload="metadata" aria-label="סרטון עיצוב אירוע עם סידורי פרחים" className="aspect-video w-full object-cover" />
+          </div>
+        </div>
+      </section>
+
       <section id="design-details" className="scroll-mt-36 bg-[#FAF6F0] py-16 sm:py-24">
         <div className="mx-auto max-w-6xl px-4">
           <div className="rounded-[2.5rem] border border-[#E8C5B8]/70 bg-white p-5 shadow-[0_30px_80px_rgba(184,134,11,0.08)] sm:p-8">
             <div className="max-w-3xl">
-              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.3em] text-[#B8860B]"><Palette className="h-4 w-4" aria-hidden="true" /> Final color details</p>
+              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.3em] text-[#B8860B]"><Palette className="h-4 w-4" aria-hidden="true" /> Personal color brief</p>
               <h2 className="font-display mt-3 text-3xl font-black text-[#2C2C2C] sm:text-5xl">{copy.designDetailsTitle}</h2>
               <p className="mt-3 text-sm leading-relaxed text-[#6C625A]">{copy.designDetailsBody}</p>
             </div>
 
-            <div className="mt-8 grid gap-5 lg:grid-cols-3">
-              {DESIGN_COLOR_GROUPS.map((group) => {
-                const selected = preferences[group.key];
-                const recommended = colorRelevance[group.key];
-                return (
-                  <fieldset key={group.key} className={`rounded-[2rem] border p-5 transition ${recommended ? 'border-[#D4AF37] bg-[#FFFDF7] shadow-[0_16px_35px_rgba(184,134,11,0.1)]' : 'border-[#E8C5B8]/70 bg-[#FDFBF7]'}`}>
-                    <legend className="w-full px-1">
-                      <span className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="font-display text-xl font-black text-[#2C2C2C]">{group.label[lang]}</span>
-                        {recommended && <span className="rounded-full bg-[#F6E8B7] px-2.5 py-1 text-[9px] font-extrabold text-[#795E08]"><Sparkles className="me-1 inline h-3 w-3" aria-hidden="true" />{copy.recommended}</span>}
-                      </span>
-                      <span className="mt-1 block text-xs font-normal leading-relaxed text-[#756B64]">{group.hint[lang]}</span>
-                    </legend>
-
-                    <div className="mt-4 grid grid-cols-2 gap-2">
-                      {group.options.map((option) => {
-                        const optionLabel = option.label[lang];
-                        const active = selected === optionLabel;
-                        return (
-                          <button
-                            key={option.label.he}
-                            type="button"
-                            onClick={() => setDesignColor(group.key, optionLabel)}
-                            aria-pressed={active}
-                            className={`rounded-2xl border p-3 text-start transition ${active ? 'border-[#B8860B] bg-white shadow-sm' : 'border-[#E8C5B8]/70 bg-white/70 hover:border-[#D4AF37]'}`}
-                          >
-                            <span className="flex h-5 overflow-hidden rounded-full border border-black/5" aria-hidden="true">
-                              {option.colors.map((color) => <span key={color} className="flex-1" style={{ backgroundColor: color }} />)}
-                            </span>
-                            <span className="mt-2 flex items-center justify-between gap-2 text-[11px] font-extrabold text-[#3F3935]">{optionLabel}{active && <Check className="h-3.5 w-3.5 text-[#B8860B]" aria-hidden="true" />}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    <label className="mt-4 block text-xs font-extrabold text-[#2C2C2C]">
-                      {copy.customShade}
-                      <input
-                        value={selected}
-                        onChange={(event) => setDesignColor(group.key, event.target.value)}
-                        aria-label={`${copy.customShade} — ${group.label[lang]}`}
-                        placeholder={copy.customShadePlaceholder}
-                        className="mt-2 w-full rounded-2xl border border-[#E8C5B8] bg-white px-4 py-3 text-sm font-normal outline-none transition placeholder:text-[#A99B90] focus:border-[#B8860B] focus:ring-4 focus:ring-[#E8C5B8]/30"
-                      />
-                    </label>
-                  </fieldset>
-                );
-              })}
-            </div>
-
-            <div className="mt-7 grid gap-5 lg:grid-cols-[1fr_320px]">
-              <label className="text-sm font-extrabold text-[#2C2C2C]">
-                {copy.customRequest}
-                <textarea value={preferences.customRequest} onChange={(event) => setCustomRequest(event.target.value)} placeholder={copy.customRequestPlaceholder} rows={4} className="mt-2 w-full resize-y rounded-2xl border border-[#E8C5B8] bg-[#FDFBF7] px-4 py-3 font-normal outline-none transition placeholder:text-[#A99B90] focus:border-[#B8860B] focus:ring-4 focus:ring-[#E8C5B8]/30" />
-              </label>
+            <div className="mt-8 grid gap-5 lg:grid-cols-[1fr_320px]">
+              <div className="space-y-5">
+                <label className="block text-sm font-extrabold text-[#2C2C2C]">
+                  {copy.colorsLabel}
+                  <textarea
+                    value={preferences.customColors}
+                    onChange={(event) => setCustomColors(event.target.value)}
+                    placeholder={copy.colorsPlaceholder}
+                    rows={5}
+                    className="mt-2 w-full resize-y rounded-2xl border border-[#E8C5B8] bg-[#FDFBF7] px-4 py-3 font-normal outline-none transition placeholder:text-[#A99B90] focus:border-[#B8860B] focus:ring-4 focus:ring-[#E8C5B8]/30"
+                  />
+                </label>
+                <label className="block text-sm font-extrabold text-[#2C2C2C]">
+                  {copy.customRequest}
+                  <textarea value={preferences.customRequest} onChange={(event) => setCustomRequest(event.target.value)} placeholder={copy.customRequestPlaceholder} rows={4} className="mt-2 w-full resize-y rounded-2xl border border-[#E8C5B8] bg-[#FDFBF7] px-4 py-3 font-normal outline-none transition placeholder:text-[#A99B90] focus:border-[#B8860B] focus:ring-4 focus:ring-[#E8C5B8]/30" />
+                </label>
+              </div>
 
               <aside className="flex items-center justify-between gap-4 rounded-[2rem] bg-gradient-to-br from-[#2C2C2C] to-[#4A3C34] p-5 text-white lg:block">
                 <div>
@@ -497,3 +468,5 @@ export function HomePage() {
     </>
   );
 }
+
+

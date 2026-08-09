@@ -11,13 +11,15 @@ interface UpgradeLine {
 }
 
 interface QuoteMetadata {
-  palette?: string;
   customColors?: string;
-  flowerColor?: string;
-  balloonColor?: string;
-  tableclothColor?: string;
   customRequest?: string;
   customerNotes?: string;
+  eventType?: string;
+  primarySigner?: string;
+  primarySignatureKind?: 'drawn' | 'typed' | 'none';
+  secondarySigner?: string;
+  secondarySignatureKind?: 'drawn' | 'typed' | 'none';
+  brandLogoUrl?: string;
   quoteOnly?: boolean;
   noPaymentCollected?: boolean;
   policyAcceptedAt?: string;
@@ -102,7 +104,7 @@ function parseMetadata(order: OrderRecord): QuoteMetadata {
 }
 
 function isQuoteRequest(order: OrderRecord, metadata: QuoteMetadata): boolean {
-  return order.order_source === 'website-quote-builder' || metadata.quoteOnly === true;
+  return ['website-quote-builder', 'website-order-selection'].includes(order.order_source ?? '') || metadata.quoteOnly === true;
 }
 
 async function sendEmail(
@@ -121,6 +123,19 @@ function detailRow(label: string, value: string, emphasis = false): string {
   </tr>`;
 }
 
+function eventTypeLabel(value: string | undefined): string {
+  const labels: Record<string, string> = {
+    wedding: 'חתונה',
+    engagement: 'אירוסין',
+    henna: 'חינה',
+    'bar-bat-mitzvah': 'בר / בת מצווה',
+    brit: 'ברית / בריתה',
+    birthday: 'יום הולדת',
+    other: 'אירוע אחר'
+  };
+  return value ? labels[value] ?? value : '';
+}
+
 function orderRows(order: OrderRecord, metadata: QuoteMetadata, quoteOnly: boolean): string {
   const upgrades = (order.upgrades ?? [])
     .map((line) => {
@@ -135,15 +150,18 @@ function orderRows(order: OrderRecord, metadata: QuoteMetadata, quoteOnly: boole
     ? `${escapeHtml(order.groom_name)} &amp; ${escapeHtml(order.bride_name)}`
     : escapeHtml(order.groom_name);
 
-  const paletteRows = quoteOnly
+  const selectionRows = quoteOnly
     ? [
-        metadata.palette ? detailRow('פלטת צבעים', escapeHtml(metadata.palette)) : '',
-        metadata.customColors ? detailRow('גוונים מדויקים', escapeHtml(metadata.customColors)) : '',
-        metadata.flowerColor ? detailRow('גוון לפרחים', escapeHtml(metadata.flowerColor)) : '',
-        metadata.balloonColor ? detailRow('גוון לבלונים', escapeHtml(metadata.balloonColor)) : '',
-        metadata.tableclothColor ? detailRow('גוון למפות וטקסטיל', escapeHtml(metadata.tableclothColor)) : '',
+        metadata.eventType ? detailRow('סוג האירוע', escapeHtml(eventTypeLabel(metadata.eventType))) : '',
+        metadata.customColors ? detailRow('צבעי האקססוריז, הפרחים או הבלונים', escapeHtml(metadata.customColors)) : '',
         metadata.customRequest ? detailRow('בקשה עיצובית אישית', escapeHtml(metadata.customRequest)) : '',
-        metadata.customerNotes ? detailRow('הערות נוספות', escapeHtml(metadata.customerNotes)) : ''
+        metadata.customerNotes ? detailRow('הערות נוספות', escapeHtml(metadata.customerNotes)) : '',
+        metadata.primarySignatureKind && metadata.primarySignatureKind !== 'none'
+          ? detailRow('חתימת המזמין/ה', escapeHtml(`נחתם דיגיטלית — ${metadata.primarySigner || order.groom_name}`))
+          : '',
+        metadata.secondarySignatureKind && metadata.secondarySignatureKind !== 'none'
+          ? detailRow('חתימת המזמין/ה הנוסף/ת', escapeHtml(`נחתם דיגיטלית — ${metadata.secondarySigner || order.bride_name}`))
+          : ''
       ].join('')
     : '';
 
@@ -156,23 +174,27 @@ function orderRows(order: OrderRecord, metadata: QuoteMetadata, quoteOnly: boole
       )
     : '';
 
+  const secondPhoneRow = order.bride_phone && order.bride_phone !== order.groom_phone
+    ? detailRow('טלפון מזמין/ה נוסף/ת', escapeHtml(order.bride_phone))
+    : '';
+
   return `
     <table style="width:100%;border-collapse:collapse;font-size:14px" dir="rtl">
-      ${detailRow('שם הלקוח/ה', `<b>${people}</b>`)}
-      ${detailRow('טלפון', escapeHtml(order.groom_phone || order.bride_phone || '-'))}
+      ${detailRow('שם המזמין/ה', `<b>${people}</b>`)}
+      ${detailRow('טלפון מזמין/ה', escapeHtml(order.groom_phone || '-'))}
+      ${secondPhoneRow}
       ${detailRow('אימייל', escapeHtml(order.email || '-'))}
       ${detailRow('תאריך אירוע', escapeHtml(order.event_date ?? '-'))}
       ${detailRow('מיקום האירוע', escapeHtml(order.event_location ?? '-'))}
-      ${detailRow(quoteOnly ? 'הבחירות שנוספו להצעה' : 'חבילה', escapeHtml(order.package_title ?? '-'))}
+      ${detailRow(quoteOnly ? 'הפריטים שנבחרו' : 'חבילה', escapeHtml(order.package_title ?? '-'))}
       ${upgrades}
-      ${paletteRows}
+      ${selectionRows}
       ${couponRow}
-      ${!quoteOnly && order.include_delivery ? detailRow('הובלה והרכבה', escapeHtml(ils(order.delivery_price))) : ''}
+      ${order.include_delivery ? detailRow('הובלה והרכבה', escapeHtml(ils(order.delivery_price))) : ''}
       ${!quoteOnly && order.coupon_discount ? detailRow(`הטבת קופון (${order.coupon_code ?? ''})`, `−${escapeHtml(ils(order.coupon_discount))}`) : ''}
-      ${detailRow(quoteOnly ? 'אומדן נוכחי להצעת המחיר' : 'סה״כ לתשלום', escapeHtml(ils(order.total_price)), true)}
+      ${detailRow(quoteOnly ? 'סה״כ הבחירה — לא לתשלום כרגע' : 'סה״כ לתשלום', escapeHtml(ils(order.total_price)), true)}
     </table>`;
 }
-
 function policySection(): string {
   return `
     <div style="margin-top:24px;padding:18px;border-radius:18px;background:#FAF6F0;border:1px solid #E8C5B8">
@@ -186,19 +208,21 @@ function policySection(): string {
 function quoteNotice(): string {
   return `
     <div style="margin:18px 0;padding:16px;border-radius:18px;background:linear-gradient(135deg,#FFFDFC,#F4E3E3);border:1px solid #E8C5B8;color:#2C2C2C;line-height:1.7">
-      <b>✨ הרכבת החבילה באתר היא לקבלת הצעת מחיר בלבד ללא שום תשלום או התחייבות.</b><br>
-      לאחר שליחת הפרטים ניפגש לשיחת התאמה אישית, ונרכיב יחד את עיצוב החלומות שלכם!
+      <b>✨ לא משלמים כרגע רק בוחרים את ההזמנה ונחזור אליכם להשלמת ההזמנה</b>
     </div>`;
 }
 
-function wrap(title: string, body: string, quoteOnly: boolean): string {
+function wrap(title: string, body: string, quoteOnly: boolean, logoUrl = ''): string {
+  const safeLogoUrl = /^https:\/\//i.test(logoUrl) ? logoUrl : '';
   return `<!doctype html>
     <html lang="he" dir="rtl">
       <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
       <body style="margin:0;padding:24px;background:#F5F1EC;font-family:Arial,Helvetica,sans-serif;color:#2C2C2C">
         <div style="max-width:680px;margin:0 auto;border:1px solid #E8C5B8;border-radius:26px;overflow:hidden;background:#FDFBF7;box-shadow:0 20px 60px rgba(44,44,44,.12)">
           <div style="background:linear-gradient(135deg,#2C2C2C,#604C3F);color:#fff;padding:26px 28px">
-            <div style="font-size:11px;letter-spacing:3px;color:#E8C5B8">LD EVENT DESIGN</div>
+            ${safeLogoUrl
+              ? `<img src="${escapeHtml(safeLogoUrl)}" alt="LD Event Design" style="display:block;max-width:180px;max-height:72px;object-fit:contain;margin-bottom:12px;background:#fff;border-radius:12px;padding:8px">`
+              : '<div style="font-size:11px;letter-spacing:3px;color:#E8C5B8">LD EVENT DESIGN</div>'}
             <h1 style="margin:8px 0 0;font-size:26px">${escapeHtml(title)}</h1>
             <div style="margin-top:5px;font-size:12px;color:rgba(255,255,255,.65)">Making all dreams come true</div>
           </div>
@@ -212,14 +236,15 @@ function wrap(title: string, body: string, quoteOnly: boolean): string {
 }
 
 function summaryDocument(order: OrderRecord, metadata: QuoteMetadata, quoteOnly: boolean): string {
-  const title = quoteOnly ? 'סיכום בקשה להצעת מחיר' : 'סיכום הזמנה';
+  const title = quoteOnly ? 'סיכום בחירת ההזמנה' : 'סיכום הזמנה';
   return wrap(
     title,
     `<p style="font-size:13px;color:#76695F">מספר פנייה: ${escapeHtml(order.id)}</p>
      ${orderRows(order, metadata, quoteOnly)}
      ${policySection()}
      <p style="margin-top:20px;font-size:12px;color:#8A817A">לכל שאלה: 054-5740423</p>`,
-    quoteOnly
+    quoteOnly,
+    metadata.brandLogoUrl
   );
 }
 
@@ -321,7 +346,7 @@ Deno.serve(async (request) => {
     const quoteOnly = isQuoteRequest(order, metadata);
     const document = summaryDocument(order, metadata, quoteOnly);
     const attachment = [{
-      filename: `${quoteOnly ? 'ld-event-design-quote' : 'ld-event-design-order'}-${order.id}.html`,
+      filename: `${quoteOnly ? 'ld-event-design-selection' : 'ld-event-design-order'}-${order.id}.html`,
       content: document,
       contentType: 'text/html; charset=utf-8'
     }];
@@ -329,12 +354,13 @@ Deno.serve(async (request) => {
     await sendEmail(
       OWNER_EMAIL,
       quoteOnly
-        ? `בקשה חדשה להצעת מחיר: ${order.groom_name} — ${ils(order.total_price)}`
+        ? `בחירת הזמנה חדשה: ${order.groom_name} — ${ils(order.total_price)}`
         : `הזמנה חדשה: ${order.groom_name} & ${order.bride_name} — ${ils(order.total_price)}`,
       wrap(
-        quoteOnly ? 'התקבלה בקשה חדשה להצעת מחיר ✨' : 'התקבלה הזמנה חדשה 🎉',
+        quoteOnly ? 'התקבלה בחירת הזמנה חדשה ✨' : 'התקבלה הזמנה חדשה 🎉',
         `${orderRows(order, metadata, quoteOnly)}${policySection()}`,
-        quoteOnly
+        quoteOnly,
+        metadata.brandLogoUrl
       ),
       attachment
     );
@@ -343,13 +369,14 @@ Deno.serve(async (request) => {
       try {
         await sendEmail(
           order.email,
-          quoteOnly ? 'קיבלנו את בקשת הצעת המחיר — LD Event Design' : 'אישור הזמנה — LD Event Design',
+          quoteOnly ? 'קיבלנו את בחירת ההזמנה — LD Event Design' : 'אישור הזמנה — LD Event Design',
           wrap(
-            quoteOnly ? `שלום ${order.groom_name}, הבקשה שלכם התקבלה באהבה` : `שלום ${order.groom_name} ו${order.bride_name}, תודה על הזמנתכם!`,
+            quoteOnly ? `שלום ${order.groom_name}, בחירת ההזמנה שלכם התקבלה באהבה` : `שלום ${order.groom_name} ו${order.bride_name}, תודה על הזמנתכם!`,
             quoteOnly
-              ? `<p style="line-height:1.7">קיבלנו את הבחירות והפרטים שלכם. מצורף מסמך סיכום מעוצב, וניצור איתכם קשר לשיחת התאמה אישית.</p>${orderRows(order, metadata, true)}${policySection()}<p style="font-size:13px;color:#76695F">לכל שאלה: 054-5740423</p>`
+              ? `<p style="line-height:1.7">קיבלנו את הבחירות, הפרטים והחתימות שלכם. לא נגבה תשלום כרגע; נחזור אליכם להשלמת ההזמנה. מצורף מסמך סיכום מעוצב.</p>${orderRows(order, metadata, true)}${policySection()}<p style="font-size:13px;color:#76695F">לכל שאלה: 054-5740423</p>`
               : `<p>קיבלנו את ההזמנה ונחזור אליכם בהקדם. להלן הסיכום:</p>${orderRows(order, metadata, false)}${policySection()}<p style="font-size:13px;color:#76695F">לכל שאלה: 054-5740423</p>`,
-            quoteOnly
+            quoteOnly,
+            metadata.brandLogoUrl
           ),
           attachment
         );

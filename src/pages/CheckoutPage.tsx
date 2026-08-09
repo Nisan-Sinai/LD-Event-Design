@@ -1,10 +1,25 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { Link } from 'react-router';
-import { CheckCircle2, ChevronLeft, ChevronRight, FileText, ShoppingBag, Sparkles } from 'lucide-react';
+import {
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  ShoppingBag,
+  Sparkles,
+  Truck,
+  Users
+} from 'lucide-react';
 import { MINIMUM_ORDER, useCart } from '../cart/CartProvider';
 import { QuoteNotice } from '../components/QuoteNotice';
+import { SignaturePad } from '../components/SignaturePad';
 import { useI18n } from '../i18n/i18n';
+import { brandLogoUrl } from '../lib/branding';
+import { EMPTY_SIGNATURE, hasSignature, type DigitalSignature } from '../lib/signatures';
 import { submitCartOrder } from '../lib/submitCartOrder';
+import { usePackages } from '../packages/PackagesProvider';
+
+const DELIVERY_PRICE = 500;
 
 const POLICY = [
   'במקרה של ביטול עקב כוח עליון — מלחמה או מגפה — הסכום ששולם יועבר לזיכוי לתאריך חלופי על בסיס זמינות. אם לא יימצא תאריך מוסכם, לא יוחזרו 50% מסכום העסקה הכולל.',
@@ -15,81 +30,126 @@ const POLICY = [
   'יתרת התשלום תועבר בהעברה בנקאית כאישור, כשבוע לפני מועד האירוע.'
 ];
 
+const EVENT_TYPES = {
+  he: [
+    { value: 'wedding', label: 'חתונה' },
+    { value: 'engagement', label: 'אירוסין' },
+    { value: 'henna', label: 'חינה' },
+    { value: 'bar-bat-mitzvah', label: 'בר / בת מצווה' },
+    { value: 'brit', label: 'ברית / בריתה' },
+    { value: 'birthday', label: 'יום הולדת' },
+    { value: 'other', label: 'אירוע אחר' }
+  ],
+  en: [
+    { value: 'wedding', label: 'Wedding' },
+    { value: 'engagement', label: 'Engagement' },
+    { value: 'henna', label: 'Henna' },
+    { value: 'bar-bat-mitzvah', label: 'Bar / Bat Mitzvah' },
+    { value: 'brit', label: 'Brit / baby celebration' },
+    { value: 'birthday', label: 'Birthday' },
+    { value: 'other', label: 'Other event' }
+  ]
+} as const;
+
 const COPY = {
   he: {
-    title: 'שליחת בקשה להצעת מחיר',
-    subtitle: 'ממלאים את פרטי האירוע ושולחים. אין חיוב, סליקה או התחייבות בשלב הזה.',
-    fullName: 'שם מלא',
-    additionalName: 'שם נוסף / בעלי השמחה',
-    phone: 'טלפון',
+    title: 'שליחת בחירת ההזמנה',
+    subtitle: 'בוחרים, חותמים ושולחים. לא משלמים כרגע — נחזור אליכם להשלמת ההזמנה.',
+    eventType: 'סוג האירוע',
+    eventTypePlaceholder: 'בחרו סוג אירוע',
+    fullName: 'שם המזמין/ה',
+    additionalName: 'שם המזמין/ה הנוסף/ת',
+    phone: 'מספר טלפון',
+    additionalPhone: 'מספר טלפון נוסף',
     email: 'אימייל',
     date: 'תאריך האירוע',
     location: 'מיקום האירוע',
     notes: 'הערות ובקשות נוספות',
     terms: 'אני מאשר/ת כי קראתי את תנאי ההתקשרות ומדיניות הביטולים והשינויים',
-    submit: 'שליחת הצעת מחיר בלבד (ללא תשלום)',
-    sending: 'הבקשה נשלחת…',
-    summary: 'סיכום הבקשה',
-    subtotal: 'אומדן נוכחי',
-    total: 'סה״כ אומדן',
+    submit: 'שליחת ההזמנה (ללא תשלום כרגע)',
+    sending: 'ההזמנה נשלחת…',
+    summary: 'סיכום בחירת ההזמנה',
+    total: 'סה״כ בחירה',
     editCart: 'חזרה לעריכת הסל',
-    successTitle: 'בקשת הצעת המחיר התקבלה',
-    successBody: 'הפרטים נשמרו ונשלח אליכם סיכום במייל. ניצור איתכם קשר לשיחת התאמה אישית.',
+    successTitle: 'בחירת ההזמנה התקבלה',
+    successBody: 'הפרטים והחתימות נשמרו ונשלח אליכם סיכום במייל. נחזור אליכם להשלמת ההזמנה.',
     orderNumber: 'מספר פנייה',
     home: 'חזרה לעמוד הבית',
-    required: 'נא למלא את כל שדות החובה ולאשר את התנאים.',
+    required: 'נא למלא את כל שדות החובה, לחתום ולאשר את התנאים.',
+    secondHostRequired: 'בחתונה או באירוסין נדרשים שם, טלפון וחתימה של שני המזמינים.',
+    signatureRequired: 'נדרשת חתימה של המזמין/ה.',
     phoneError: 'נא להזין מספר טלפון תקין.',
     emailError: 'נא להזין כתובת אימייל תקינה.',
-    genericError: 'לא הצלחנו לשלוח את הבקשה. נסו שוב או פנו אלינו בוואטסאפ.',
+    genericError: 'לא הצלחנו לשלוח את ההזמנה. נסו שוב או פנו אלינו בוואטסאפ.',
     empty: 'העגלה ריקה או שטרם הגעתם למינימום ההזמנה. יש לעדכן את הסל לפני השליחה.',
     policyTitle: 'מדיניות ביטולים, שינויים ואחריות',
-    flowerColor: 'גוון לפרחים',
-    balloonColor: 'גוון לבלונים',
-    tableclothColor: 'גוון למפות וטקסטיל',
-    notSelected: 'טרם נבחר',
+    colors: 'צבעי האקססוריז, הפרחים או הבלונים',
+    notSelected: 'טרם נכתב',
     request: 'בקשה אישית',
-    coupon: 'קופון'
+    coupon: 'קופון',
+    deliveryTitle: 'הובלה והרכבה',
+    deliveryBody: 'הוספת שירות הובלה והרכבה להזמנה ב־₪500.',
+    deliveryOptional: 'לא חובה',
+    items: 'פריטים וכמויות',
+    signaturesTitle: 'חתימות המזמינים',
+    signaturesBody: 'אפשר לחתום בציור באצבע או בעכבר, או להקליד שם מלא כחלופה נגישה.',
+    primarySignature: 'חתימת המזמין/ה',
+    secondarySignature: 'חתימת המזמין/ה הנוסף/ת',
+    typedSignature: 'הקלדת שם מלא לחתימה'
   },
   en: {
-    title: 'Request a personal quote',
-    subtitle: 'Enter your event details and submit. No charge, payment or commitment is made at this stage.',
-    fullName: 'Full name',
-    additionalName: 'Additional name / event hosts',
-    phone: 'Phone',
+    title: 'Submit your order selection',
+    subtitle: 'Choose, sign and send. No payment is collected now — we will contact you to complete the order.',
+    eventType: 'Event type',
+    eventTypePlaceholder: 'Select an event type',
+    fullName: 'Host name',
+    additionalName: 'Second host name',
+    phone: 'Phone number',
+    additionalPhone: 'Second phone number',
     email: 'Email',
     date: 'Event date',
     location: 'Event venue',
     notes: 'Additional notes and requests',
     terms: 'I confirm that I have read the engagement, cancellation and change policy',
-    submit: 'Send quote request only (no payment)',
+    submit: 'Submit order (no payment now)',
     sending: 'Submitting…',
-    summary: 'Request summary',
-    subtotal: 'Current estimate',
-    total: 'Estimated total',
+    summary: 'Order selection summary',
+    total: 'Selection total',
     editCart: 'Edit cart',
-    successTitle: 'Your quote request was received',
-    successBody: 'The details were saved and a summary will be emailed to you. We will contact you for a personal consultation.',
+    successTitle: 'Your order selection was received',
+    successBody: 'Your details and signatures were saved and a summary will be emailed to you. We will contact you to complete the order.',
     orderNumber: 'Request number',
     home: 'Back to homepage',
-    required: 'Please complete all required fields and approve the terms.',
+    required: 'Please complete all required fields, sign and approve the terms.',
+    secondHostRequired: 'Weddings and engagements require the name, phone and signature of both hosts.',
+    signatureRequired: 'The host signature is required.',
     phoneError: 'Please enter a valid phone number.',
     emailError: 'Please enter a valid email address.',
-    genericError: 'We could not submit the request. Please try again or contact us on WhatsApp.',
+    genericError: 'We could not submit the order. Please try again or contact us on WhatsApp.',
     empty: 'The cart is empty or below the minimum. Please update it before submitting.',
     policyTitle: 'Cancellation, changes and responsibility policy',
-    flowerColor: 'Flower shade',
-    balloonColor: 'Balloon shade',
-    tableclothColor: 'Table linen shade',
-    notSelected: 'Not selected',
+    colors: 'Accessory, flower or balloon colors',
+    notSelected: 'Not entered',
     request: 'Custom request',
-    coupon: 'Coupon'
+    coupon: 'Coupon',
+    deliveryTitle: 'Delivery and setup',
+    deliveryBody: 'Add delivery and setup to the order for ₪500.',
+    deliveryOptional: 'Optional',
+    items: 'Items and quantities',
+    signaturesTitle: 'Host signatures',
+    signaturesBody: 'Draw with a finger or mouse, or type a full name as an accessible alternative.',
+    primarySignature: 'Host signature',
+    secondarySignature: 'Second host signature',
+    typedSignature: 'Type full name as signature'
   }
 } as const;
 
 interface CheckoutForm {
+  eventType: string;
   fullName: string;
   additionalName: string;
   phone: string;
+  additionalPhone: string;
   email: string;
   eventDate: string;
   eventLocation: string;
@@ -97,17 +157,26 @@ interface CheckoutForm {
 }
 
 const EMPTY_FORM: CheckoutForm = {
+  eventType: '',
   fullName: '',
   additionalName: '',
   phone: '',
+  additionalPhone: '',
   email: '',
   eventDate: '',
   eventLocation: '',
   notes: ''
 };
 
+const PHONE_PATTERN = /^\+?\d{9,15}$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 function money(value: number) {
-  return `₪${value.toLocaleString('he-IL')}`;
+  return '₪' + value.toLocaleString('he-IL');
+}
+
+function validPhone(value: string) {
+  return PHONE_PATTERN.test(value.replace(/[\s()-]/g, ''));
 }
 
 export function CheckoutPage() {
@@ -115,14 +184,23 @@ export function CheckoutPage() {
   const copy = COPY[lang];
   const Arrow = lang === 'he' ? ChevronLeft : ChevronRight;
   const { items, subtotal, preferences, clearCart } = useCart();
+  const { overrides } = usePackages();
   const [form, setForm] = useState<CheckoutForm>(EMPTY_FORM);
+  const [includeDelivery, setIncludeDelivery] = useState(false);
+  const [primarySignature, setPrimarySignature] = useState<DigitalSignature>({ ...EMPTY_SIGNATURE });
+  const [secondarySignature, setSecondarySignature] = useState<DigitalSignature>({ ...EMPTY_SIGNATURE });
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [orderId, setOrderId] = useState('');
 
+  const requiresTwoHosts = form.eventType === 'wedding' || form.eventType === 'engagement';
+  const deliveryPrice = includeDelivery ? DELIVERY_PRICE : 0;
+  const totalPrice = subtotal + deliveryPrice;
+  const logoUrl = brandLogoUrl(overrides);
+
   const itemSummary = useMemo(
-    () => items.map((item) => `${item.title}${item.quantity > 1 ? ` × ${item.quantity}` : ''}`).join(', '),
+    () => items.map((item) => item.title + (item.quantity > 1 ? ' × ' + item.quantity : '')).join(', '),
     [items]
   );
 
@@ -132,12 +210,23 @@ export function CheckoutPage() {
   };
 
   const validate = () => {
-    if (!form.fullName.trim() || !form.phone.trim() || !form.email.trim() || !form.eventDate || !form.eventLocation.trim() || !termsAccepted) {
+    if (
+      !form.eventType ||
+      !form.fullName.trim() ||
+      !form.phone.trim() ||
+      !form.email.trim() ||
+      !form.eventDate ||
+      !form.eventLocation.trim() ||
+      !termsAccepted
+    ) {
       return copy.required;
     }
-    const normalizedPhone = form.phone.replace(/[\s()-]/g, '');
-    if (!/^\+?\d{9,15}$/.test(normalizedPhone)) return copy.phoneError;
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) return copy.emailError;
+    if (requiresTwoHosts && (!form.additionalName.trim() || !form.additionalPhone.trim() || !hasSignature(secondarySignature))) {
+      return copy.secondHostRequired;
+    }
+    if (!hasSignature(primarySignature)) return copy.signatureRequired;
+    if (!validPhone(form.phone) || (form.additionalPhone.trim() && !validPhone(form.additionalPhone))) return copy.phoneError;
+    if (!EMAIL_PATTERN.test(form.email.trim())) return copy.emailError;
     return '';
   };
 
@@ -157,8 +246,14 @@ export function CheckoutPage() {
         items: items.map((item) => ({ id: item.id, title: item.title, price: item.price, quantity: item.quantity })),
         preferences,
         subtotal,
-        deliveryPrice: 0,
-        totalPrice: subtotal
+        includeDelivery,
+        deliveryPrice,
+        totalPrice,
+        signatures: {
+          primary: primarySignature,
+          secondary: requiresTwoHosts ? secondarySignature : null
+        },
+        brandLogoUrl: logoUrl
       });
       setOrderId(result.id);
       clearCart();
@@ -205,7 +300,7 @@ export function CheckoutPage() {
     <section className="bg-[#FAF6F0] py-10 sm:py-16">
       <div className="mx-auto max-w-6xl px-4">
         <div className="mb-8">
-          <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.3em] text-[#B8860B]"><FileText className="h-4 w-4" aria-hidden="true" /> Quote request</p>
+          <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.3em] text-[#B8860B]"><FileText className="h-4 w-4" aria-hidden="true" /> Order selection</p>
           <h2 className="font-display mt-3 text-4xl font-black text-[#2C2C2C] sm:text-5xl">{copy.title}</h2>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#6C625A]">{copy.subtitle}</p>
         </div>
@@ -214,19 +309,42 @@ export function CheckoutPage() {
 
         <div className="mt-7 grid gap-7 lg:grid-cols-[1fr_380px]">
           <form onSubmit={handleSubmit} noValidate className="rounded-[2rem] border border-[#E8C5B8]/70 bg-white p-5 shadow-sm sm:p-8">
-            <div className="grid gap-5 sm:grid-cols-2">
+            <label className="block text-sm font-extrabold text-[#2C2C2C]">
+              {copy.eventType} *
+              <select value={form.eventType} onChange={(event) => setField('eventType', event.target.value)} className={inputClass}>
+                <option value="">{copy.eventTypePlaceholder}</option>
+                {EVENT_TYPES[lang].map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
+              </select>
+            </label>
+
+            {requiresTwoHosts && (
+              <div className="mt-5 flex items-start gap-3 rounded-2xl border border-[#D4AF37]/50 bg-[#FFFDF5] p-4 text-xs leading-relaxed text-[#6C5B31]">
+                <Users className="mt-0.5 h-4 w-4 shrink-0 text-[#B8860B]" aria-hidden="true" />
+                {copy.secondHostRequired}
+              </div>
+            )}
+
+            <div className="mt-5 grid gap-5 sm:grid-cols-2">
               <label className="text-sm font-extrabold text-[#2C2C2C]">
                 {copy.fullName} *
                 <input value={form.fullName} onChange={(event) => setField('fullName', event.target.value)} autoComplete="name" className={inputClass} />
               </label>
-              <label className="text-sm font-extrabold text-[#2C2C2C]">
-                {copy.additionalName}
-                <input value={form.additionalName} onChange={(event) => setField('additionalName', event.target.value)} className={inputClass} />
-              </label>
+              {requiresTwoHosts && (
+                <label className="text-sm font-extrabold text-[#2C2C2C]">
+                  {copy.additionalName} *
+                  <input value={form.additionalName} onChange={(event) => setField('additionalName', event.target.value)} autoComplete="name" className={inputClass} />
+                </label>
+              )}
               <label className="text-sm font-extrabold text-[#2C2C2C]">
                 {copy.phone} *
                 <input value={form.phone} onChange={(event) => setField('phone', event.target.value)} type="tel" inputMode="tel" autoComplete="tel" className={inputClass} />
               </label>
+              {requiresTwoHosts && (
+                <label className="text-sm font-extrabold text-[#2C2C2C]">
+                  {copy.additionalPhone} *
+                  <input value={form.additionalPhone} onChange={(event) => setField('additionalPhone', event.target.value)} type="tel" inputMode="tel" autoComplete="tel" className={inputClass} />
+                </label>
+              )}
               <label className="text-sm font-extrabold text-[#2C2C2C]">
                 {copy.email} *
                 <input value={form.email} onChange={(event) => setField('email', event.target.value)} type="email" autoComplete="email" className={inputClass} />
@@ -235,7 +353,7 @@ export function CheckoutPage() {
                 {copy.date} *
                 <input value={form.eventDate} onChange={(event) => setField('eventDate', event.target.value)} type="date" className={inputClass} />
               </label>
-              <label className="text-sm font-extrabold text-[#2C2C2C]">
+              <label className="text-sm font-extrabold text-[#2C2C2C] sm:col-span-2">
                 {copy.location} *
                 <input value={form.eventLocation} onChange={(event) => setField('eventLocation', event.target.value)} className={inputClass} />
               </label>
@@ -243,8 +361,45 @@ export function CheckoutPage() {
 
             <label className="mt-5 block text-sm font-extrabold text-[#2C2C2C]">
               {copy.notes}
-              <textarea value={form.notes} onChange={(event) => setField('notes', event.target.value)} rows={4} className={`${inputClass} resize-y`} />
+              <textarea value={form.notes} onChange={(event) => setField('notes', event.target.value)} rows={4} className={inputClass + ' resize-y'} />
             </label>
+
+            <label className="mt-6 flex cursor-pointer items-start gap-4 rounded-[1.5rem] border border-[#E8C5B8] bg-gradient-to-br from-[#FFFDF8] to-[#F4E3E3]/40 p-5 shadow-sm">
+              <input type="checkbox" checked={includeDelivery} onChange={(event) => setIncludeDelivery(event.target.checked)} className="mt-1 h-5 w-5 accent-[#B8860B]" />
+              <span className="flex-1">
+                <span className="flex flex-wrap items-center gap-2 font-display text-lg font-black text-[#2C2C2C]">
+                  <Truck className="h-5 w-5 text-[#B8860B]" aria-hidden="true" />
+                  {copy.deliveryTitle} — {money(DELIVERY_PRICE)}
+                  <span className="rounded-full bg-white px-2.5 py-1 text-[9px] font-extrabold text-[#8C6D3F]">{copy.deliveryOptional}</span>
+                </span>
+                <span className="mt-1 block text-xs leading-relaxed text-[#6C625A]">{copy.deliveryBody}</span>
+              </span>
+            </label>
+
+            <section className="mt-7" aria-labelledby="checkout-signatures-title">
+              <h3 id="checkout-signatures-title" className="font-display text-2xl font-black text-[#2C2C2C]">{copy.signaturesTitle}</h3>
+              <p className="mt-2 text-xs leading-relaxed text-[#6C625A]">{copy.signaturesBody}</p>
+              <div className={'mt-4 grid gap-4 ' + (requiresTwoHosts ? 'md:grid-cols-2' : '')}>
+                <SignaturePad
+                  id="primary-signature"
+                  label={copy.primarySignature + ' *'}
+                  typedLabel={copy.typedSignature}
+                  hint={copy.signaturesBody}
+                  value={primarySignature}
+                  onChange={(value) => { setPrimarySignature(value); setError(''); }}
+                />
+                {requiresTwoHosts && (
+                  <SignaturePad
+                    id="secondary-signature"
+                    label={copy.secondarySignature + ' *'}
+                    typedLabel={copy.typedSignature}
+                    hint={copy.signaturesBody}
+                    value={secondarySignature}
+                    onChange={(value) => { setSecondarySignature(value); setError(''); }}
+                  />
+                )}
+              </div>
+            </section>
 
             <details className="mt-6 rounded-[1.5rem] border border-[#E8C5B8]/70 bg-[#FAF6F0] p-5">
               <summary className="cursor-pointer font-display text-lg font-black text-[#2C2C2C]">{copy.policyTitle}</summary>
@@ -269,16 +424,17 @@ export function CheckoutPage() {
           </form>
 
           <aside className="h-fit rounded-[2rem] border border-[#E8C5B8]/70 bg-white p-6 shadow-[0_24px_65px_rgba(44,44,44,0.1)] lg:sticky lg:top-24">
+            {logoUrl && <img src={logoUrl} alt="לוגו LD Event Design" className="mb-5 max-h-20 max-w-[180px] object-contain" />}
             <h3 className="font-display text-2xl font-black text-[#2C2C2C]">{copy.summary}</h3>
-            <p className="mt-3 text-xs leading-relaxed text-[#6C625A]">{itemSummary}</p>
             <dl className="mt-5 space-y-3 text-sm">
-              <div className="rounded-2xl bg-[#FAF6F0] p-4"><dt className="font-extrabold text-[#2C2C2C]">{copy.flowerColor}</dt><dd className="mt-1 text-[#6C625A]">{preferences.flowerColor || copy.notSelected}</dd></div>
-              <div className="rounded-2xl bg-[#FAF6F0] p-4"><dt className="font-extrabold text-[#2C2C2C]">{copy.balloonColor}</dt><dd className="mt-1 text-[#6C625A]">{preferences.balloonColor || copy.notSelected}</dd></div>
-              <div className="rounded-2xl bg-[#FAF6F0] p-4"><dt className="font-extrabold text-[#2C2C2C]">{copy.tableclothColor}</dt><dd className="mt-1 text-[#6C625A]">{preferences.tableclothColor || copy.notSelected}</dd></div>
+              <div className="rounded-2xl bg-[#FAF6F0] p-4"><dt className="font-extrabold text-[#2C2C2C]">{copy.items}</dt><dd className="mt-1 text-[#6C625A]">{itemSummary}</dd></div>
+              <div className="rounded-2xl bg-[#FAF6F0] p-4"><dt className="font-extrabold text-[#2C2C2C]">{copy.colors}</dt><dd className="mt-1 whitespace-pre-wrap text-[#6C625A]">{preferences.customColors || copy.notSelected}</dd></div>
               {preferences.customRequest && <div className="rounded-2xl bg-[#FAF6F0] p-4"><dt className="font-extrabold text-[#2C2C2C]">{copy.request}</dt><dd className="mt-1 whitespace-pre-wrap text-[#6C625A]">{preferences.customRequest}</dd></div>}
               {preferences.couponApplied && <div className="rounded-2xl bg-emerald-50 p-4"><dt className="font-extrabold text-emerald-800">{copy.coupon}</dt><dd className="mt-1 flex items-center gap-1.5 text-emerald-800"><Sparkles className="h-4 w-4" aria-hidden="true" />{preferences.couponCode}</dd></div>}
-              <div className="flex items-center justify-between gap-3 border-t border-[#E8C5B8]/60 pt-5"><dt className="font-extrabold text-[#2C2C2C]">{copy.total}</dt><dd className="font-display text-2xl font-black text-[#B8860B]">{money(subtotal)}</dd></div>
+              {includeDelivery && <div className="flex items-center justify-between gap-3 rounded-2xl bg-[#FFF8E7] p-4"><dt className="font-extrabold text-[#6C5B31]">{copy.deliveryTitle}</dt><dd className="font-black text-[#B8860B]">{money(DELIVERY_PRICE)}</dd></div>}
+              <div className="flex items-center justify-between gap-3 border-t border-[#E8C5B8]/60 pt-5"><dt className="font-extrabold text-[#2C2C2C]">{copy.total}</dt><dd className="font-display text-2xl font-black text-[#B8860B]">{money(totalPrice)}</dd></div>
             </dl>
+            <p className="mt-3 text-xs font-bold leading-relaxed text-[#7A7069]">{copy.subtitle}</p>
             <Link to="/cart" className="mt-5 flex items-center justify-center text-xs font-bold text-[#B8860B] hover:underline">{copy.editCart}</Link>
           </aside>
         </div>
@@ -286,3 +442,4 @@ export function CheckoutPage() {
     </section>
   );
 }
+

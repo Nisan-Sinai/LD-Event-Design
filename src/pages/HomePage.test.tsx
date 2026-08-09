@@ -54,9 +54,19 @@ describe('HomePage', () => {
 
     expect(screen.getByText('האירוע שלכם. האמנות שלנו.')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /הרכבת חבילה אישית/ })).toHaveAttribute('href', '#products');
-    expect(screen.getAllByText(/הרכבת החבילה באתר היא לקבלת הצעת מחיר בלבד/).length).toBeGreaterThan(0);
-    expect(screen.getByRole('heading', { name: 'עכשיו מדייקים את הגוונים' })).toBeInTheDocument();
+    expect(screen.getAllByText(/לא משלמים כרגע/).length).toBeGreaterThan(0);
+    expect(screen.getByRole('heading', { name: 'בוחרים צבעים במילים שלכם' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'בואו נרכיב את שפת העיצוב שלכם' })).not.toBeInTheDocument();
+  });
+
+  it('falls back to catalogue artwork when the floral hero video cannot load', () => {
+    renderHome();
+    const heroVideo = screen.getByLabelText('עיצוב אירועים יוקרתי');
+
+    fireEvent.error(heroVideo);
+
+    expect(screen.queryByLabelText('עיצוב אירועים יוקרתי')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'האירוע שלכם. האמנות שלנו.' })).toBeInTheDocument();
   });
 
   it('critically removes delivery and minimum-order messaging from the homepage', () => {
@@ -79,19 +89,16 @@ describe('HomePage', () => {
     expect(packagesLink).not.toHaveClass('bg-gradient-to-r', 'text-white');
   });
 
-  it('stores separate flower, balloon and table-linen shades plus a custom design request', () => {
+  it('stores free-text colors plus a custom design request without shade presets', () => {
     renderHome();
 
-    fireEvent.click(screen.getByRole('button', { name: 'בורדו' }));
-    fireEvent.click(screen.getByRole('button', { name: 'שמפניה וזהב' }));
-    fireEvent.change(screen.getByLabelText('גוון מדויק / מותאם אישית — מפות וטקסטיל'), { target: { value: 'ירוק זית' } });
+    expect(screen.queryByRole('button', { name: 'בורדו' })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('צבעי האקססוריז, הפרחים או הבלונים'), { target: { value: 'פרחים לבנים, אקססוריז זהב ובלונים ורודים' } });
     fireEvent.change(screen.getByLabelText(/יש משהו ספציפי/), { target: { value: 'קיר צילום עם פרחים' } });
 
     const stored = JSON.parse(window.localStorage.getItem(CART_DESIGN_STORAGE_KEY) ?? '{}') as Record<string, unknown>;
     expect(stored).toMatchObject({
-      flowerColor: 'בורדו',
-      balloonColor: 'שמפניה וזהב',
-      tableclothColor: 'ירוק זית',
+      customColors: 'פרחים לבנים, אקססוריז זהב ובלונים ורודים',
       customRequest: 'קיר צילום עם פרחים'
     });
   });
@@ -105,7 +112,7 @@ describe('HomePage', () => {
     fireEvent.click(screen.getByRole('button', { name: `הוספה לסל: ${first.title}` }));
 
     expect(screen.getByText('עגלת קניות: 1 פריט')).toBeInTheDocument();
-    expect(screen.getAllByText('רלוונטי לפי הסל').length).toBeGreaterThan(0);
+    expect(screen.getByRole('group', { name: `כמות: ${first.title}` })).toHaveTextContent('1');
     expect(screen.getByRole('link', { name: /לצפייה בעגלה/ })).toHaveAttribute('href', '/cart');
   });
 
@@ -118,6 +125,9 @@ describe('HomePage', () => {
       .map((node) => node.closest('article'))
       .find((node): node is HTMLElement => node instanceof HTMLElement)!;
     fireEvent.click(within(firstArticle).getByRole('button', { name: 'נוסף לסל' }));
+
+    fireEvent.click(screen.getByRole('button', { name: `הגדלת כמות ${first.title}` }));
+    fireEvent.click(screen.getByRole('button', { name: `הפחתת כמות ${first.title}` }));
 
     expect(screen.getByText('עגלת קניות: 2 פריטים')).toBeInTheDocument();
   });
@@ -132,6 +142,7 @@ describe('HomePage', () => {
     expect(screen.getAllByText(/₪2,900/).length).toBeGreaterThan(0);
     expect(screen.getAllByText('מה כלול?').length).toBeGreaterThan(0);
     expect(screen.getByRole('img', { name: `המחשת עיצוב ${sample.title}` })).toBeInTheDocument();
+    expect(screen.getByLabelText('סרטון עיצוב אירוע עם סידורי פרחים')).toHaveAttribute('controls');
   });
 
   it('adds a package to the same cart', () => {
@@ -139,6 +150,9 @@ describe('HomePage', () => {
     const sample = PACKAGES.find((pkg) => pkg.id === 'classic-s')!;
 
     fireEvent.click(screen.getByRole('button', { name: `הוספה לסל: ${sample.title}` }));
+
+    fireEvent.click(screen.getByRole('button', { name: `הגדלת כמות ${sample.title}` }));
+    fireEvent.click(screen.getByRole('button', { name: `הפחתת כמות ${sample.title}` }));
 
     expect(screen.getByText('עגלת קניות: 1 פריט')).toBeInTheDocument();
     expect(screen.getAllByText('נוסף לסל').length).toBeGreaterThan(0);
