@@ -1,9 +1,9 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { validateCouponCode } from '../lib/coupons';
 
 export const CART_STORAGE_KEY = 'ld-event-design-cart-v1';
 export const CART_DESIGN_STORAGE_KEY = 'ld-event-design-design-v1';
 export const MINIMUM_ORDER = 2900;
-export const GIFT_COUPON = 'מתנה';
 
 export interface CartProduct {
   id: string;
@@ -46,7 +46,7 @@ interface CartValue {
   setCustomColors: (customColors: string) => void;
   setDesignColor: (field: DesignColorField, color: string) => void;
   setCustomRequest: (customRequest: string) => void;
-  applyCoupon: (couponCode: string) => boolean;
+  applyCoupon: (couponCode: string) => Promise<boolean>;
   clearCoupon: () => void;
 }
 
@@ -74,7 +74,7 @@ const EMPTY_CART: CartValue = {
   setCustomColors: () => {},
   setDesignColor: () => {},
   setCustomRequest: () => {},
-  applyCoupon: () => false,
+  applyCoupon: async () => false,
   clearCoupon: () => {}
 };
 
@@ -125,8 +125,9 @@ function readStoredPreferences(): DesignPreferences {
       balloonColor: typeof parsed.balloonColor === 'string' ? parsed.balloonColor : '',
       tableclothColor: typeof parsed.tableclothColor === 'string' ? parsed.tableclothColor : '',
       customRequest: typeof parsed.customRequest === 'string' ? parsed.customRequest : '',
-      couponCode: parsed.couponApplied === true ? GIFT_COUPON : '',
-      couponApplied: parsed.couponApplied === true
+      couponCode: typeof parsed.couponCode === 'string' ? parsed.couponCode : '',
+      // Never trust an applied flag from localStorage. A stored code is revalidated by Supabase on mount.
+      couponApplied: false
     };
   } catch {
     return EMPTY_PREFERENCES;
@@ -144,6 +145,33 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     window.localStorage.setItem(CART_DESIGN_STORAGE_KEY, JSON.stringify(preferences));
   }, [preferences]);
+
+  useEffect(() => {
+    const storedCode = preferences.couponCode.trim();
+    if (!storedCode) return;
+
+    let cancelled = false;
+    void validateCouponCode(storedCode)
+      .then((accepted) => {
+        if (cancelled) return;
+        setPreferences((current) =>
+          current.couponCode.trim() === storedCode ? { ...current, couponApplied: accepted } : current
+        );
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setPreferences((current) =>
+          current.couponCode.trim() === storedCode ? { ...current, couponApplied: false } : current
+        );
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // Only revalidate the value that existed when the provider mounted.
+    // User-entered codes are validated explicitly by applyCoupon.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const addItem = useCallback((product: CartProduct) => {
     setItems((current) => {
@@ -191,11 +219,23 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setPreferences((current) => ({ ...current, customRequest }));
   }, []);
 
-  const applyCoupon = useCallback((couponCode: string) => {
-    const accepted = couponCode.trim().toLocaleLowerCase('he-IL') === GIFT_COUPON;
+  const applyCoupon = useCallback(async (couponCode: string) => {
+    const normalized = couponCode.trim();
+    if (!normalized) {
+      setPreferences((current) => ({ ...current, couponCode: '', couponApplied: false }));
+      return false;
+    }
+
+    let accepted = false;
+    try {
+      accepted = await validateCouponCode(normalized);
+    } catch {
+      accepted = false;
+    }
+
     setPreferences((current) => ({
       ...current,
-      couponCode: accepted ? GIFT_COUPON : couponCode.trim(),
+      couponCode: normalized,
       couponApplied: accepted
     }));
     return accepted;
