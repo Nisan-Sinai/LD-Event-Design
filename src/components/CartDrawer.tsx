@@ -20,6 +20,7 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   } = useCart();
   const [couponInput, setCouponInput] = useState(preferences.couponCode);
   const [couponError, setCouponError] = useState('');
+  const [couponBusy, setCouponBusy] = useState(false);
   const panelRef = useRef<HTMLElement>(null);
   const missing = Math.max(0, MINIMUM_ORDER - subtotal);
   const canContinue = items.length > 0 && missing === 0;
@@ -44,12 +45,16 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
     };
   }, [open, onClose]);
 
-  const submitCoupon = () => {
-    if (applyCoupon(couponInput)) {
-      setCouponError('');
-      return;
+  const submitCoupon = async () => {
+    if (couponBusy) return;
+    setCouponBusy(true);
+    setCouponError('');
+    try {
+      if (await applyCoupon(couponInput)) return;
+      setCouponError('הקוד אינו תקין.');
+    } finally {
+      setCouponBusy(false);
     }
-    setCouponError('הקוד אינו תקין.');
   };
 
   return (
@@ -110,11 +115,11 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                 <label htmlFor="drawer-coupon" className="text-xs font-extrabold text-[#2C2C2C]">יש לכם קוד קופון?</label>
                 <div className="mt-2 flex gap-2">
                   <input id="drawer-coupon" value={couponInput} onChange={(event) => { setCouponInput(event.target.value); setCouponError(''); }} placeholder="הקלידו קוד" className="min-w-0 flex-1 rounded-full border border-[#E8C5B8] px-4 py-2.5 text-sm outline-none focus:border-[#B8860B]" />
-                  <button type="button" onClick={submitCoupon} className="rounded-full bg-[#2C2C2C] px-4 py-2.5 text-xs font-bold text-white">הפעלה</button>
+                  <button type="button" onClick={() => void submitCoupon()} disabled={couponBusy} className="rounded-full bg-[#2C2C2C] px-4 py-2.5 text-xs font-bold text-white disabled:cursor-wait disabled:opacity-60">{couponBusy ? 'בודק…' : 'הפעלה'}</button>
                 </div>
                 {preferences.couponApplied && (
                   <div role="status" className="mt-3 flex items-start gap-2 rounded-2xl bg-emerald-50 p-3 text-xs font-bold leading-relaxed text-emerald-800">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> קופון התקבל! מתנה מפתיעה מחכה לכם בשיחת הטלפון איתנו :)
+                    <Check className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> קופון התקבל! הפתעה מיוחדת מחכה לכם בשיחת הטלפון איתנו :)
                     <button type="button" onClick={() => { clearCoupon(); setCouponInput(''); }} className="ms-auto shrink-0 underline">ביטול</button>
                   </div>
                 )}
