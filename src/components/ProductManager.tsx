@@ -193,6 +193,11 @@ export function ProductManager() {
     sort_order: product.custom ? overrides[product.id]?.sort_order ?? Date.now() : null
   });
 
+  const persistImage = (product: ManagedProduct, imageUrl: string) =>
+    run(product.id, () =>
+      saveOverride(toOverride(product, { ...draftFor(product), image: imageUrl }, product.hidden))
+    );
+
   const saveProduct = (product: ManagedProduct) => {
     const draft = draftFor(product);
     if (!draft.category || !draft.title.trim() || draft.price.trim() === '') {
@@ -206,13 +211,19 @@ export function ProductManager() {
     void run(product.id, () => saveOverride(toOverride(product, draftFor(product), !product.hidden)));
   };
 
-  const uploadImage = async (id: string, file: File | undefined, apply: (url: string) => void) => {
+  const uploadImage = async (
+    id: string,
+    file: File | undefined,
+    apply: (url: string) => void,
+    product?: ManagedProduct
+  ) => {
     if (!file) return;
     setUploadingId(id);
     setErrorId(null);
     try {
       const url = await uploadPackageImage(file);
       apply(url);
+      if (product) await persistImage(product, url);
     } catch {
       setErrorId(id);
     } finally {
@@ -246,7 +257,12 @@ export function ProductManager() {
     setShowAdd(false);
   };
 
-  const imageControl = (id: string, url: string, apply: (url: string) => void) => (
+  const imageControl = (
+    id: string,
+    url: string,
+    apply: (url: string) => void,
+    product?: ManagedProduct
+  ) => (
     <div>
       <span className={labelClass}>{copy.image}</span>
       <div className="flex flex-wrap items-center gap-3">
@@ -254,7 +270,15 @@ export function ProductManager() {
           {url ? (
             <>
               <img src={url} alt="" className="h-full w-full object-cover" />
-              <button type="button" onClick={() => apply('')} aria-label={copy.removeImage} className="absolute end-1 top-1 rounded-full bg-white/95 p-1 text-gray-500 shadow hover:text-red-600">
+              <button
+                type="button"
+                onClick={() => {
+                  apply('');
+                  if (product) void persistImage(product, '');
+                }}
+                aria-label={copy.removeImage}
+                className="absolute end-1 top-1 rounded-full bg-white/95 p-1 text-gray-500 shadow hover:text-red-600"
+              >
                 <X className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
             </>
@@ -268,11 +292,11 @@ export function ProductManager() {
             {uploadingId === id ? copy.uploading : copy.upload}
             <input
               type="file"
-              accept="image/jpeg,image/png,image/webp,image/avif"
+              accept="image/*,.heic,.heif"
               className="sr-only"
               disabled={uploadingId === id}
               onChange={(event) => {
-                void uploadImage(id, event.target.files?.[0], apply);
+                void uploadImage(id, event.target.files?.[0], apply, product);
                 event.target.value = '';
               }}
             />
@@ -333,7 +357,7 @@ export function ProductManager() {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-[130px_1fr]">
-                {imageControl(product.id, draft.image, (image) => setField(product, 'image', image))}
+                {imageControl(product.id, draft.image, (image) => setField(product, 'image', image), product)}
                 <div className="grid gap-3">
                   <label><span className={labelClass}>{copy.category}</span><select value={draft.category} onChange={(event) => setField(product, 'category', event.target.value)} className={inputClass}>{Object.values(SHOP_PRODUCT_CATEGORIES).map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
                   <label><span className={labelClass}>{copy.name}</span><input value={draft.title} onChange={(event) => setField(product, 'title', event.target.value)} className={inputClass} /></label>

@@ -108,20 +108,18 @@ describe('ProductManager', () => {
     });
   });
 
-  it('uploads and saves a product image', async () => {
+  it('uploads and saves a product image immediately', async () => {
     renderManager();
     const card = productCard();
     const fileInput = card.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(fileInput, { target: { files: [new File(['image'], 'product.png', { type: 'image/png' })] } });
 
     await waitFor(() => expect(state.upload).toHaveBeenCalled());
-    await waitFor(() => expect(card.querySelector('img')).toHaveAttribute('src', 'https://cdn.example/product.webp'));
-    fireEvent.click(within(card).getByRole('button', { name: 'שמירה' }));
     await waitFor(() => expect(state.saveOverride).toHaveBeenCalled());
     expect(state.saveOverride.mock.calls[0][0]).toMatchObject({ image_url: 'https://cdn.example/product.webp' });
   });
 
-  it('removes an existing image before saving', () => {
+  it('removes an existing image and saves the removal immediately', async () => {
     state.overrides = {
       [firstProduct.id]: override({ package_id: firstProduct.id, image_url: 'https://cdn.example/old.webp' })
     };
@@ -130,6 +128,8 @@ describe('ProductManager', () => {
     expect(card.querySelector('img')).toBeInTheDocument();
     fireEvent.click(within(card).getByRole('button', { name: 'הסרת תמונה' }));
     expect(card.querySelector('img')).not.toBeInTheDocument();
+    await waitFor(() => expect(state.saveOverride).toHaveBeenCalled());
+    expect(state.saveOverride.mock.calls[0][0]).toMatchObject({ image_url: null });
   });
 
   it('hides a product in the public shop', async () => {

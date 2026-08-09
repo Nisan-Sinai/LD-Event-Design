@@ -206,6 +206,43 @@ describe('uploadPackageImage', () => {
     expect(m.uploadedPath).toMatch(/\.jpg$/);
   });
 
+  it('accepts Android images whose MIME type is missing or reported as image/jpg', async () => {
+    await uploadPackageImage(new File(['x'], 'camera.JPEG', { type: '' }));
+    expect(m.uploadedPath).toMatch(/\.jpg$/);
+    expect(m.uploadOpts).toMatchObject({ contentType: 'image/jpeg' });
+
+    await uploadPackageImage(new File(['x'], 'camera', { type: 'image/jpg' }));
+    expect(m.uploadedPath).toMatch(/\.jpg$/);
+    expect(m.uploadOpts).toMatchObject({ contentType: 'image/jpeg' });
+  });
+
+  it('resizes large phone photos before uploading them', async () => {
+    const close = vi.fn();
+    vi.stubGlobal('createImageBitmap', vi.fn().mockResolvedValue({
+      width: 4000,
+      height: 3000,
+      close
+    }));
+    const getContext = vi.spyOn(HTMLCanvasElement.prototype, 'getContext')
+      .mockReturnValue({ drawImage: vi.fn() } as unknown as CanvasRenderingContext2D);
+    const toBlob = vi.spyOn(HTMLCanvasElement.prototype, 'toBlob')
+      .mockImplementation((callback) => callback(new Blob(['compressed'], { type: 'image/webp' })));
+
+    try {
+      const large = new File([new Uint8Array(9 * 1024 * 1024)], 'large-phone-photo.jpg', {
+        type: 'image/jpeg'
+      });
+      await uploadPackageImage(large);
+      expect(m.uploadedPath).toMatch(/\.webp$/);
+      expect(m.uploadOpts).toMatchObject({ contentType: 'image/webp', upsert: false });
+      expect(close).toHaveBeenCalled();
+    } finally {
+      getContext.mockRestore();
+      toBlob.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('throws when Supabase is not configured', async () => {
     m.configured = false;
     await expect(uploadPackageImage(file)).rejects.toThrow(/not configured/i);

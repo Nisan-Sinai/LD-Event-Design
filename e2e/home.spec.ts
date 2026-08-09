@@ -61,6 +61,11 @@ test.describe('Luxury quote storefront (guest)', () => {
     await expect(drawer.getByText(/מינימום להזמנה הינו ₪2,900/)).toBeVisible();
     await expect(drawer.getByRole('button', { name: 'יש להגיע למינימום כדי להמשיך' })).toBeDisabled();
 
+    await drawer.getByLabel('יש לכם קוד קופון?').fill('קוד שגוי');
+    await drawer.getByRole('button', { name: 'הפעלה' }).click();
+    await expect(drawer.getByRole('alert')).toHaveText('הקוד אינו תקין.');
+    await expect(drawer.getByRole('alert')).not.toContainText('מתנה');
+
     await drawer.getByLabel('יש לכם קוד קופון?').fill('מתנה');
     await drawer.getByRole('button', { name: 'הפעלה' }).click();
     await expect(drawer.getByText(/מתנה מפתיעה מחכה לכם/)).toBeVisible();

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { ArrowLeft, ArrowRight, Check, Minus, Palette, Plus, ShoppingBag, Sparkles, Trash2 } from 'lucide-react';
 import { ArtDefsHost, renderPackageSVG } from '../App';
-import { GIFT_COUPON, MINIMUM_ORDER, useCart } from '../cart/CartProvider';
+import { MINIMUM_ORDER, useCart } from '../cart/CartProvider';
 import { QuoteNotice } from '../components/QuoteNotice';
 import { useI18n } from '../i18n/i18n';
 
@@ -79,7 +79,7 @@ export function CartPage() {
       setCouponError('');
       return;
     }
-    setCouponError(t('cart.couponInvalid', { code: GIFT_COUPON }));
+    setCouponError(t('cart.couponInvalid'));
   };
 
   if (items.length === 0) {
