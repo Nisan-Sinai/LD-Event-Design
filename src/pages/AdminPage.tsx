@@ -3,6 +3,7 @@ import { AlertTriangle, ClipboardList, EyeOff, ImagePlus, LayoutDashboard, Packa
 import { OrderDetailModal } from '../components/OrderDetailModal';
 import { PackageManager } from '../components/PackageManager';
 import { ProductManager } from '../components/ProductManager';
+import { BrandingManager } from '../components/BrandingManager';
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/i18n';
 import { deleteOrder, fetchOrders, type OrderRow } from '../lib/orders';
@@ -136,6 +137,7 @@ export function AdminPage() {
 
       {tab === 'catalog' && (
         <div className="space-y-6">
+          <BrandingManager />
           <div id="admin-products" className="scroll-mt-28">
             <div className="mb-3 flex items-center gap-2 px-1">
               <ShoppingBag className="h-5 w-5 text-[#B8860B]" aria-hidden="true" />
@@ -284,3 +286,4 @@ export function AdminPage() {
     </div>
   );
 }
+

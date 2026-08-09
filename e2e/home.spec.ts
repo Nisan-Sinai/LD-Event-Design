@@ -8,7 +8,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('Luxury quote storefront (guest)', () => {
-  test('adds a package, opens the slide-in cart and continues to quote checkout', async ({ page }) => {
+  test('adds a package, opens the slide-in cart and continues to signed checkout', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1, name: /LD Event Design/ })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'האירוע שלכם. האמנות שלנו.' })).toBeVisible();
@@ -20,17 +20,17 @@ test.describe('Luxury quote storefront (guest)', () => {
     const drawer = page.getByRole('dialog', { name: 'סל הצעת מחיר' });
     await expect(drawer).toBeVisible();
     await expect(drawer.getByText('חבילת עיצוב חתונה - Classic S')).toBeVisible();
-    await expect(drawer.getByText(/ללא שום תשלום או התחייבות/)).toBeVisible();
+    await expect(drawer.getByText(/לא משלמים כרגע/)).toBeVisible();
 
-    await drawer.getByRole('link', { name: 'המשך לשליחת הצעת מחיר' }).click();
+    await drawer.getByRole('link', { name: 'המשך להשלמת בחירת ההזמנה' }).click();
     await expect(page).toHaveURL(/\/checkout$/);
-    await expect(page.getByRole('heading', { name: 'שליחת בקשה להצעת מחיר' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'שליחת הצעת מחיר בלבד (ללא תשלום)' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'שליחת בחירת ההזמנה' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'שליחת ההזמנה (ללא תשלום כרגע)' })).toBeVisible();
   });
 
   test('keeps minimum and delivery messaging out of the homepage', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByText(/הרכבת החבילה באתר היא לקבלת הצעת מחיר בלבד/).first()).toBeVisible();
+    await expect(page.getByText(/לא משלמים כרגע/).first()).toBeVisible();
     await expect(page.getByText('קומפוזיציית פרחים ונרות לשולחן').first()).toBeVisible();
     await expect(page.getByText('חבילת עיצוב חתונה - Classic S')).toBeVisible();
 
@@ -39,20 +39,17 @@ test.describe('Luxury quote storefront (guest)', () => {
     await expect(page.getByText(/מינימום הזמנה.*2,500/)).toHaveCount(0);
   });
 
-  test('stores separate flower, balloon and table-linen shades plus a custom request', async ({ page }) => {
+  test('stores free-text event colors plus a custom request', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('button', { name: 'בורדו' }).click();
-    await page.getByRole('button', { name: 'שמפניה וזהב' }).click();
-    await page.getByLabel('גוון מדויק / מותאם אישית — מפות וטקסטיל').fill('ירוק זית');
+    await page.getByLabel('צבעי האקססוריז, הפרחים או הבלונים').fill('פרחים לבנים, אקססוריז זהב ובלונים ורודים');
     await page.getByLabel(/יש משהו ספציפי/).fill('קיר צילום פרחוני');
 
     const preferences = await page.evaluate(() => JSON.parse(window.localStorage.getItem('ld-event-design-design-v1') ?? '{}'));
     expect(preferences).toMatchObject({
-      flowerColor: 'בורדו',
-      balloonColor: 'שמפניה וזהב',
-      tableclothColor: 'ירוק זית',
+      customColors: 'פרחים לבנים, אקססוריז זהב ובלונים ורודים',
       customRequest: 'קיר צילום פרחוני'
     });
+    await expect(page.getByLabel('סרטון עיצוב אירוע עם סידורי פרחים')).toBeVisible();
   });
 
   test('accepts the gift coupon and blocks checkout below ₪2,900 only in the cart', async ({ page }) => {

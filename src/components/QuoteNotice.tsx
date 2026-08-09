@@ -8,9 +8,7 @@ export function QuoteNotice({ compact = false }: { compact?: boolean }) {
           <Sparkles className="h-4 w-4" aria-hidden="true" />
         </span>
         <p className={`${compact ? 'text-xs' : 'text-sm sm:text-base'} leading-relaxed text-[#2C2C2C]`}>
-          <strong className="font-extrabold">הרכבת החבילה באתר היא לקבלת הצעת מחיר בלבד ללא שום תשלום או התחייבות.</strong>
-          <br />
-          לאחר שליחת הפרטים ניפגש לשיחת התאמה אישית, ונרכיב יחד את עיצוב החלומות שלכם!
+          <strong className="font-extrabold">לא משלמים כרגע רק בוחרים את ההזמנה ונחזור אליכם להשלמת ההזמנה</strong>
         </p>
       </div>
     </div>

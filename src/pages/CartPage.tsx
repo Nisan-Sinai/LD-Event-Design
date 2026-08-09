@@ -18,14 +18,12 @@ const COPY = {
     total: 'סה״כ אומדן',
     minimum: 'מינימום להזמנה הינו 2,900 ש״ח',
     missing: 'חסרים להשלמת מינימום ההזמנה',
-    checkout: 'המשך לשליחת הצעת מחיר',
+    checkout: 'המשך להשלמת בחירת ההזמנה',
     clear: 'ריקון העגלה',
-    guest: 'אין צורך בהרשמה. בוחרים, ממלאים פרטים ושולחים בקשה להצעת מחיר בלבד.',
+    guest: 'אין צורך בהרשמה. כל הבחירות נשמרות לקראת השלמת ההזמנה מולנו.',
     cartLabel: 'עגלת קניות',
-    flowerColor: 'גוון לפרחים',
-    balloonColor: 'גוון לבלונים',
-    tableclothColor: 'גוון למפות וטקסטיל',
-    notSelected: 'טרם נבחר — נסגור יחד בהמשך',
+    colors: 'צבעי האקססוריז, הפרחים או הבלונים',
+    notSelected: 'טרם נכתבו — נסגור יחד בהמשך',
     request: 'בקשה עיצובית אישית',
     coupon: 'קוד קופון',
     apply: 'הפעלת קופון'
@@ -41,14 +39,12 @@ const COPY = {
     total: 'Estimated total',
     minimum: 'Minimum order is ₪2,900',
     missing: 'Still needed to reach the minimum order',
-    checkout: 'Continue to quote request',
+    checkout: 'Continue to complete your selection',
     clear: 'Clear cart',
-    guest: 'No registration required. Choose, enter details and request a quote with no payment.',
+    guest: 'No registration required. No payment is collected now — choose your order and we will contact you to complete it.',
     cartLabel: 'Shopping cart',
-    flowerColor: 'Flower shade',
-    balloonColor: 'Balloon shade',
-    tableclothColor: 'Table linen shade',
-    notSelected: 'Not selected yet — we can refine it together',
+    colors: 'Accessory, flower or balloon colors',
+    notSelected: 'Not entered yet — we can refine them together',
     request: 'Custom design request',
     coupon: 'Promo code',
     apply: 'Apply code'
@@ -161,11 +157,9 @@ export function CartPage() {
 
             <section className="rounded-[2rem] border border-[#E8C5B8]/70 bg-white p-5 sm:p-6">
               <h3 className="flex items-center gap-2 font-display text-xl font-black text-[#2C2C2C]"><Palette className="h-5 w-5 text-[#B8860B]" aria-hidden="true" />הבחירות העיצוביות שלכם</h3>
-              <dl className="mt-4 grid gap-3 text-sm text-[#6C625A] sm:grid-cols-3">
-                <div className="rounded-2xl bg-[#FAF6F0] p-4"><dt className="font-extrabold text-[#2C2C2C]">{copy.flowerColor}</dt><dd className="mt-1">{preferences.flowerColor || copy.notSelected}</dd></div>
-                <div className="rounded-2xl bg-[#FAF6F0] p-4"><dt className="font-extrabold text-[#2C2C2C]">{copy.balloonColor}</dt><dd className="mt-1">{preferences.balloonColor || copy.notSelected}</dd></div>
-                <div className="rounded-2xl bg-[#FAF6F0] p-4"><dt className="font-extrabold text-[#2C2C2C]">{copy.tableclothColor}</dt><dd className="mt-1">{preferences.tableclothColor || copy.notSelected}</dd></div>
-                <div className="rounded-2xl bg-[#FAF6F0] p-4 sm:col-span-3"><dt className="font-extrabold text-[#2C2C2C]">{copy.request}</dt><dd className="mt-1 whitespace-pre-wrap">{preferences.customRequest || 'לא נוספה בקשה מיוחדת'}</dd></div>
+              <dl className="mt-4 grid gap-3 text-sm text-[#6C625A]">
+                <div className="rounded-2xl bg-[#FAF6F0] p-4"><dt className="font-extrabold text-[#2C2C2C]">{copy.colors}</dt><dd className="mt-1 whitespace-pre-wrap">{preferences.customColors || copy.notSelected}</dd></div>
+                <div className="rounded-2xl bg-[#FAF6F0] p-4"><dt className="font-extrabold text-[#2C2C2C]">{copy.request}</dt><dd className="mt-1 whitespace-pre-wrap">{preferences.customRequest || 'לא נוספה בקשה מיוחדת'}</dd></div>
               </dl>
               <Link to="/#design-details" className="mt-4 inline-flex items-center gap-2 text-xs font-extrabold text-[#B8860B] hover:underline"><Sparkles className="h-4 w-4" aria-hidden="true" />עדכון בחירות העיצוב</Link>
             </section>

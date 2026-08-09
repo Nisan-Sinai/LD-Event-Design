@@ -100,12 +100,10 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
               <section className="rounded-3xl border border-[#E8C5B8]/70 bg-[#FAF6F0] p-4">
                 <h3 className="flex items-center gap-2 text-sm font-extrabold text-[#2C2C2C]"><Sparkles className="h-4 w-4 text-[#B8860B]" aria-hidden="true" />הבחירות העיצוביות שלכם</h3>
                 <dl className="mt-3 space-y-2 text-xs leading-relaxed text-[#6C625A]">
-                  <div><dt className="inline font-bold text-[#2C2C2C]">פרחים: </dt><dd className="inline">{preferences.flowerColor || 'טרם נבחר'}</dd></div>
-                  <div><dt className="inline font-bold text-[#2C2C2C]">בלונים: </dt><dd className="inline">{preferences.balloonColor || 'טרם נבחר'}</dd></div>
-                  <div><dt className="inline font-bold text-[#2C2C2C]">מפות וטקסטיל: </dt><dd className="inline">{preferences.tableclothColor || 'טרם נבחר'}</dd></div>
+                  <div><dt className="inline font-bold text-[#2C2C2C]">צבעי האקססוריז, הפרחים או הבלונים: </dt><dd className="inline whitespace-pre-wrap">{preferences.customColors || 'טרם נכתבו'}</dd></div>
                   {preferences.customRequest && <div><dt className="inline font-bold text-[#2C2C2C]">בקשה אישית: </dt><dd className="inline">{preferences.customRequest}</dd></div>}
                 </dl>
-                <Link to="/#design-details" onClick={onClose} className="mt-3 inline-flex text-xs font-extrabold text-[#B8860B] underline-offset-4 hover:underline">עדכון גוונים</Link>
+                <Link to="/#design-details" onClick={onClose} className="mt-3 inline-flex text-xs font-extrabold text-[#B8860B] underline-offset-4 hover:underline">עדכון צבעים ובקשות</Link>
               </section>
 
               <section className="rounded-3xl border border-[#E8C5B8]/70 bg-white p-4">
@@ -134,7 +132,7 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
             </div>
             <QuoteNotice compact />
             {canContinue ? (
-              <Link to="/checkout" onClick={onClose} className="mt-4 flex w-full items-center justify-center rounded-full bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#C69A71] px-5 py-3.5 text-sm font-extrabold text-white shadow-lg transition hover:-translate-y-0.5">המשך לשליחת הצעת מחיר</Link>
+              <Link to="/checkout" onClick={onClose} className="mt-4 flex w-full items-center justify-center rounded-full bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#C69A71] px-5 py-3.5 text-sm font-extrabold text-white shadow-lg transition hover:-translate-y-0.5">המשך להשלמת בחירת ההזמנה</Link>
             ) : (
               <button type="button" disabled className="mt-4 w-full cursor-not-allowed rounded-full bg-[#E9E4DE] px-5 py-3.5 text-sm font-extrabold text-[#9B8A7D]">יש להגיע למינימום כדי להמשיך</button>
             )}

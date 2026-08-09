@@ -4,6 +4,8 @@ import { Facebook, Instagram, LogOut, Phone, ShoppingBag, Sparkles, User as User
 import { useAuth } from '../auth/AuthProvider';
 import { useCart } from '../cart/CartProvider';
 import { useI18n } from '../i18n/i18n';
+import { brandLogoUrl } from '../lib/branding';
+import { usePackages } from '../packages/PackagesProvider';
 import { AccessibilityWidget } from './AccessibilityWidget';
 import { CartDrawer } from './CartDrawer';
 import { WhatsAppButton } from './WhatsAppButton';
@@ -37,6 +39,7 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
   const { t, tList, lang, dir, setLang } = useI18n();
   const { user, role, roleLoading, signOut } = useAuth();
   const { itemCount, subtotal } = useCart();
+  const { overrides } = usePackages();
   const [legalModal, setLegalModal] = useState<LegalKey | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
   const legalPanelRef = useRef<HTMLDivElement>(null);
@@ -112,6 +115,7 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
         : 'text-[#4A4540] hover:bg-white/75 hover:text-[#B8860B]'
     }`;
   const cartText = t('nav.cart');
+  const logoUrl = brandLogoUrl(overrides);
 
   return (
     <div className="flex min-h-screen flex-col overflow-x-hidden bg-[#FDFBF7] font-sans text-[#2C2C2C] antialiased" dir={dir}>
@@ -122,9 +126,15 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-50 border-b border-white/70 bg-[#FDFBF7]/82 shadow-[0_8px_35px_rgba(44,44,44,0.05)] backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <Link to="/" className="group flex items-center gap-2.5">
-            <div className="rounded-2xl bg-gradient-to-br from-[#D4AF37] via-[#C69A71] to-[#B8860B] p-2 text-white shadow-lg transition-transform group-hover:rotate-3 group-hover:scale-105">
-              <Sparkles className="h-5 w-5" aria-hidden="true" />
-            </div>
+            {logoUrl ? (
+              <span className="flex h-11 w-16 items-center justify-center overflow-hidden rounded-2xl border border-[#E8C5B8]/70 bg-white p-1.5 shadow-sm">
+                <img src={logoUrl} alt="לוגו LD Event Design" className="h-full w-full object-contain" />
+              </span>
+            ) : (
+              <div className="rounded-2xl bg-gradient-to-br from-[#D4AF37] via-[#C69A71] to-[#B8860B] p-2 text-white shadow-lg transition-transform group-hover:rotate-3 group-hover:scale-105">
+                <Sparkles className="h-5 w-5" aria-hidden="true" />
+              </div>
+            )}
             <div className="text-start">
               <h1 className="font-display text-lg font-black tracking-wide text-[#2C2C2C] sm:text-xl">LD Event Design</h1>
               <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-[#9B7762]">{t('brand.tagline')}</p>
@@ -177,7 +187,13 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
         <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 py-14 sm:grid-cols-3">
           <div>
             <div className="flex items-center gap-2.5">
-              <div className="rounded-2xl bg-gradient-to-br from-[#D4AF37] to-[#B8860B] p-2 text-white"><Sparkles className="h-4 w-4" aria-hidden="true" /></div>
+              {logoUrl ? (
+                <span className="flex h-12 w-20 items-center justify-center rounded-2xl bg-white p-1.5">
+                  <img src={logoUrl} alt="לוגו LD Event Design" className="h-full w-full object-contain" />
+                </span>
+              ) : (
+                <div className="rounded-2xl bg-gradient-to-br from-[#D4AF37] to-[#B8860B] p-2 text-white"><Sparkles className="h-4 w-4" aria-hidden="true" /></div>
+              )}
               <span className="font-display text-xl font-black text-white">LD Event Design</span>
             </div>
             <p className="mt-4 max-w-xs text-xs leading-relaxed text-white/55">עיצוב אירועים נשי, מדויק ומלא רגש — מהרעיון הראשון ועד לרגע שבו האורחים נכנסים.</p>

@@ -34,10 +34,10 @@ describe('CartPage', () => {
   it('shows quote totals without a fixed delivery charge when the minimum is reached', () => {
     renderCart([item]);
     expect(screen.getByText(item.title)).toBeInTheDocument();
-    expect(screen.getByText(/בקשה להצעת מחיר בלבד/)).toBeInTheDocument();
+    expect(screen.getByText(/לא משלמים כרגע/)).toBeInTheDocument();
     expect(screen.getAllByText('₪2,900').length).toBeGreaterThan(0);
     expect(screen.queryByText('₪3,400')).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'המשך לשליחת הצעת מחיר' })).toHaveAttribute('href', '/checkout');
+    expect(screen.getByRole('link', { name: 'המשך להשלמת בחירת ההזמנה' })).toHaveAttribute('href', '/checkout');
   });
 
   it('updates quantities with plus and minus buttons', () => {
@@ -65,7 +65,7 @@ describe('CartPage', () => {
     renderCart([{ ...item, price: 1000 }]);
     expect(screen.getByText('מינימום להזמנה הינו 2,900 ש״ח')).toBeInTheDocument();
     expect(screen.getByText(/חסרים להשלמת מינימום ההזמנה/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'המשך לשליחת הצעת מחיר' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'המשך להשלמת בחירת ההזמנה' })).toBeDisabled();
   });
 
   it('accepts only the gift coupon, persists it and can clear it', () => {
@@ -90,6 +90,6 @@ describe('CartPage', () => {
     window.localStorage.setItem('ld-lang', 'en');
     renderCart([item]);
     expect(screen.getByText('Your design cart')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Continue to quote request' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Continue to complete your selection' })).toBeInTheDocument();
   });
 });
