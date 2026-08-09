@@ -6,11 +6,13 @@ import type { PackageOverride } from '../lib/packages';
 const m = vi.hoisted(() => ({
   fetch: vi.fn(async () => ({}) as Record<string, PackageOverride>),
   save: vi.fn(async () => {}),
+  saveImage: vi.fn(async () => {}),
   del: vi.fn(async () => {})
 }));
 vi.mock('../lib/packages', () => ({
   fetchPackageOverrides: m.fetch,
   savePackageOverride: m.save,
+  savePackageImage: m.saveImage,
   deletePackageOverride: m.del
 }));
 
@@ -27,6 +29,7 @@ const wrapper = ({ children }: { children: ReactNode }) => <PackagesProvider>{ch
 beforeEach(() => {
   m.fetch.mockReset().mockResolvedValue({});
   m.save.mockReset().mockResolvedValue(undefined);
+  m.saveImage.mockReset().mockResolvedValue(undefined);
   m.del.mockReset().mockResolvedValue(undefined);
 });
 
@@ -38,7 +41,10 @@ describe('PackagesProvider', () => {
     expect(result.current.loading).toBe(false);
   });
 
-  it('saveOverride persists and updates local state', async () => {
+  it('saveOverride persists and refreshes local state from the database', async () => {
+    m.fetch
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({ x: ov({ package_id: 'x', price: 5 }) });
     const { result } = renderHook(() => usePackages(), { wrapper });
     await waitFor(() => expect(result.current.loading).toBe(false));
     await act(async () => {
@@ -48,8 +54,23 @@ describe('PackagesProvider', () => {
     expect(result.current.overrides.x).toMatchObject({ package_id: 'x', price: 5 });
   });
 
-  it('removeOverride deletes and updates local state', async () => {
-    m.fetch.mockResolvedValue({ x: ov({ package_id: 'x' }) });
+  it('saveImage persists only the image and refreshes local state', async () => {
+    m.fetch
+      .mockResolvedValueOnce({ x: ov({ package_id: 'x', image_url: null }) })
+      .mockResolvedValueOnce({ x: ov({ package_id: 'x', image_url: 'https://cdn.example/new.webp' }) });
+    const { result } = renderHook(() => usePackages(), { wrapper });
+    await waitFor(() => expect(result.current.overrides.x).toBeTruthy());
+    await act(async () => {
+      await result.current.saveImage('x', 'https://cdn.example/new.webp');
+    });
+    expect(m.saveImage).toHaveBeenCalledWith('x', 'https://cdn.example/new.webp');
+    expect(result.current.overrides.x.image_url).toBe('https://cdn.example/new.webp');
+  });
+
+  it('removeOverride deletes and refreshes local state', async () => {
+    m.fetch
+      .mockResolvedValueOnce({ x: ov({ package_id: 'x' }) })
+      .mockResolvedValueOnce({});
     const { result } = renderHook(() => usePackages(), { wrapper });
     await waitFor(() => expect(result.current.overrides.x).toBeTruthy());
     await act(async () => {
@@ -70,10 +91,10 @@ describe('PackagesProvider', () => {
     const { result } = renderHook(() => usePackages());
     expect(result.current.overrides).toEqual({});
     expect(result.current.loading).toBe(false);
-    // הפונקציות בברירת המחדל הן no-op בטוחות (לא זורקות, מחזירות Promise)
     await act(async () => {
       await result.current.refresh();
       await result.current.saveOverride(ov({ package_id: 'noop' }));
+      await result.current.saveImage('noop', null);
       await result.current.removeOverride('noop');
     });
     expect(result.current.overrides).toEqual({});
