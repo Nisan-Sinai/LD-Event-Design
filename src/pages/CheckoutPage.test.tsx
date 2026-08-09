@@ -7,6 +7,8 @@ import { submitCartOrder } from '../lib/submitCartOrder';
 import { renderWithProviders } from '../test/render';
 import { CheckoutPage } from './CheckoutPage';
 
+const coupon = vi.hoisted(() => ({ validate: vi.fn() }));
+vi.mock('../lib/coupons', () => ({ validateCouponCode: coupon.validate }));
 vi.mock('../lib/submitCartOrder', () => ({ submitCartOrder: vi.fn() }));
 
 const packageState = vi.hoisted(() => ({ overrides: {} as OverrideMap }));
@@ -17,6 +19,7 @@ vi.mock('../packages/PackagesProvider', () => ({
     loading: false,
     refresh: vi.fn(),
     saveOverride: vi.fn(),
+    saveImage: vi.fn(),
     removeOverride: vi.fn()
   })
 }));
@@ -31,12 +34,14 @@ const item: CartItem = {
   svgType: 'chuppah-s'
 };
 
+const STORED_COUPON = 'server-approved-code';
+
 function renderCheckout(items: CartItem[] = [item]) {
   window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
   window.localStorage.setItem(CART_DESIGN_STORAGE_KEY, JSON.stringify({
     customColors: 'פרחים לבנים, אקססוריז זהב ובלונים ורודים',
     customRequest: 'קיר צילום',
-    couponCode: 'מתנה',
+    couponCode: STORED_COUPON,
     couponApplied: true
   }));
   return renderWithProviders(<CartProvider><CheckoutPage /></CartProvider>, { route: '/checkout' });
@@ -57,6 +62,7 @@ beforeEach(() => {
   window.localStorage.clear();
   window.localStorage.removeItem('ld-lang');
   packageState.overrides = {};
+  coupon.validate.mockReset().mockResolvedValue(true);
   vi.mocked(submitCartOrder).mockReset();
 });
 
@@ -79,11 +85,12 @@ describe('CheckoutPage', () => {
     expect(screen.getByRole('button', { name: 'שליחת ההזמנה (ללא תשלום כרגע)' })).toBeInTheDocument();
   });
 
-  it('shows free-text colors, custom request and coupon without shade cards', () => {
+  it('shows free-text colors, custom request and a server-revalidated coupon without shade cards', async () => {
     renderCheckout();
     expect(screen.getByText('פרחים לבנים, אקססוריז זהב ובלונים ורודים')).toBeInTheDocument();
     expect(screen.getByText('קיר צילום')).toBeInTheDocument();
-    expect(screen.getByText('מתנה')).toBeInTheDocument();
+    await waitFor(() => expect(coupon.validate).toHaveBeenCalledWith(STORED_COUPON));
+    await waitFor(() => expect(screen.getByText(STORED_COUPON)).toBeInTheDocument());
     expect(screen.queryByText('גוון לפרחים')).not.toBeInTheDocument();
   });
 
@@ -181,6 +188,8 @@ describe('CheckoutPage', () => {
   it('submits signatures and optional delivery, clears the cart and shows success', async () => {
     vi.mocked(submitCartOrder).mockResolvedValue({ id: 'order-123' });
     renderCheckout();
+    await waitFor(() => expect(coupon.validate).toHaveBeenCalledWith(STORED_COUPON));
+    await waitFor(() => expect(screen.getByText(STORED_COUPON)).toBeInTheDocument());
     fillValidForm();
     fireEvent.change(screen.getByLabelText(/הערות/), { target: { value: 'ללא פרחים אדומים' } });
     fireEvent.click(screen.getByLabelText(/הוספת שירות הובלה והרכבה/));
@@ -199,7 +208,7 @@ describe('CheckoutPage', () => {
         primary: expect.objectContaining({ typedName: 'ישראל ישראלי' }),
         secondary: null
       }),
-      preferences: expect.objectContaining({ couponCode: 'מתנה', couponApplied: true })
+      preferences: expect.objectContaining({ couponCode: STORED_COUPON, couponApplied: true })
     }));
   });
 
