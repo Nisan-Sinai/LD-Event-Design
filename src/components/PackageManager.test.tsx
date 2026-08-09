@@ -6,7 +6,7 @@ import type { PackageOverride } from '../lib/packages';
 const p = vi.hoisted(() => ({
   overrides: {} as Record<string, PackageOverride>,
   configured: true,
-  saveOverride: vi.fn(async (_o: PackageOverride) => {}),
+  saveOverride: vi.fn(async (_o: PackageOverride, _options?: unknown) => {}),
   saveImage: vi.fn(async (_id: string, _url: string | null) => {}),
   removeOverride: vi.fn(async (_id: string) => {}),
   upload: vi.fn(async (_f: File) => 'https://cdn.example/x.png')
