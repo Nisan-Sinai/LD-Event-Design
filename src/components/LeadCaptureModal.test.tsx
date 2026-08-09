@@ -22,7 +22,8 @@ describe('LeadCaptureModal', () => {
 
     const phone = screen.getByLabelText('טלפון');
     expect(phone).toHaveAttribute('dir', 'ltr');
-    expect(phone).toHaveClass('text-right');
+    expect(phone).toHaveClass('lead-phone-input', 'pr-11', 'pl-4', 'text-right');
+    expect(phone).not.toHaveClass('ps-11', 'pe-4');
 
     const eventDate = screen.getByLabelText('תאריך האירוע');
     expect(eventDate).toHaveAttribute('type', 'date');

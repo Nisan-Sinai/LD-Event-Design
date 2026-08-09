@@ -110,7 +110,9 @@ export function LeadCaptureModal() {
 
   if (!open) return null;
 
-  const inputClass = 'w-full rounded-2xl border border-[#E8C5B8] bg-white/90 py-3 ps-11 pe-4 text-sm text-[#2C2C2C] outline-none transition focus:border-[#B8860B] focus:ring-4 focus:ring-[#E8C5B8]/35';
+  const inputBaseClass = 'w-full rounded-2xl border border-[#E8C5B8] bg-white/90 py-3 text-sm text-[#2C2C2C] outline-none transition focus:border-[#B8860B] focus:ring-4 focus:ring-[#E8C5B8]/35';
+  const inputClass = `${inputBaseClass} ps-11 pe-4`;
+  const phoneInputClass = `${inputBaseClass} lead-phone-input pr-11 pl-4 text-right`;
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-[#2C2C2C]/55 p-4 backdrop-blur-sm" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
@@ -144,7 +146,7 @@ export function LeadCaptureModal() {
               <label className="relative block">
                 <span className="sr-only">טלפון</span>
                 <Phone className="pointer-events-none absolute start-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#B8860B]" aria-hidden="true" />
-                <input value={form.phone} onChange={(event) => setField('phone', event.target.value)} placeholder="טלפון *" type="tel" inputMode="tel" autoComplete="tel" dir="ltr" className={`${inputClass} text-right`} />
+                <input value={form.phone} onChange={(event) => setField('phone', event.target.value)} placeholder="טלפון *" type="tel" inputMode="tel" autoComplete="tel" dir="ltr" className={phoneInputClass} />
               </label>
               <label className="relative block">
                 <span className="sr-only">אימייל</span>
