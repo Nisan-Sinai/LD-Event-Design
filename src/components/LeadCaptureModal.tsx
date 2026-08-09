@@ -144,17 +144,19 @@ export function LeadCaptureModal() {
               <label className="relative block">
                 <span className="sr-only">טלפון</span>
                 <Phone className="pointer-events-none absolute start-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#B8860B]" aria-hidden="true" />
-                <input value={form.phone} onChange={(event) => setField('phone', event.target.value)} placeholder="טלפון *" type="tel" inputMode="tel" autoComplete="tel" className={inputClass} />
+                <input value={form.phone} onChange={(event) => setField('phone', event.target.value)} placeholder="טלפון *" type="tel" inputMode="tel" autoComplete="tel" dir="ltr" className={`${inputClass} text-right`} />
               </label>
               <label className="relative block">
                 <span className="sr-only">אימייל</span>
                 <Mail className="pointer-events-none absolute start-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#B8860B]" aria-hidden="true" />
                 <input value={form.email} onChange={(event) => setField('email', event.target.value)} placeholder="אימייל" type="email" autoComplete="email" className={inputClass} />
               </label>
-              <label className="relative block sm:col-span-2">
-                <span className="sr-only">תאריך משוער של האירוע</span>
-                <CalendarDays className="pointer-events-none absolute start-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#B8860B]" aria-hidden="true" />
-                <input value={form.estimatedEventDate} onChange={(event) => setField('estimatedEventDate', event.target.value)} type="date" className={inputClass} />
+              <label className="block text-right sm:col-span-2">
+                <span className="mb-1.5 block text-xs font-extrabold text-[#6C625A]">תאריך האירוע</span>
+                <span className="relative block">
+                  <CalendarDays className="pointer-events-none absolute start-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#B8860B]" aria-hidden="true" />
+                  <input value={form.estimatedEventDate} onChange={(event) => setField('estimatedEventDate', event.target.value)} type="date" className={inputClass} />
+                </span>
               </label>
               <label className="hidden" aria-hidden="true">Website<input tabIndex={-1} autoComplete="off" value={form.website} onChange={(event) => setField('website', event.target.value)} /></label>
 
