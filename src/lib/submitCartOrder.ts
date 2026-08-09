@@ -124,7 +124,7 @@ export async function submitCartOrder(input: CartOrderInput): Promise<{ id: stri
     base_price: input.subtotal,
     upgrades_total: 0,
     delivery_price: input.deliveryPrice,
-    coupon_code: input.preferences.couponApplied ? input.preferences.couponCode : null,
+    coupon_code: input.preferences.couponApplied ? 'validated' : null,
     coupon_discount: 0,
     total_price: input.totalPrice,
     status: 'new',
@@ -140,4 +140,3 @@ export async function submitCartOrder(input: CartOrderInput): Promise<{ id: stri
   if (error) throw error;
   return { id };
 }
-

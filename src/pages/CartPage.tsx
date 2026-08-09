@@ -26,7 +26,8 @@ const COPY = {
     notSelected: 'טרם נכתבו — נסגור יחד בהמשך',
     request: 'בקשה עיצובית אישית',
     coupon: 'קוד קופון',
-    apply: 'הפעלת קופון'
+    apply: 'הפעלת קופון',
+    checking: 'בודק…'
   },
   en: {
     title: 'Your design cart',
@@ -47,7 +48,8 @@ const COPY = {
     notSelected: 'Not entered yet — we can refine them together',
     request: 'Custom design request',
     coupon: 'Promo code',
-    apply: 'Apply code'
+    apply: 'Apply code',
+    checking: 'Checking…'
   }
 } as const;
 
@@ -70,16 +72,21 @@ export function CartPage() {
   } = useCart();
   const [couponInput, setCouponInput] = useState(preferences.couponCode);
   const [couponError, setCouponError] = useState('');
+  const [couponBusy, setCouponBusy] = useState(false);
   const Arrow = lang === 'he' ? ArrowLeft : ArrowRight;
   const minimumMissing = Math.max(0, MINIMUM_ORDER - subtotal);
   const canCheckout = items.length > 0 && minimumMissing === 0;
 
-  const submitCoupon = () => {
-    if (applyCoupon(couponInput)) {
-      setCouponError('');
-      return;
+  const submitCoupon = async () => {
+    if (couponBusy) return;
+    setCouponBusy(true);
+    setCouponError('');
+    try {
+      if (await applyCoupon(couponInput)) return;
+      setCouponError(t('cart.couponInvalid'));
+    } finally {
+      setCouponBusy(false);
     }
-    setCouponError(t('cart.couponInvalid'));
   };
 
   if (items.length === 0) {
@@ -176,7 +183,7 @@ export function CartPage() {
               <label htmlFor="cart-coupon" className="text-xs font-extrabold text-[#2C2C2C]">{copy.coupon}</label>
               <div className="mt-2 flex gap-2">
                 <input id="cart-coupon" value={couponInput} onChange={(event) => { setCouponInput(event.target.value); setCouponError(''); }} placeholder="הקלידו קוד" className="min-w-0 flex-1 rounded-full border border-[#E8C5B8] px-4 py-2.5 text-sm outline-none focus:border-[#B8860B]" />
-                <button type="button" onClick={submitCoupon} className="rounded-full bg-[#2C2C2C] px-4 py-2.5 text-xs font-bold text-white">{copy.apply}</button>
+                <button type="button" onClick={() => void submitCoupon()} disabled={couponBusy} className="rounded-full bg-[#2C2C2C] px-4 py-2.5 text-xs font-bold text-white disabled:cursor-wait disabled:opacity-60">{couponBusy ? copy.checking : copy.apply}</button>
               </div>
               {preferences.couponApplied && (
                 <div role="status" className="mt-3 flex items-start gap-2 rounded-2xl bg-emerald-50 p-3 text-xs font-bold leading-relaxed text-emerald-800">

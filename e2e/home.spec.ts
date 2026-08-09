@@ -52,7 +52,7 @@ test.describe('Luxury quote storefront (guest)', () => {
     await expect(page.getByLabel('סרטון עיצוב אירוע עם סידורי פרחים')).toBeVisible();
   });
 
-  test('accepts the gift coupon and blocks checkout below ₪2,900 only in the cart', async ({ page }) => {
+  test('keeps coupon rejection generic and blocks checkout below ₪2,900 only in the cart', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: /הוספה לסל: קומפוזיציית פרחים ונרות לשולחן/ }).first().click();
     await page.getByRole('link', { name: /עגלת קניות: 1/ }).click();
@@ -64,11 +64,8 @@ test.describe('Luxury quote storefront (guest)', () => {
     await drawer.getByLabel('יש לכם קוד קופון?').fill('קוד שגוי');
     await drawer.getByRole('button', { name: 'הפעלה' }).click();
     await expect(drawer.getByRole('alert')).toHaveText('הקוד אינו תקין.');
-    await expect(drawer.getByRole('alert')).not.toContainText('מתנה');
-
-    await drawer.getByLabel('יש לכם קוד קופון?').fill('מתנה');
-    await drawer.getByRole('button', { name: 'הפעלה' }).click();
-    await expect(drawer.getByText(/מתנה מפתיעה מחכה לכם/)).toBeVisible();
+    await expect(drawer.getByRole('status')).toHaveCount(0);
+    await expect(drawer.getByText(/הקוד (?:הנכון|התקין) הוא/)).toHaveCount(0);
   });
 
   for (const width of [360, 390, 430]) {
