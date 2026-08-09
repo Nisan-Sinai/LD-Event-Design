@@ -49,7 +49,18 @@ test.describe('Luxury quote storefront (guest)', () => {
       customColors: 'פרחים לבנים, אקססוריז זהב ובלונים ורודים',
       customRequest: 'קיר צילום פרחוני'
     });
-    await expect(page.getByLabel('סרטון עיצוב אירוע עם סידורי פרחים')).toBeVisible();
+    await expect(page.getByLabel('עיצוב אירועים יוקרתי')).toBeVisible();
+    await expect(page.getByLabel('סרטון עיצוב אירוע עם סידורי פרחים')).toBeHidden();
+  });
+
+  test('keeps Instagram link-only and removes the lower media gallery', async ({ page }) => {
+    await page.goto('/');
+
+    const instagramSection = page.locator('section[aria-labelledby="instagram-title"]');
+    await expect(instagramSection.getByRole('heading', { name: 'מהאינסטגרם שלנו' })).toBeVisible();
+    await expect(instagramSection.getByRole('link', { name: '@ld_event_design' })).toBeVisible();
+    await expect(instagramSection.locator('.mt-8.grid')).toHaveCSS('display', 'none');
+    await expect(page.locator('section[aria-labelledby="event-video-title"]')).toHaveCSS('display', 'none');
   });
 
   test('keeps coupon rejection generic and blocks checkout below ₪2,900 only in the cart', async ({ page }) => {
