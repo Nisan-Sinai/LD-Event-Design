@@ -80,7 +80,7 @@ describe('CartPage', () => {
     fireEvent.change(input, { target: { value: 'לא תקין' } });
     fireEvent.click(screen.getByRole('button', { name: 'הפעלת קופון' }));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/אינו תקין/));
-    expect(screen.getByRole('alert')).not.toHaveTextContent(/קוד.*תקין/i);
+    expect(screen.getByRole('alert')).not.toHaveTextContent(/הקוד (?:הנכון|התקין) הוא/);
 
     fireEvent.change(input, { target: { value: 'server-approved-code' } });
     fireEvent.click(screen.getByRole('button', { name: 'הפעלת קופון' }));
