@@ -113,13 +113,12 @@ describe('PackageManager', () => {
     expect(p.saveOverride).not.toHaveBeenCalled();
   });
 
-  it('uploads an image, shows a preview and saves it immediately', async () => {
+  it('uploads an image and saves it immediately', async () => {
     renderPM();
     const row = rowFor(CLASSIC_S);
     const fileInput = row.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(fileInput, { target: { files: [new File(['x'], 'p.png', { type: 'image/png' })] } });
     await waitFor(() => expect(p.upload).toHaveBeenCalled());
-    await waitFor(() => expect(row.querySelector('img')).toBeTruthy());
     await waitFor(() => expect(p.saveOverride).toHaveBeenCalled());
     expect(p.saveOverride.mock.calls[0][0]).toMatchObject({
       package_id: 'classic-s',

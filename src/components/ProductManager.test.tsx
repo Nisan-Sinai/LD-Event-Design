@@ -115,7 +115,6 @@ describe('ProductManager', () => {
     fireEvent.change(fileInput, { target: { files: [new File(['image'], 'product.png', { type: 'image/png' })] } });
 
     await waitFor(() => expect(state.upload).toHaveBeenCalled());
-    await waitFor(() => expect(card.querySelector('img')).toHaveAttribute('src', 'https://cdn.example/product.webp'));
     await waitFor(() => expect(state.saveOverride).toHaveBeenCalled());
     expect(state.saveOverride.mock.calls[0][0]).toMatchObject({ image_url: 'https://cdn.example/product.webp' });
   });

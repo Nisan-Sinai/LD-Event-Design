@@ -72,7 +72,8 @@ export function validatePackageImage(file: File): string {
   if (file.size > MAX_SOURCE_IMAGE_BYTES) throw new Error('Image file is larger than 30 MB');
 
   const mimeType = file.type.trim().toLowerCase();
-  const extension = IMAGE_EXTENSIONS[mimeType] ?? extensionFromFileName(file.name);
+  const mayUseFileName = mimeType === '' || mimeType === 'application/octet-stream';
+  const extension = IMAGE_EXTENSIONS[mimeType] ?? (mayUseFileName ? extensionFromFileName(file.name) : undefined);
   if (!extension) throw new Error('Unsupported image format');
   return extension;
 }
