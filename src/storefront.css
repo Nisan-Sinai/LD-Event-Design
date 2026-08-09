@@ -54,6 +54,11 @@ select {
   display: block;
 }
 
+/* Keep the Hebrew hint readable while entered phone digits retain LTR ordering. */
+.lead-phone-input:placeholder-shown {
+  direction: rtl;
+}
+
 @media (max-width: 639px) {
   nav[aria-label='קטגוריות החנות'],
   nav[aria-label='Shop categories'] {
