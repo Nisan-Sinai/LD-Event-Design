@@ -5,7 +5,6 @@ import {
   ArrowRight,
   Check,
   Heart,
-  Instagram,
   MessageCircle,
   Minus,
   Palette,
@@ -21,6 +20,7 @@ import {
   SHOP_PRODUCT_CATEGORIES,
   type ShopProduct
 } from '../catalog/shopProducts';
+import { InstagramFeedSection } from '../components/InstagramFeedSection';
 import { LeadCaptureModal } from '../components/LeadCaptureModal';
 import { PackageMediaCarousel } from '../components/PackageMediaCarousel';
 import { QuoteNotice } from '../components/QuoteNotice';
@@ -367,7 +367,6 @@ export function HomePage() {
         </div>
       </section>
 
-
       <section className="bg-[#2C2C2C] py-16 text-white sm:py-24" aria-labelledby="event-video-title">
         <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 lg:grid-cols-[0.8fr_1.2fr]">
           <div>
@@ -423,24 +422,7 @@ export function HomePage() {
 
       <TestimonialsCarousel />
 
-      <section className="bg-[#FAF6F0] py-16 sm:py-24" aria-labelledby="instagram-title">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="flex flex-wrap items-end justify-between gap-5">
-            <div>
-              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.3em] text-[#B8860B]"><Instagram className="h-4 w-4" aria-hidden="true" /> Live inspiration</p>
-              <h2 id="instagram-title" className="font-display mt-3 text-4xl font-black text-[#2C2C2C]">מהאינסטגרם שלנו</h2>
-            </div>
-            <a href="https://www.instagram.com/ld_event_design?igsh=MWpsN2c2OWhyY2FsaQ==" target="_blank" rel="noopener noreferrer" className="rounded-full border border-[#B8860B] px-5 py-2.5 text-xs font-extrabold text-[#7A5A46] transition hover:bg-[#B8860B] hover:text-white">@ld_event_design</a>
-          </div>
-          <div className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
-            {products.slice(0, 6).map((product) => (
-              <a key={product.id} href="https://www.instagram.com/ld_event_design?igsh=MWpsN2c2OWhyY2FsaQ==" target="_blank" rel="noopener noreferrer" aria-label={`פתיחת אינסטגרם — ${product.title}`} className="group aspect-square overflow-hidden rounded-3xl bg-white shadow-sm">
-                {product.image ? <img src={product.image} alt={product.title} loading="lazy" className="h-full w-full object-cover transition duration-700 group-hover:scale-110" /> : <div className="flex h-full items-center justify-center p-3 transition duration-500 group-hover:scale-105">{renderPackageSVG(product.svgType)}</div>}
-              </a>
-            ))}
-          </div>
-        </div>
-      </section>
+      <InstagramFeedSection />
 
       <section className="bg-white py-16">
         <div className="mx-auto max-w-5xl px-4 text-center">
@@ -468,5 +450,3 @@ export function HomePage() {
     </>
   );
 }
-
-
