@@ -50,6 +50,7 @@ import {
   buildCatalog,
   fetchPackageOverrides,
   savePackageOverride,
+  savePackageImage,
   deletePackageOverride,
   uploadPackageImage,
   type PackageOverride
@@ -155,6 +156,7 @@ describe('packages data layer', () => {
     m.configured = false;
     expect(await fetchPackageOverrides()).toEqual({});
     await savePackageOverride(ov({ package_id: 'classic-s', price: 100 }));
+    await savePackageImage('classic-s', 'https://cdn.example/image.webp');
     await deletePackageOverride('classic-s');
     expect(m.upserted).toBeNull();
     expect(m.deleted).toBeNull();
@@ -166,12 +168,45 @@ describe('packages data layer', () => {
     expect(map['classic-s'].price).toBe(1);
   });
 
-  it('upserts with onConflict and an updated_at timestamp', async () => {
-    await savePackageOverride(ov({ package_id: 'classic-s', price: 999 }));
+  it('ordinary saves omit image_url so stale edits cannot erase a newer image', async () => {
+    await savePackageOverride(ov({
+      package_id: 'classic-s',
+      price: 999,
+      image_url: 'https://cdn.example/stale.webp'
+    }));
     expect(m.upserted?.package_id).toBe('classic-s');
     expect(m.upserted?.price).toBe(999);
+    expect(m.upserted?.image_url).toBeUndefined();
     expect(m.upserted?.updated_at).toBeTruthy();
     expect(m.upsertOpts).toEqual({ onConflict: 'package_id' });
+  });
+
+  it('creation saves can explicitly include image_url', async () => {
+    await savePackageOverride(
+      ov({ package_id: 'custom-new', image_url: 'https://cdn.example/new.webp', is_custom: true }),
+      { includeImage: true }
+    );
+    expect(m.upserted).toMatchObject({
+      package_id: 'custom-new',
+      image_url: 'https://cdn.example/new.webp',
+      is_custom: true
+    });
+  });
+
+  it('updates only image_url through the dedicated image write', async () => {
+    await savePackageImage('classic-s', 'https://cdn.example/fresh.webp');
+    expect(m.upserted).toMatchObject({
+      package_id: 'classic-s',
+      image_url: 'https://cdn.example/fresh.webp'
+    });
+    expect(m.upserted).not.toHaveProperty('price');
+    expect(m.upserted?.updated_at).toBeTruthy();
+    expect(m.upsertOpts).toEqual({ onConflict: 'package_id' });
+  });
+
+  it('can explicitly remove an image through the dedicated image write', async () => {
+    await savePackageImage('classic-s', null);
+    expect(m.upserted).toMatchObject({ package_id: 'classic-s', image_url: null });
   });
 
   it('deletes by package_id', async () => {
@@ -179,13 +214,16 @@ describe('packages data layer', () => {
     expect(m.deleted).toBe('classic-s');
   });
 
-  it('throws on select / upsert / delete errors', async () => {
+  it('throws on select / ordinary save / image save / delete errors', async () => {
     m.selectError = { message: 'sel' };
     await expect(fetchPackageOverrides()).rejects.toEqual({ message: 'sel' });
     m.selectError = null;
+
     m.upsertError = { message: 'up' };
     await expect(savePackageOverride(ov({ package_id: 'classic-s' }))).rejects.toEqual({ message: 'up' });
+    await expect(savePackageImage('classic-s', 'https://cdn.example/x.webp')).rejects.toEqual({ message: 'up' });
     m.upsertError = null;
+
     m.deleteError = { message: 'del' };
     await expect(deletePackageOverride('classic-s')).rejects.toEqual({ message: 'del' });
   });
@@ -196,7 +234,7 @@ describe('uploadPackageImage', () => {
 
   it('uploads with content type and returns a public URL', async () => {
     const url = await uploadPackageImage(file);
-    expect(m.uploadedPath).toMatch(/\.png$/); // הסיומת מנורמלת לאותיות קטנות
+    expect(m.uploadedPath).toMatch(/\.png$/);
     expect(m.uploadOpts).toMatchObject({ contentType: 'image/png', upsert: false });
     expect(url).toBe(`https://cdn.example/${m.uploadedPath}`);
   });
