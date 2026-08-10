@@ -51,7 +51,6 @@ function enhanceProductCard(article: HTMLElement, urls: string[]) {
   media.dataset.catalogGalleryCount = String(orderedUrls.length);
 
   primary.dataset.catalogGalleryImage = 'true';
-  primary.dataset.catalogGalleryGenerated = 'primary';
   primary.classList.add('absolute', 'inset-0', 'transition-opacity', 'duration-300');
   primary.style.opacity = '1';
   primary.style.pointerEvents = 'auto';
