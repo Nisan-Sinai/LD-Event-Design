@@ -53,7 +53,8 @@ export function PackagesProvider({ children }: { children: React.ReactNode }) {
   }, [refresh]);
 
   const saveImage = useCallback(async (packageId: string, imageUrl: string | null, slot: 1 | 2 = 1) => {
-    await savePackageImage(packageId, imageUrl, slot);
+    if (slot === 1) await savePackageImage(packageId, imageUrl);
+    else await savePackageImage(packageId, imageUrl, 2);
     await refresh();
   }, [refresh]);
 
