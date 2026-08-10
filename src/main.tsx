@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { Root } from './Root';
 import { I18nProvider } from './i18n/i18n';
 import { initHashNavigation } from './lib/hashNavigation';
+import { installNavigationActiveState } from './lib/navigationActiveState';
 import { installProductGalleryAdmin } from './lib/productGalleryAdmin';
 import { installProductImageLightbox } from './lib/productImageLightbox';
 import { installSecondaryCatalogMedia } from './lib/secondaryCatalogMedia';
@@ -20,6 +21,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 );
 
 initHashNavigation();
+installNavigationActiveState();
 installSecondaryCatalogMedia();
 installProductImageLightbox();
 installProductGalleryAdmin();
