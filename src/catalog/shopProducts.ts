@@ -178,7 +178,7 @@ export function buildShopProducts(overrides: OverrideMap): ShopProduct[] {
         title: override.title ?? product.title,
         subtitle: override.subtitle ?? product.subtitle,
         price: override.price ?? product.price,
-        image: override.image_url ?? product.image,
+        image: override.image_url ?? override.image_url_2 ?? product.image,
         category: (override.category ?? product.category) as ShopProductCategory,
         svgType: override.svg_type ?? product.svgType
       };
@@ -199,7 +199,7 @@ export function productFromOverride(override: PackageOverride): ShopProduct {
     title: override.title ?? '',
     subtitle: override.subtitle ?? '',
     price: override.price ?? 0,
-    image: override.image_url ?? undefined,
+    image: override.image_url ?? override.image_url_2 ?? undefined,
     svgType: override.svg_type ?? 'default'
   };
 }
