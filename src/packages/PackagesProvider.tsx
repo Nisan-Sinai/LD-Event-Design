@@ -57,7 +57,8 @@ export function PackagesProvider({ children }: { children: React.ReactNode }) {
     imageUrl: string | null,
     slot: 1 | 2 | 3 | 4 = 1
   ) => {
-    await savePackageImage(packageId, imageUrl, slot);
+    if (slot === 1) await savePackageImage(packageId, imageUrl);
+    else await savePackageImage(packageId, imageUrl, slot);
     await refresh();
   }, [refresh]);
 
