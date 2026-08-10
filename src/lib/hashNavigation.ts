@@ -12,6 +12,11 @@ function decodeHash(hash: string): string {
   }
 }
 
+function isReloadNavigation(): boolean {
+  const navigation = window.performance?.getEntriesByType?.('navigation')[0] as PerformanceNavigationTiming | undefined;
+  return navigation?.type === 'reload';
+}
+
 export function scrollToHashTarget(hash = window.location.hash): boolean {
   const id = decodeHash(hash);
   if (!id) return false;
@@ -26,7 +31,12 @@ export function scrollToHashTarget(hash = window.location.hash): boolean {
 /**
  * React mounts asynchronously, so a deep link such as /#packages can be
  * evaluated before the target exists. Retry briefly and also handle later
- * hash changes. Returns a cleanup function for tests or embedded usage.
+ * hash changes.
+ *
+ * A browser refresh is intentionally different: if the previous in-page
+ * navigation left a hash such as #packages in the URL, clear that stale hash
+ * and keep the refreshed homepage at the top. New hash changes after load
+ * still scroll normally.
  */
 export function initHashNavigation(
   maxAttempts = DEFAULT_MAX_ATTEMPTS,
@@ -55,8 +65,29 @@ export function initHashNavigation(
     frameId = window.requestAnimationFrame(() => tryScroll(maxAttempts));
   };
 
+  const resetReloadedHash = () => {
+    if (!window.location.hash || !isReloadNavigation()) return false;
+
+    const previousScrollRestoration = window.history.scrollRestoration;
+    window.history.scrollRestoration = 'manual';
+    window.history.replaceState(
+      window.history.state,
+      '',
+      `${window.location.pathname}${window.location.search}`
+    );
+
+    const scrollToTop = () => window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    scrollToTop();
+    frameId = window.requestAnimationFrame(() => {
+      scrollToTop();
+      window.history.scrollRestoration = previousScrollRestoration;
+      frameId = undefined;
+    });
+    return true;
+  };
+
   window.addEventListener('hashchange', onHashChange);
-  onHashChange();
+  if (!resetReloadedHash()) onHashChange();
 
   return () => {
     cancelled = true;
