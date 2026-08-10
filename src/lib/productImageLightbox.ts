@@ -3,27 +3,23 @@ interface GalleryImage {
   alt: string;
 }
 
-const CONTROL_SELECTOR = 'button, a, [data-secondary-catalog-media="control"], [data-secondary-catalog-media="dots"]';
+const CONTROL_SELECTOR = 'button, a, [data-catalog-gallery-control="true"], [data-secondary-catalog-media="control"], [data-secondary-catalog-media="dots"]';
 
-function collectCategoryImages(section: HTMLElement): GalleryImage[] {
+export function collectProductImages(article: HTMLElement): GalleryImage[] {
+  const media = article.firstElementChild;
+  if (!(media instanceof HTMLElement)) return [];
+
   const seen = new Set<string>();
   const images: GalleryImage[] = [];
-
-  section.querySelectorAll<HTMLElement>('article').forEach((article) => {
-    const media = article.firstElementChild;
-    if (!(media instanceof HTMLElement)) return;
-
-    media.querySelectorAll<HTMLImageElement>('img').forEach((image) => {
-      const src = image.currentSrc || image.src;
-      if (!src || seen.has(src)) return;
-      seen.add(src);
-      images.push({
-        src,
-        alt: image.alt || article.querySelector('h4')?.textContent?.trim() || 'תמונת עיצוב'
-      });
+  media.querySelectorAll<HTMLImageElement>('img[data-catalog-gallery-image="true"], img').forEach((image) => {
+    const src = image.currentSrc || image.src;
+    if (!src || seen.has(src)) return;
+    seen.add(src);
+    images.push({
+      src,
+      alt: image.alt || article.querySelector('h4')?.textContent?.trim() || 'תמונת עיצוב'
     });
   });
-
   return images;
 }
 
@@ -43,6 +39,7 @@ export function installProductImageLightbox() {
   let index = 0;
   let touchStartX = 0;
   let previousOverflow = '';
+  let trigger: HTMLElement | null = null;
 
   const overlay = document.createElement('div');
   overlay.className = 'fixed inset-0 z-[1000] hidden items-center justify-center bg-black/92 p-3 backdrop-blur-sm sm:p-6';
@@ -63,12 +60,12 @@ export function installProductImageLightbox() {
     'absolute end-3 top-3 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-3xl leading-none text-[#2C2C2C] shadow-xl transition hover:scale-105'
   );
   const previous = createIconButton(
-    'התמונה הקודמת בקטגוריה',
+    'התמונה הקודמת של הפריט',
     '›',
     'absolute start-3 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-3xl leading-none text-[#2C2C2C] shadow-xl transition hover:scale-105 sm:start-5'
   );
   const next = createIconButton(
-    'התמונה הבאה בקטגוריה',
+    'התמונה הבאה של הפריט',
     '‹',
     'absolute end-3 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-3xl leading-none text-[#2C2C2C] shadow-xl transition hover:scale-105 sm:end-5'
   );
@@ -93,11 +90,12 @@ export function installProductImageLightbox() {
     next.hidden = !hasMultiple;
   };
 
-  const open = (images: GalleryImage[], startSrc: string) => {
+  const open = (images: GalleryImage[], startSrc: string, opener: HTMLElement) => {
     gallery = images;
     if (gallery.length === 0) return;
     const startIndex = gallery.findIndex((item) => item.src === startSrc);
     show(startIndex >= 0 ? startIndex : 0);
+    trigger = opener;
     previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     overlay.classList.remove('hidden');
@@ -109,6 +107,8 @@ export function installProductImageLightbox() {
     overlay.classList.add('hidden');
     overlay.classList.remove('flex');
     document.body.style.overflow = previousOverflow;
+    trigger?.focus({ preventScroll: true });
+    trigger = null;
   };
 
   const onDocumentClick = (event: MouseEvent) => {
@@ -119,18 +119,17 @@ export function installProductImageLightbox() {
     const media = target.closest<HTMLElement>('#products article > div:first-child');
     if (!media) return;
     const article = media.closest<HTMLElement>('article');
-    const section = article?.closest<HTMLElement>('section[id^="product-category-"]');
-    if (!article || !section) return;
+    if (!article) return;
 
     const clickedImage = target.closest<HTMLImageElement>('img');
     const visibleImage = clickedImage ?? Array.from(media.querySelectorAll<HTMLImageElement>('img')).find((item) => {
       const opacity = Number.parseFloat(getComputedStyle(item).opacity || '1');
-      return opacity > 0.5;
+      return opacity > 0.5 && item.getAttribute('aria-hidden') !== 'true';
     });
     if (!visibleImage) return;
 
-    const images = collectCategoryImages(section);
-    open(images, visibleImage.currentSrc || visibleImage.src);
+    const images = collectProductImages(article);
+    open(images, visibleImage.currentSrc || visibleImage.src, media);
   };
 
   const onKeyDown = (event: KeyboardEvent) => {
