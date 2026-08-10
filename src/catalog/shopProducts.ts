@@ -167,6 +167,10 @@ export const SHOP_PRODUCTS: ShopProduct[] = [
   }
 ];
 
+function firstOverrideImage(override: PackageOverride): string | undefined {
+  return override.image_url ?? override.image_url_2 ?? override.image_url_3 ?? override.image_url_4 ?? undefined;
+}
+
 export function buildShopProducts(overrides: OverrideMap): ShopProduct[] {
   const base = SHOP_PRODUCTS
     .filter((product) => !overrides[product.id]?.hidden)
@@ -178,7 +182,7 @@ export function buildShopProducts(overrides: OverrideMap): ShopProduct[] {
         title: override.title ?? product.title,
         subtitle: override.subtitle ?? product.subtitle,
         price: override.price ?? product.price,
-        image: override.image_url ?? override.image_url_2 ?? product.image,
+        image: firstOverrideImage(override) ?? product.image,
         category: (override.category ?? product.category) as ShopProductCategory,
         svgType: override.svg_type ?? product.svgType
       };
@@ -199,7 +203,7 @@ export function productFromOverride(override: PackageOverride): ShopProduct {
     title: override.title ?? '',
     subtitle: override.subtitle ?? '',
     price: override.price ?? 0,
-    image: override.image_url ?? override.image_url_2 ?? undefined,
+    image: firstOverrideImage(override),
     svgType: override.svg_type ?? 'default'
   };
 }
