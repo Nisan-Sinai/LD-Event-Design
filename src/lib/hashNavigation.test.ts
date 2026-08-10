@@ -86,6 +86,7 @@ describe('hashNavigation', () => {
 
     stopNavigation = initHashNavigation();
 
+    expect(window.location.pathname).toBe('/');
     expect(window.location.hash).toBe('');
     expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: 'auto' });
     expect(target.scrollIntoView).not.toHaveBeenCalled();
