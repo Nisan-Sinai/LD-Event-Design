@@ -16,21 +16,23 @@ interface ProductDraft {
   subtitle: string;
   price: string;
   image: string;
+  image2: string;
   category: ShopProductCategory | '';
 }
 
 interface ManagedProduct extends ShopProduct {
+  image2: string;
   hidden: boolean;
   custom: boolean;
   hasOverride: boolean;
 }
 
-const EMPTY_DRAFT: ProductDraft = { title: '', subtitle: '', price: '', image: '', category: '' };
+const EMPTY_DRAFT: ProductDraft = { title: '', subtitle: '', price: '', image: '', image2: '', category: '' };
 
 const COPY = {
   he: {
     title: 'מוצרים קטנים בחנות',
-    subtitle: 'כאן לירון יכולה להעלות תמונה, לשנות מחיר וטקסט, להסתיר מוצר או להוסיף מוצר חדש.',
+    subtitle: 'כאן לירון יכולה להעלות שתי תמונות, לשנות מחיר וטקסט, להסתיר מוצר או להוסיף מוצר חדש.',
     add: 'הוספת מוצר',
     newProduct: 'מוצר חדש',
     category: 'קטגוריה',
@@ -55,12 +57,12 @@ const COPY = {
     custom: 'מוצר חדש',
     hidden: 'מוסתר',
     edited: 'נערך',
-    noImage: 'ללא תמונה — יוצג איור זמני',
+    noImage: 'ללא תמונה',
     imageHint: 'מומלץ להעלות תמונה ריבועית או ביחס 4:5 באיכות גבוהה.'
   },
   en: {
     title: 'Small shop products',
-    subtitle: 'Upload product images, change prices and text, hide products or create new products.',
+    subtitle: 'Upload two product images, change prices and text, hide products or create new products.',
     add: 'Add product',
     newProduct: 'New product',
     category: 'Category',
@@ -85,17 +87,18 @@ const COPY = {
     custom: 'New product',
     hidden: 'Hidden',
     edited: 'Edited',
-    noImage: 'No image — a temporary illustration will be shown',
+    noImage: 'No image',
     imageHint: 'A high-quality square or 4:5 image is recommended.'
   }
 } as const;
 
-function toDraft(product: ShopProduct): ProductDraft {
+function toDraft(product: ManagedProduct): ProductDraft {
   return {
     title: product.title,
     subtitle: product.subtitle,
     price: String(product.price),
     image: product.image ?? '',
+    image2: product.image2,
     category: product.category
   };
 }
@@ -122,6 +125,7 @@ export function ProductManager() {
       subtitle: override?.subtitle ?? product.subtitle,
       price: override?.price ?? product.price,
       image: override?.image_url ?? product.image,
+      image2: override?.image_url_2 ?? '',
       category: (override?.category ?? product.category) as ShopProductCategory,
       svgType: override?.svg_type ?? product.svgType,
       hidden: override?.hidden ?? false,
@@ -140,6 +144,7 @@ export function ProductManager() {
       subtitle: override.subtitle ?? '',
       price: override.price ?? 0,
       image: override.image_url ?? undefined,
+      image2: override.image_url_2 ?? '',
       svgType: override.svg_type ?? 'default',
       hidden: override.hidden,
       custom: true,
@@ -185,6 +190,7 @@ export function ProductManager() {
     description: null,
     benefits: null,
     image_url: draft.image.trim() || null,
+    image_url_2: draft.image2.trim() || null,
     category: draft.category || product.category,
     svg_type: product.svgType,
     pricing_tiers: null,
@@ -193,8 +199,10 @@ export function ProductManager() {
     sort_order: product.custom ? overrides[product.id]?.sort_order ?? Date.now() : null
   });
 
-  const persistImage = (product: ManagedProduct, imageUrl: string) =>
-    run(product.id, () => saveImage(product.id, imageUrl.trim() || null));
+  const persistImage = (product: ManagedProduct, imageUrl: string, slot: 1 | 2) =>
+    run(product.id, () => slot === 1
+      ? saveImage(product.id, imageUrl.trim() || null)
+      : saveImage(product.id, imageUrl.trim() || null, 2));
 
   const saveProduct = (product: ManagedProduct) => {
     const draft = draftFor(product);
@@ -210,22 +218,23 @@ export function ProductManager() {
   };
 
   const uploadImage = async (
-    id: string,
+    uploadKey: string,
     file: File | undefined,
     apply: (url: string) => void,
+    slot: 1 | 2,
     product?: ManagedProduct
   ) => {
     if (!file) return;
-    setUploadingId(id);
+    setUploadingId(uploadKey);
     setErrorId(null);
     try {
       const url = await uploadPackageImage(file);
       apply(url);
-      if (product) await persistImage(product, url);
+      if (product) await persistImage(product, url, slot);
     } catch {
-      setErrorId(id);
+      setErrorId(product?.id ?? '__new_product__');
     } finally {
-      setUploadingId((current) => (current === id ? null : current));
+      setUploadingId((current) => (current === uploadKey ? null : current));
     }
   };
 
@@ -244,6 +253,7 @@ export function ProductManager() {
       description: null,
       benefits: null,
       image_url: newDraft.image.trim() || null,
+      image_url_2: newDraft.image2.trim() || null,
       category: newDraft.category,
       svg_type: 'default',
       pricing_tiers: null,
@@ -256,52 +266,52 @@ export function ProductManager() {
   };
 
   const imageControl = (
-    id: string,
+    uploadKey: string,
     url: string,
     apply: (url: string) => void,
+    slot: 1 | 2,
     product?: ManagedProduct
   ) => (
-    <div>
-      <span className={labelClass}>{copy.image}</span>
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl border border-[#EAE3D2] bg-[#FAF7F2]">
-          {url ? (
-            <>
-              <img src={url} alt="" className="h-full w-full object-cover" />
-              <button
-                type="button"
-                onClick={() => {
-                  apply('');
-                  if (product) void persistImage(product, '');
-                }}
-                aria-label={copy.removeImage}
-                className="absolute end-1 top-1 rounded-full bg-white/95 p-1 text-gray-500 shadow hover:text-red-600"
-              >
-                <X className="h-3.5 w-3.5" aria-hidden="true" />
-              </button>
-            </>
-          ) : (
-            <ImagePlus className="h-7 w-7 text-[#B29259]/60" aria-hidden="true" />
-          )}
-        </div>
-        <div>
-          <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-[#B29259] px-3 py-2 text-xs font-bold text-[#8C6D3F] hover:bg-[#FAF7F2]">
-            <ImagePlus className="h-4 w-4" aria-hidden="true" />
-            {uploadingId === id ? copy.uploading : copy.upload}
-            <input
-              type="file"
-              accept="image/*,.heic,.heif"
-              className="sr-only"
-              disabled={uploadingId === id || busyId === id}
-              onChange={(event) => {
-                void uploadImage(id, event.target.files?.[0], apply, product);
-                event.target.value = '';
+    <div className="min-w-0 rounded-2xl border border-[#EAE3D2] bg-[#FAF7F2] p-2.5">
+      <span className={labelClass}>{copy.image} {slot}</span>
+      <div className="relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-xl border border-[#EAE3D2] bg-white">
+        {url ? (
+          <>
+            <img src={url} alt="" className="h-full w-full object-cover" />
+            <button
+              type="button"
+              onClick={() => {
+                apply('');
+                if (product) void persistImage(product, '', slot);
               }}
-            />
-          </label>
-          <p className="mt-1.5 max-w-64 text-[10px] leading-relaxed text-gray-400">{url ? copy.imageHint : copy.noImage}</p>
-        </div>
+              aria-label={slot === 1 ? copy.removeImage : `${copy.removeImage} 2`}
+              className="absolute end-1.5 top-1.5 rounded-full bg-white/95 p-1.5 text-gray-500 shadow hover:text-red-600"
+            >
+              <X className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+          </>
+        ) : (
+          <div className="text-center">
+            <ImagePlus className="mx-auto h-6 w-6 text-[#B29259]/60" aria-hidden="true" />
+            <span className="mt-1 block text-[9px] font-bold text-gray-400">{copy.noImage}</span>
+          </div>
+        )}
       </div>
+      <label className="mt-2 flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#B29259] px-2 py-2 text-[10px] font-bold text-[#8C6D3F] hover:bg-white">
+        <ImagePlus className="h-3.5 w-3.5" aria-hidden="true" />
+        {uploadingId === uploadKey ? copy.uploading : url ? `${copy.upload} ${slot}` : `${copy.upload} ${slot}`}
+        <input
+          type="file"
+          accept="image/*,.heic,.heif"
+          className="sr-only"
+          aria-label={`${copy.upload} ${slot}`}
+          disabled={uploadingId === uploadKey || Boolean(product && busyId === product.id)}
+          onChange={(event) => {
+            void uploadImage(uploadKey, event.target.files?.[0], apply, slot, product);
+            event.target.value = '';
+          }}
+        />
+      </label>
     </div>
   );
 
@@ -329,7 +339,10 @@ export function ProductManager() {
             <label className="lg:col-span-2"><span className={labelClass}>{copy.name}</span><input value={newDraft.title} onChange={(event) => setNewDraft({ ...newDraft, title: event.target.value })} className={inputClass} /></label>
             <label><span className={labelClass}>{copy.price}</span><input type="number" min="0" value={newDraft.price} onChange={(event) => setNewDraft({ ...newDraft, price: event.target.value })} className={inputClass} /></label>
             <label className="sm:col-span-2 lg:col-span-4"><span className={labelClass}>{copy.description}</span><input value={newDraft.subtitle} onChange={(event) => setNewDraft({ ...newDraft, subtitle: event.target.value })} className={inputClass} /></label>
-            <div className="sm:col-span-2 lg:col-span-4">{imageControl('__new_product__', newDraft.image, (image) => setNewDraft({ ...newDraft, image }))}</div>
+            <div className="grid grid-cols-2 gap-3 sm:col-span-2 lg:col-span-4">
+              {imageControl('__new_product__:1', newDraft.image, (image) => setNewDraft((current) => ({ ...current, image })), 1)}
+              {imageControl('__new_product__:2', newDraft.image2, (image2) => setNewDraft((current) => ({ ...current, image2 })), 2)}
+            </div>
           </div>
           {errorId === '__new_product__' && <p role="alert" className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-red-600"><AlertCircle className="h-4 w-4" aria-hidden="true" />{copy.required}</p>}
           <div className="mt-4 flex gap-2">
@@ -342,7 +355,7 @@ export function ProductManager() {
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         {products.map((product) => {
           const draft = draftFor(product);
-          const busy = busyId === product.id || uploadingId === product.id;
+          const busy = busyId === product.id || Boolean(uploadingId?.startsWith(`${product.id}:`));
           return (
             <article key={product.id} className={`rounded-2xl border p-4 ${product.hidden ? 'border-gray-200 bg-gray-50 opacity-75' : 'border-[#EAE3D2] bg-white'}`}>
               <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -354,8 +367,11 @@ export function ProductManager() {
                 </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-[130px_1fr]">
-                {imageControl(product.id, draft.image, (image) => setField(product, 'image', image), product)}
+              <div className="grid gap-4 sm:grid-cols-[minmax(220px,260px)_1fr]">
+                <div className="grid grid-cols-2 gap-2">
+                  {imageControl(`${product.id}:1`, draft.image, (image) => setField(product, 'image', image), 1, product)}
+                  {imageControl(`${product.id}:2`, draft.image2, (image2) => setField(product, 'image2', image2), 2, product)}
+                </div>
                 <div className="grid gap-3">
                   <label><span className={labelClass}>{copy.category}</span><select value={draft.category} onChange={(event) => setField(product, 'category', event.target.value)} className={inputClass}>{Object.values(SHOP_PRODUCT_CATEGORIES).map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
                   <label><span className={labelClass}>{copy.name}</span><input value={draft.title} onChange={(event) => setField(product, 'title', event.target.value)} className={inputClass} /></label>
@@ -363,6 +379,8 @@ export function ProductManager() {
                   <label><span className={labelClass}>{copy.price}</span><input type="number" min="0" value={draft.price} onChange={(event) => setField(product, 'price', event.target.value)} className={inputClass} /></label>
                 </div>
               </div>
+
+              <p className="mt-2 text-[10px] text-gray-400">{copy.imageHint}</p>
 
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 <button type="button" onClick={() => saveProduct(product)} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-[#B29259] px-3 py-2 text-xs font-bold text-white disabled:opacity-50">
