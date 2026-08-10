@@ -11,6 +11,16 @@ describe('hashNavigation', () => {
       configurable: true,
       value: vi.fn()
     });
+    Object.defineProperty(window, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: vi.fn()
+    });
+    Object.defineProperty(window.performance, 'getEntriesByType', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => [])
+    });
     Object.defineProperty(window, 'requestAnimationFrame', {
       configurable: true,
       writable: true,
@@ -60,6 +70,41 @@ describe('hashNavigation', () => {
     target.id = 'packages';
     document.body.appendChild(target);
     retry?.();
+
+    expect(target.scrollIntoView).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears a stale hash and stays at the top when the page is refreshed', () => {
+    const target = document.createElement('section');
+    target.id = 'packages';
+    document.body.appendChild(target);
+    window.history.replaceState(null, '', '/#packages');
+
+    vi.mocked(window.performance.getEntriesByType).mockReturnValue([
+      { type: 'reload' } as PerformanceNavigationTiming
+    ]);
+
+    stopNavigation = initHashNavigation();
+
+    expect(window.location.pathname).toBe('/');
+    expect(window.location.hash).toBe('');
+    expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: 'auto' });
+    expect(target.scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  it('still handles intentional hash changes after a refreshed page is reset', () => {
+    window.history.replaceState(null, '', '/#packages');
+    vi.mocked(window.performance.getEntriesByType).mockReturnValue([
+      { type: 'reload' } as PerformanceNavigationTiming
+    ]);
+    stopNavigation = initHashNavigation();
+
+    const target = document.createElement('section');
+    target.id = 'cat-1';
+    document.body.appendChild(target);
+
+    window.history.replaceState(null, '', '/#cat-1');
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
 
     expect(target.scrollIntoView).toHaveBeenCalledTimes(1);
   });
