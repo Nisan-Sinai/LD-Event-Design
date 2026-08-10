@@ -15,7 +15,7 @@ interface PackagesValue {
   loading: boolean;
   refresh: () => Promise<void>;
   saveOverride: (o: PackageOverride, options?: SaveOverrideOptions) => Promise<void>;
-  saveImage: (packageId: string, imageUrl: string | null, slot?: 1 | 2) => Promise<void>;
+  saveImage: (packageId: string, imageUrl: string | null, slot?: 1 | 2 | 3 | 4) => Promise<void>;
   removeOverride: (packageId: string) => Promise<void>;
 }
 
@@ -52,9 +52,12 @@ export function PackagesProvider({ children }: { children: React.ReactNode }) {
     await refresh();
   }, [refresh]);
 
-  const saveImage = useCallback(async (packageId: string, imageUrl: string | null, slot: 1 | 2 = 1) => {
-    if (slot === 1) await savePackageImage(packageId, imageUrl);
-    else await savePackageImage(packageId, imageUrl, 2);
+  const saveImage = useCallback(async (
+    packageId: string,
+    imageUrl: string | null,
+    slot: 1 | 2 | 3 | 4 = 1
+  ) => {
+    await savePackageImage(packageId, imageUrl, slot);
     await refresh();
   }, [refresh]);
 
