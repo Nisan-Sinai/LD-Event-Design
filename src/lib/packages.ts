@@ -9,6 +9,7 @@ export interface PackageOverride {
   description: string | null;
   benefits: string | null;
   image_url: string | null;
+  image_url_2?: string | null;
   category: string | null;
   svg_type: string | null;
   pricing_tiers: Record<number, number> | null;
@@ -18,14 +19,14 @@ export interface PackageOverride {
 }
 
 export interface SaveOverrideOptions {
-  /** Only creation flows should include image_url in a full-row upsert. */
+  /** Only creation flows should include image fields in a full-row upsert. */
   includeImage?: boolean;
 }
 
 export type OverrideMap = Record<string, PackageOverride>;
 
 const COLS =
-  'package_id,price,title,subtitle,description,benefits,image_url,category,svg_type,pricing_tiers,hidden,is_custom,sort_order';
+  'package_id,price,title,subtitle,description,benefits,image_url,image_url_2,category,svg_type,pricing_tiers,hidden,is_custom,sort_order';
 
 const MAX_SOURCE_IMAGE_BYTES = 30 * 1024 * 1024;
 const MAX_UPLOAD_IMAGE_BYTES = 6 * 1024 * 1024;
@@ -161,10 +162,13 @@ export async function savePackageOverride(
 ): Promise<void> {
   if (!isSupabaseConfigured) return;
 
-  // Images are auto-saved separately. Excluding image_url from ordinary edits prevents
-  // a stale admin tab/session from overwriting a newer image with null or an old URL.
+  // Images are auto-saved separately. Excluding both image fields from ordinary edits prevents
+  // a stale admin tab/session from overwriting newer images with null or an old URL.
   const payload: Record<string, unknown> = { ...o };
-  if (!options.includeImage) delete payload.image_url;
+  if (!options.includeImage) {
+    delete payload.image_url;
+    delete payload.image_url_2;
+  }
 
   const { error } = await supabase
     .from('package_overrides')
@@ -172,12 +176,17 @@ export async function savePackageOverride(
   if (error) throw error;
 }
 
-export async function savePackageImage(packageId: string, imageUrl: string | null): Promise<void> {
+export async function savePackageImage(
+  packageId: string,
+  imageUrl: string | null,
+  slot: 1 | 2 = 1
+): Promise<void> {
   if (!isSupabaseConfigured) return;
+  const column = slot === 1 ? 'image_url' : 'image_url_2';
   const { error } = await supabase
     .from('package_overrides')
     .upsert(
-      { package_id: packageId, image_url: imageUrl, updated_at: new Date().toISOString() },
+      { package_id: packageId, [column]: imageUrl, updated_at: new Date().toISOString() },
       { onConflict: 'package_id' }
     );
   if (error) throw error;
