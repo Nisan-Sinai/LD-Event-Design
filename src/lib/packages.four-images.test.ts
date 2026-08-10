@@ -29,7 +29,6 @@ import { buildCatalog, savePackageImage, type PackageOverride } from './packages
 
 function override(input: Partial<PackageOverride> & { package_id: string }): PackageOverride {
   return {
-    package_id: input.package_id,
     price: null,
     title: null,
     subtitle: null,
