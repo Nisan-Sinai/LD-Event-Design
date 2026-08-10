@@ -8,6 +8,7 @@ import { installCatalogImageAdmin } from './lib/catalogImageAdmin';
 import './index.css';
 import './storefront.css';
 import './storefront-refinement.css';
+import './mobile-cart-summary.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
