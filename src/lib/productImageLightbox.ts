@@ -11,7 +11,14 @@ export function collectProductImages(article: HTMLElement): GalleryImage[] {
 
   const seen = new Set<string>();
   const images: GalleryImage[] = [];
-  media.querySelectorAll<HTMLImageElement>('img[data-catalog-gallery-image="true"], img').forEach((image) => {
+  const productImages = Array.from(media.querySelectorAll<HTMLImageElement>('img[data-catalog-gallery-image="true"], img'))
+    .sort((a, b) => {
+      const aIndex = Number.parseInt(a.dataset.catalogImageIndex ?? '0', 10) || 0;
+      const bIndex = Number.parseInt(b.dataset.catalogImageIndex ?? '0', 10) || 0;
+      return aIndex - bIndex;
+    });
+
+  productImages.forEach((image) => {
     const src = image.currentSrc || image.src;
     if (!src || seen.has(src)) return;
     seen.add(src);
