@@ -1,0 +1,24 @@
+/* Keep the sticky cart summary above mobile browser safe areas and prevent
+   floating WhatsApp/accessibility controls from covering it. */
+
+div.fixed.bottom-4:has(a[href="/cart"]) {
+  bottom: calc(1rem + env(safe-area-inset-bottom));
+}
+
+#main:has(div.fixed.bottom-4 a[href="/cart"]) {
+  padding-bottom: calc(6.5rem + env(safe-area-inset-bottom));
+}
+
+body:has(div.fixed.bottom-4 a[href="/cart"]) .no-print.fixed.bottom-4 {
+  bottom: calc(7.25rem + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 640px) {
+  div.fixed.bottom-4:has(a[href="/cart"]) {
+    bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  }
+
+  body:has(div.fixed.bottom-4 a[href="/cart"]) .no-print.fixed.bottom-4 {
+    bottom: calc(7.75rem + env(safe-area-inset-bottom));
+  }
+}
