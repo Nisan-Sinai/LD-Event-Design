@@ -9,7 +9,6 @@ import {
 import { isSupabaseConfigured } from './supabase';
 
 const SLOT_KEYS = ['image_url', 'image_url_2', 'image_url_3', 'image_url_4'] as const;
-type SlotKey = (typeof SLOT_KEYS)[number];
 type SlotNumber = 1 | 2 | 3 | 4;
 
 interface ManagedGalleryProduct {
