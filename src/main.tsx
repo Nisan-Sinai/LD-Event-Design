@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { Root } from './Root';
 import { I18nProvider } from './i18n/i18n';
 import { initHashNavigation } from './lib/hashNavigation';
+import { installProductImageLightbox } from './lib/productImageLightbox';
 import { installSecondaryCatalogMedia } from './lib/secondaryCatalogMedia';
 import './index.css';
 import './storefront.css';
@@ -19,5 +20,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 
 initHashNavigation();
 installSecondaryCatalogMedia();
+installProductImageLightbox();
 
 // No-op production deployment trigger.
