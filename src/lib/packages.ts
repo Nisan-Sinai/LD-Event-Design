@@ -10,6 +10,8 @@ export interface PackageOverride {
   benefits: string | null;
   image_url: string | null;
   image_url_2?: string | null;
+  image_url_3?: string | null;
+  image_url_4?: string | null;
   category: string | null;
   svg_type: string | null;
   pricing_tiers: Record<number, number> | null;
@@ -26,7 +28,7 @@ export interface SaveOverrideOptions {
 export type OverrideMap = Record<string, PackageOverride>;
 
 const COLS =
-  'package_id,price,title,subtitle,description,benefits,image_url,image_url_2,category,svg_type,pricing_tiers,hidden,is_custom,sort_order';
+  'package_id,price,title,subtitle,description,benefits,image_url,image_url_2,image_url_3,image_url_4,category,svg_type,pricing_tiers,hidden,is_custom,sort_order';
 
 const MAX_SOURCE_IMAGE_BYTES = 30 * 1024 * 1024;
 const MAX_UPLOAD_IMAGE_BYTES = 6 * 1024 * 1024;
@@ -162,12 +164,14 @@ export async function savePackageOverride(
 ): Promise<void> {
   if (!isSupabaseConfigured) return;
 
-  // Images are auto-saved separately. Excluding both image fields from ordinary edits prevents
-  // a stale admin tab/session from overwriting newer images with null or an old URL.
+  // Images are auto-saved separately. Excluding every image field from ordinary edits prevents
+  // a stale admin tab/session from overwriting newer gallery images with null or an old URL.
   const payload: Record<string, unknown> = { ...o };
   if (!options.includeImage) {
     delete payload.image_url;
     delete payload.image_url_2;
+    delete payload.image_url_3;
+    delete payload.image_url_4;
   }
 
   const { error } = await supabase
@@ -179,10 +183,16 @@ export async function savePackageOverride(
 export async function savePackageImage(
   packageId: string,
   imageUrl: string | null,
-  slot: 1 | 2 = 1
+  slot: 1 | 2 | 3 | 4 = 1
 ): Promise<void> {
   if (!isSupabaseConfigured) return;
-  const column = slot === 1 ? 'image_url' : 'image_url_2';
+  const column = slot === 1
+    ? 'image_url'
+    : slot === 2
+      ? 'image_url_2'
+      : slot === 3
+        ? 'image_url_3'
+        : 'image_url_4';
   const { error } = await supabase
     .from('package_overrides')
     .upsert(
@@ -213,6 +223,10 @@ export async function uploadPackageImage(file: File): Promise<string> {
   return supabase.storage.from('package-images').getPublicUrl(path).data.publicUrl;
 }
 
+function firstImage(o: PackageOverride): string | undefined {
+  return o.image_url ?? o.image_url_2 ?? o.image_url_3 ?? o.image_url_4 ?? undefined;
+}
+
 function customToPackage(o: PackageOverride): Package {
   return {
     id: o.package_id,
@@ -224,7 +238,7 @@ function customToPackage(o: PackageOverride): Package {
     benefits: o.benefits ?? '',
     details: {},
     svgType: o.svg_type ?? 'default',
-    image: o.image_url ?? o.image_url_2 ?? undefined,
+    image: firstImage(o),
     pricingTiers: o.pricing_tiers ?? undefined
   };
 }
@@ -242,7 +256,7 @@ export function buildCatalog(packages: Package[], overrides: OverrideMap): Packa
         subtitle: o.subtitle ?? p.subtitle,
         description: o.description ?? p.description,
         benefits: o.benefits ?? p.benefits,
-        image: o.image_url ?? o.image_url_2 ?? p.image,
+        image: firstImage(o) ?? p.image,
         pricingTiers: o.pricing_tiers ?? p.pricingTiers
       };
     });
