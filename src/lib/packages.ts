@@ -224,7 +224,7 @@ function customToPackage(o: PackageOverride): Package {
     benefits: o.benefits ?? '',
     details: {},
     svgType: o.svg_type ?? 'default',
-    image: o.image_url ?? undefined,
+    image: o.image_url ?? o.image_url_2 ?? undefined,
     pricingTiers: o.pricing_tiers ?? undefined
   };
 }
@@ -242,7 +242,7 @@ export function buildCatalog(packages: Package[], overrides: OverrideMap): Packa
         subtitle: o.subtitle ?? p.subtitle,
         description: o.description ?? p.description,
         benefits: o.benefits ?? p.benefits,
-        image: o.image_url ?? p.image,
+        image: o.image_url ?? o.image_url_2 ?? p.image,
         pricingTiers: o.pricing_tiers ?? p.pricingTiers
       };
     });
