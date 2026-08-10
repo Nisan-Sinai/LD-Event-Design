@@ -14,6 +14,7 @@ interface Draft {
   benefits: string;
   price: string;
   image_url: string;
+  image_url_2: string;
   category: string;
 }
 
@@ -27,13 +28,22 @@ interface Item {
   svgType: string | null;
 }
 
-const EMPTY_NEW: Draft = { title: '', subtitle: '', description: '', benefits: '', price: '', image_url: '', category: '' };
+const EMPTY_NEW: Draft = {
+  title: '',
+  subtitle: '',
+  description: '',
+  benefits: '',
+  price: '',
+  image_url: '',
+  image_url_2: '',
+  category: ''
+};
 
 const strOrNull = (v: string) => (v.trim() === '' ? null : v.trim());
 const numOrNull = (v: string) => (v.trim() === '' ? null : Math.max(0, Number(v) || 0));
 
 /**
- * ניהול קטלוג מלא בידי המנהל — עריכת כל השדות (כולל תמונה), הסתרה,
+ * ניהול קטלוג מלא בידי המנהל — עריכת כל השדות, שתי תמונות, הסתרה,
  * הוספת חבילות חדשות ומחיקה. נשמר ב-Supabase (כתיבה למנהל בלבד ב-RLS).
  */
 export function PackageManager() {
@@ -61,6 +71,7 @@ export function PackageManager() {
         benefits: o?.benefits ?? p.benefits,
         price: String(o?.price ?? p.price),
         image_url: o?.image_url ?? '',
+        image_url_2: o?.image_url_2 ?? '',
         category: p.category
       },
       hidden: o?.hidden ?? false,
@@ -71,7 +82,7 @@ export function PackageManager() {
   });
 
   const customItems: Item[] = Object.values(overrides)
-    .filter((o) => o.is_custom)
+    .filter((o) => o.is_custom && !o.package_id.startsWith('product-'))
     .map((o) => ({
       id: o.package_id,
       isCustom: true,
@@ -82,6 +93,7 @@ export function PackageManager() {
         benefits: o.benefits ?? '',
         price: String(o.price ?? 0),
         image_url: o.image_url ?? '',
+        image_url_2: o.image_url_2 ?? '',
         category: o.category ?? ''
       },
       hidden: o.hidden,
@@ -110,6 +122,7 @@ export function PackageManager() {
     description: strOrNull(d.description),
     benefits: strOrNull(d.benefits),
     image_url: strOrNull(d.image_url),
+    image_url_2: strOrNull(d.image_url_2),
     category: item.isCustom ? strOrNull(d.category) : null,
     svg_type: item.svgType,
     pricing_tiers: item.pricingTiers,
@@ -141,26 +154,29 @@ export function PackageManager() {
   const toggleHidden = (item: Item) => run(item.id, () => saveOverride(buildOverride(item, draftFor(item), !item.hidden)));
   const removeItem = (item: Item) => run(item.id, () => removeOverride(item.id));
 
-  const persistImage = (item: Item, imageUrl: string) =>
-    run(item.id, () => saveImage(item.id, strOrNull(imageUrl)));
+  const persistImage = (item: Item, imageUrl: string, slot: 1 | 2) =>
+    run(item.id, () => slot === 1
+      ? saveImage(item.id, strOrNull(imageUrl))
+      : saveImage(item.id, strOrNull(imageUrl), 2));
 
   const pickImage = async (
-    id: string,
+    uploadKey: string,
     file: File | undefined,
     apply: (url: string) => void,
+    slot: 1 | 2,
     item?: Item
   ) => {
     if (!file) return;
-    setUploadingId(id);
+    setUploadingId(uploadKey);
     setErrorId(null);
     try {
       const url = await uploadPackageImage(file);
       apply(url);
-      if (item) await persistImage(item, url);
+      if (item) await persistImage(item, url, slot);
     } catch {
-      setErrorId(id);
+      setErrorId(item?.id ?? '__new__');
     } finally {
-      setUploadingId((cur) => (cur === id ? null : cur));
+      setUploadingId((cur) => (cur === uploadKey ? null : cur));
     }
   };
 
@@ -179,6 +195,7 @@ export function PackageManager() {
         description: strOrNull(newDraft.description),
         benefits: strOrNull(newDraft.benefits),
         image_url: strOrNull(newDraft.image_url),
+        image_url_2: strOrNull(newDraft.image_url_2),
         category: newDraft.category,
         svg_type: null,
         pricing_tiers: null,
@@ -194,40 +211,58 @@ export function PackageManager() {
   const inputCls = 'w-full px-3 py-2 bg-[#FAF7F2] border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#B29259]';
   const labelCls = 'block text-[10px] font-bold text-gray-500 mb-1';
 
-  const imageControl = (id: string, url: string, onUrl: (u: string) => void, item?: Item) => (
-    <div>
-      <label className={labelCls}>{t('packageManager.image')}</label>
-      <div className="flex items-center gap-2">
+  const imageControl = (
+    uploadKey: string,
+    url: string,
+    onUrl: (u: string) => void,
+    slot: 1 | 2,
+    item?: Item
+  ) => (
+    <div className="min-w-0 rounded-xl border border-[#EAE3D2] bg-[#FAF7F2] p-2.5">
+      <label className={labelCls}>{t('packageManager.image')} {slot}</label>
+      <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-lg border border-[#EAE3D2] bg-white">
         {url ? (
-          <div className="relative">
-            <img src={url} alt="" className="h-12 w-16 object-cover rounded-md border border-[#EAE3D2]" />
+          <>
+            <img src={url} alt="" className="h-full w-full object-cover" />
             <button
               type="button"
               onClick={() => {
                 onUrl('');
-                if (item) void persistImage(item, '');
+                if (item) void persistImage(item, '', slot);
               }}
-              aria-label={t('packageManager.removeImage')}
-              className="absolute -top-1.5 -end-1.5 bg-white border border-gray-200 rounded-full p-0.5 text-gray-400 hover:text-red-500 shadow-sm"
+              aria-label={slot === 1 ? t('packageManager.removeImage') : `${t('packageManager.removeImage')} 2`}
+              className="absolute end-1.5 top-1.5 rounded-full border border-gray-200 bg-white/95 p-1 text-gray-400 shadow-sm hover:text-red-500"
             >
-              <X className="w-3 h-3" />
+              <X className="h-3 w-3" aria-hidden="true" />
             </button>
-          </div>
-        ) : null}
-        <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-[#8C6D3F] border border-dashed border-[#B29259]/50 hover:border-[#B29259] rounded-lg px-2.5 py-2 transition-colors">
-          <ImagePlus className="w-3.5 h-3.5" aria-hidden="true" />
-          {uploadingId === id ? t('packageManager.uploading') : t('packageManager.uploadImage')}
-          <input type="file" accept="image/*,.heic,.heif" className="sr-only" disabled={uploadingId === id || busyId === id} onChange={(e) => { void pickImage(id, e.target.files?.[0], onUrl, item); e.target.value = ''; }} />
-        </label>
+          </>
+        ) : (
+          <ImagePlus className="h-6 w-6 text-[#B29259]/50" aria-hidden="true" />
+        )}
       </div>
+      <label className="mt-2 flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-dashed border-[#B29259]/50 px-2 py-2 text-[10px] font-bold text-[#8C6D3F] transition-colors hover:border-[#B29259] hover:bg-white">
+        <ImagePlus className="h-3.5 w-3.5" aria-hidden="true" />
+        {uploadingId === uploadKey ? t('packageManager.uploading') : `${t('packageManager.uploadImage')} ${slot}`}
+        <input
+          type="file"
+          accept="image/*,.heic,.heif"
+          className="sr-only"
+          aria-label={`${t('packageManager.uploadImage')} ${slot}`}
+          disabled={uploadingId === uploadKey || Boolean(item && busyId === item.id)}
+          onChange={(e) => {
+            void pickImage(uploadKey, e.target.files?.[0], onUrl, slot, item);
+            e.target.value = '';
+          }}
+        />
+      </label>
     </div>
   );
 
   return (
-    <section className="bg-white border border-[#EAE3D2] rounded-2xl p-5 mb-6">
-      <div className="flex items-start justify-between gap-3 mb-1">
+    <section className="mb-6 rounded-2xl border border-[#EAE3D2] bg-white p-5">
+      <div className="mb-1 flex items-start justify-between gap-3">
         <div className="flex items-start gap-2">
-          <PackageIcon className="w-5 h-5 text-[#B29259] mt-0.5" aria-hidden="true" />
+          <PackageIcon className="mt-0.5 h-5 w-5 text-[#B29259]" aria-hidden="true" />
           <div>
             <h3 className="text-base font-bold text-[#8C6D3F]">{t('packageManager.title')}</h3>
             <p className="text-xs text-gray-500">{t('packageManager.subtitle')}</p>
@@ -236,17 +271,17 @@ export function PackageManager() {
         <button
           type="button"
           onClick={() => setShowAdd((v) => !v)}
-          className="shrink-0 flex items-center gap-1.5 bg-[#8C6D3F] hover:bg-[#705630] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
+          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[#8C6D3F] px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[#705630]"
         >
-          <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+          <Plus className="h-3.5 w-3.5" aria-hidden="true" />
           {t('packageManager.addPackage')}
         </button>
       </div>
 
       {showAdd && (
-        <div className="mt-4 rounded-xl border border-[#B29259]/40 bg-[#FAF7F2] p-4 space-y-3 animate-fadeIn">
+        <div className="mt-4 space-y-3 rounded-xl border border-[#B29259]/40 bg-[#FAF7F2] p-4 animate-fadeIn">
           <p className="text-sm font-bold text-[#8C6D3F]">{t('packageManager.newPackage')}</p>
-          <div className="grid grid-cols-1 sm:grid-cols-6 gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-6">
             <div className="sm:col-span-2">
               <label className={labelCls}>{t('packageManager.category')}</label>
               <select aria-label={`${t('packageManager.category')} — ${t('packageManager.newPackage')}`} value={newDraft.category} onChange={(e) => setNewDraft({ ...newDraft, category: e.target.value })} className={inputCls}>
@@ -276,22 +311,23 @@ export function PackageManager() {
               <label className={labelCls}>{t('packageManager.descriptionField')}</label>
               <textarea rows={2} aria-label={`${t('packageManager.descriptionField')} — ${t('packageManager.newPackage')}`} value={newDraft.description} onChange={(e) => setNewDraft({ ...newDraft, description: e.target.value })} className={inputCls} />
             </div>
-            <div className="sm:col-span-6">
-              {imageControl('__new__', newDraft.image_url, (u) => setNewDraft({ ...newDraft, image_url: u }))}
+            <div className="grid grid-cols-2 gap-2 sm:col-span-6">
+              {imageControl('__new__:1', newDraft.image_url, (image_url) => setNewDraft((current) => ({ ...current, image_url })), 1)}
+              {imageControl('__new__:2', newDraft.image_url_2, (image_url_2) => setNewDraft((current) => ({ ...current, image_url_2 })), 2)}
             </div>
           </div>
           <p className="text-[10px] text-gray-400">{t('packageManager.requiredNote')}</p>
           <div className="flex items-center gap-2">
-            <button type="button" onClick={() => void createPackage()} disabled={busyId === '__new__'} className="flex items-center gap-1.5 bg-[#B29259] hover:bg-[#8C6D3F] disabled:opacity-50 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">
-              <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+            <button type="button" onClick={() => void createPackage()} disabled={busyId === '__new__'} className="flex items-center gap-1.5 rounded-lg bg-[#B29259] px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[#8C6D3F] disabled:opacity-50">
+              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
               {t('packageManager.create')}
             </button>
-            <button type="button" onClick={() => { setShowAdd(false); setNewDraft(EMPTY_NEW); }} className="text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg text-xs font-bold">
+            <button type="button" onClick={() => { setShowAdd(false); setNewDraft(EMPTY_NEW); }} className="rounded-lg px-3 py-1.5 text-xs font-bold text-gray-500 hover:text-gray-700">
               {t('packageManager.cancel')}
             </button>
             {errorId === '__new__' && (
-              <span className="flex items-center gap-1 text-[11px] text-red-500 font-bold">
-                <AlertCircle className="w-3.5 h-3.5" aria-hidden="true" />
+              <span className="flex items-center gap-1 text-[11px] font-bold text-red-500">
+                <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
                 {t('packageManager.requiredNote')}
               </span>
             )}
@@ -302,20 +338,20 @@ export function PackageManager() {
       <div className="mt-4 space-y-3">
         {items.map((item) => {
           const d = draftFor(item);
-          const busy = busyId === item.id || uploadingId === item.id;
+          const busy = busyId === item.id || Boolean(uploadingId?.startsWith(`${item.id}:`));
           const aria = (field: string) => `${field} — ${item.current.title || item.id}`;
           return (
             <div key={item.id} className={`rounded-xl border p-3 ${item.hidden ? 'border-gray-200 bg-gray-50 opacity-80' : 'border-[#EAE3D2] bg-white'}`}>
-              <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="mb-2 flex items-center justify-between gap-2">
                 <span className="text-[10px] font-bold uppercase tracking-wide text-gray-400">{item.current.category ? categoryLabel(item.current.category, lang) : '—'}</span>
                 <div className="flex items-center gap-1.5">
-                  {item.isCustom && <span className="text-[10px] font-bold text-[#8C6D3F] bg-[#FAF7F2] px-2 py-0.5 rounded-full">{t('packageManager.customBadge')}</span>}
-                  {item.hidden && <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">{t('packageManager.hiddenBadge')}</span>}
-                  {!item.hidden && !item.isCustom && item.hasOverride && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">{t('packageManager.editedBadge')}</span>}
+                  {item.isCustom && <span className="rounded-full bg-[#FAF7F2] px-2 py-0.5 text-[10px] font-bold text-[#8C6D3F]">{t('packageManager.customBadge')}</span>}
+                  {item.hidden && <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-500">{t('packageManager.hiddenBadge')}</span>}
+                  {!item.hidden && !item.isCustom && item.hasOverride && <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600">{t('packageManager.editedBadge')}</span>}
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-6 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-6">
                 <div className="sm:col-span-3">
                   <label className={labelCls}>{t('packageManager.titleField')}</label>
                   <input type="text" value={d.title} aria-label={aria(t('packageManager.titleField'))} onChange={(e) => setField(item, 'title', e.target.value)} className={inputCls} />
@@ -332,45 +368,46 @@ export function PackageManager() {
                   <label className={labelCls}>{t('packageManager.descriptionField')}</label>
                   <textarea rows={2} value={d.description} aria-label={aria(t('packageManager.descriptionField'))} onChange={(e) => setField(item, 'description', e.target.value)} className={inputCls} />
                 </div>
-                <div className="sm:col-span-3">
+                <div className="sm:col-span-2">
                   <label className={labelCls}>{t('packageManager.benefitsField')}</label>
                   <input type="text" value={d.benefits} aria-label={aria(t('packageManager.benefitsField'))} onChange={(e) => setField(item, 'benefits', e.target.value)} className={inputCls} />
                 </div>
-                <div className="sm:col-span-3">
-                  {imageControl(item.id, d.image_url, (u) => setField(item, 'image_url', u), item)}
+                <div className="grid grid-cols-2 gap-2 sm:col-span-4">
+                  {imageControl(`${item.id}:1`, d.image_url, (u) => setField(item, 'image_url', u), 1, item)}
+                  {imageControl(`${item.id}:2`, d.image_url_2, (u) => setField(item, 'image_url_2', u), 2, item)}
                 </div>
               </div>
 
-              {item.pricingTiers && <p className="text-[10px] text-gray-400 mt-1.5">{t('packageManager.tierNote')}</p>}
+              {item.pricingTiers && <p className="mt-1.5 text-[10px] text-gray-400">{t('packageManager.tierNote')}</p>}
 
-              <div className="flex flex-wrap items-center gap-2 mt-3">
-                <button type="button" onClick={() => save(item)} disabled={busy || !isDirty(item)} className="flex items-center gap-1.5 bg-[#B29259] hover:bg-[#8C6D3F] disabled:opacity-40 disabled:cursor-not-allowed text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">
-                  <Save className="w-3.5 h-3.5" aria-hidden="true" />
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button type="button" onClick={() => save(item)} disabled={busy || !isDirty(item)} className="flex items-center gap-1.5 rounded-lg bg-[#B29259] px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[#8C6D3F] disabled:cursor-not-allowed disabled:opacity-40">
+                  <Save className="h-3.5 w-3.5" aria-hidden="true" />
                   {busy ? t('packageManager.saving') : savedId === item.id ? t('packageManager.saved') : t('packageManager.save')}
                 </button>
 
-                <button type="button" onClick={() => toggleHidden(item)} disabled={busy} className="flex items-center gap-1.5 border border-gray-200 hover:border-[#B29259] text-gray-600 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors disabled:opacity-40">
-                  {item.hidden ? <Eye className="w-3.5 h-3.5" aria-hidden="true" /> : <EyeOff className="w-3.5 h-3.5" aria-hidden="true" />}
+                <button type="button" onClick={() => toggleHidden(item)} disabled={busy} className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-600 transition-colors hover:border-[#B29259] disabled:opacity-40">
+                  {item.hidden ? <Eye className="h-3.5 w-3.5" aria-hidden="true" /> : <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />}
                   {item.hidden ? t('packageManager.show') : t('packageManager.hide')}
                 </button>
 
                 {item.isCustom ? (
-                  <button type="button" onClick={() => removeItem(item)} disabled={busy} className="flex items-center gap-1.5 text-red-500 hover:text-red-700 px-2 py-1.5 rounded-lg text-xs font-bold transition-colors disabled:opacity-40">
-                    <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                  <button type="button" onClick={() => removeItem(item)} disabled={busy} className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-bold text-red-500 transition-colors hover:text-red-700 disabled:opacity-40">
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                     {t('packageManager.delete')}
                   </button>
                 ) : (
                   item.hasOverride && (
-                    <button type="button" onClick={() => removeItem(item)} disabled={busy} className="flex items-center gap-1.5 text-gray-500 hover:text-red-500 px-2 py-1.5 rounded-lg text-xs font-bold transition-colors disabled:opacity-40">
-                      <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+                    <button type="button" onClick={() => removeItem(item)} disabled={busy} className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-bold text-gray-500 transition-colors hover:text-red-500 disabled:opacity-40">
+                      <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                       {t('packageManager.reset')}
                     </button>
                   )
                 )}
 
                 {errorId === item.id && (
-                  <span className="flex items-center gap-1 text-[11px] text-red-500 font-bold">
-                    <AlertCircle className="w-3.5 h-3.5" aria-hidden="true" />
+                  <span className="flex items-center gap-1 text-[11px] font-bold text-red-500">
+                    <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
                     {t('packageManager.saveError')}
                   </span>
                 )}

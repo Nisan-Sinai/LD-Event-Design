@@ -4,10 +4,10 @@ import { Root } from './Root';
 import { I18nProvider } from './i18n/i18n';
 import { initHashNavigation } from './lib/hashNavigation';
 import { installSecondaryCatalogMedia } from './lib/secondaryCatalogMedia';
-import { installCatalogImageAdmin } from './lib/catalogImageAdmin';
 import './index.css';
 import './storefront.css';
 import './storefront-refinement.css';
+import './mobile-cart-summary.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -19,6 +19,5 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 
 initHashNavigation();
 installSecondaryCatalogMedia();
-installCatalogImageAdmin();
 
 // No-op production deployment trigger.
