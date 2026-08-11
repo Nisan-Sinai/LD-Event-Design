@@ -5,11 +5,13 @@ import { I18nProvider } from './i18n/i18n';
 import { initHashNavigation } from './lib/hashNavigation';
 import { installNavigationActiveState } from './lib/navigationActiveState';
 import { installProductImageLightbox } from './lib/productImageLightbox';
+import { installPromoVideo } from './lib/promoVideo';
 import { installSecondaryCatalogMedia } from './lib/secondaryCatalogMedia';
 import './index.css';
 import './storefront.css';
 import './storefront-refinement.css';
 import './mobile-cart-summary.css';
+import './promo-video.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -23,5 +25,6 @@ initHashNavigation();
 installNavigationActiveState();
 installSecondaryCatalogMedia();
 installProductImageLightbox();
+installPromoVideo();
 
 // No-op production deployment trigger.
