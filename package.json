@@ -14,7 +14,8 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "audit:prod": "npm audit --omit=dev --audit-level=moderate",
-    "qa": "npm run audit:prod && npm run type-check && npm run test:coverage && npm run build && npm run test:e2e"
+    "qa": "npm run audit:prod && npm run type-check && npm run test:coverage && npm run build && npm run test:e2e",
+    "postinstall": "node scripts/materializePromoVideo.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.2",
