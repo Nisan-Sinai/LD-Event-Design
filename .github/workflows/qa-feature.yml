@@ -85,7 +85,7 @@ jobs:
 
       - name: Publish detailed QA result
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           INSTALL: ${{ steps.install.outcome }}
           AUDIT: ${{ steps.audit.outcome }}
