@@ -45,6 +45,15 @@ const websiteOrder: OrderDetail = {
   bride_signature_path: null
 };
 
+function renderOrder(order: OrderDetail, showInternal = true) {
+  fetchOrderById.mockResolvedValue(order);
+  return render(
+    <I18nProvider>
+      <OrderDetailModal orderId={order.id} onClose={() => {}} showInternal={showInternal} />
+    </I18nProvider>
+  );
+}
+
 beforeEach(() => {
   fetchOrderById.mockReset();
   signatureUrl.mockReset();
@@ -53,16 +62,10 @@ beforeEach(() => {
 
 describe('OrderDetailModal website-order signature', () => {
   it('loads the private signature with a signed URL and shows it in admin', async () => {
-    fetchOrderById.mockResolvedValue(websiteOrder);
     signatureUrl.mockImplementation(async (path: string | null) =>
       path ? `https://signed.example/${path}` : null
     );
-
-    render(
-      <I18nProvider>
-        <OrderDetailModal orderId={websiteOrder.id} onClose={() => {}} showInternal />
-      </I18nProvider>
-    );
+    renderOrder(websiteOrder);
 
     await waitFor(() => expect(screen.getByText('חתימות')).toBeInTheDocument());
     expect(screen.getByText('חתימת הלקוח')).toBeInTheDocument();
@@ -81,18 +84,65 @@ describe('OrderDetailModal website-order signature', () => {
     );
   });
 
-  it('does not request or expose signatures outside the admin view', async () => {
-    fetchOrderById.mockResolvedValue(websiteOrder);
-    signatureUrl.mockResolvedValue('https://signed.example/hidden.png');
-
-    render(
-      <I18nProvider>
-        <OrderDetailModal orderId={websiteOrder.id} onClose={() => {}} showInternal={false} />
-      </I18nProvider>
+  it('renders both stored signatures and supports a signature without a date', async () => {
+    const twoSignatures: OrderDetail = {
+      ...websiteOrder,
+      bride_signature_path: `${websiteOrder.id}/secondary.png`,
+      bride_sign_date: null
+    };
+    signatureUrl.mockImplementation(async (path: string | null) =>
+      path ? `https://signed.example/${path}` : null
     );
+    renderOrder(twoSignatures);
+
+    expect(await screen.findByRole('img', { name: 'חתימת הלקוח' })).toBeInTheDocument();
+    const secondary = await screen.findByRole('img', { name: 'חתימה נוספת' });
+    expect(secondary).toHaveAttribute('src', `https://signed.example/${websiteOrder.id}/secondary.png`);
+    expect(signatureUrl).toHaveBeenCalledWith(`${websiteOrder.id}/secondary.png`);
+  });
+
+  it('shows a safe fallback when the stored signature cannot get a signed URL', async () => {
+    signatureUrl.mockResolvedValue(null);
+    renderOrder(websiteOrder);
+
+    await waitFor(() => {
+      expect(screen.getByText('החתימה שמורה אך לא ניתן לטעון אותה כרגע.')).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('img', { name: 'חתימת הלקוח' })).not.toBeInTheDocument();
+  });
+
+  it('does not request or expose signatures outside the admin view', async () => {
+    signatureUrl.mockResolvedValue('https://signed.example/hidden.png');
+    renderOrder(websiteOrder, false);
 
     await screen.findByText('customer@example.com');
     expect(screen.queryByText('חתימת הלקוח')).not.toBeInTheDocument();
     expect(signatureUrl).not.toHaveBeenCalled();
+  });
+
+  it('does not render a signature section when a website order has no stored signature', async () => {
+    signatureUrl.mockResolvedValue('https://signed.example/unused.png');
+    renderOrder({
+      ...websiteOrder,
+      groom_signature_path: null,
+      bride_signature_path: null,
+      groom_sign_date: null
+    });
+
+    await screen.findByText('customer@example.com');
+    expect(screen.queryByText('חתימות')).not.toBeInTheDocument();
+    expect(signatureUrl).not.toHaveBeenCalled();
+  });
+
+  it('uses the English labels for the same protected signature preview', async () => {
+    window.localStorage.setItem('ld-lang', 'en');
+    signatureUrl.mockImplementation(async (path: string | null) =>
+      path ? `https://signed.example/${path}` : null
+    );
+    renderOrder(websiteOrder);
+
+    expect(await screen.findByRole('img', { name: 'Customer signature' })).toBeInTheDocument();
+    expect(screen.getByText('Signatures')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open signature full size' })).toBeInTheDocument();
   });
 });
