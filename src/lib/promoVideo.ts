@@ -1,4 +1,4 @@
-const PROMO_VIDEO_SRC = 'https://deafgaztsyukmmeqnmvw.supabase.co/storage/v1/object/public/ld-event-design-promo.mp4/WhatsApp%20Video%202026-08-11%20at%2009.55.10.mp4';
+const PROMO_VIDEO_SRC = 'https://deafgaztsyukmmeqnmvw.supabase.co/storage/v1/object/public/ld-event-design-promo.mp4/LD%20.mp4';
 
 const COPY = {
   he: {
