@@ -6,10 +6,12 @@ import { initHashNavigation } from './lib/hashNavigation';
 import { installNavigationActiveState } from './lib/navigationActiveState';
 import { installProductGalleryAdmin } from './lib/productGalleryAdmin';
 import { installProductImageLightbox } from './lib/productImageLightbox';
+import { installPromoVideo } from './lib/promoVideo';
 import { installSecondaryCatalogMedia } from './lib/secondaryCatalogMedia';
 import './index.css';
 import './storefront.css';
 import './storefront-refinement.css';
+import './promo-video.css';
 import './mobile-cart-summary.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -25,5 +27,6 @@ installNavigationActiveState();
 installSecondaryCatalogMedia();
 installProductImageLightbox();
 installProductGalleryAdmin();
+installPromoVideo();
 
 // No-op production deployment trigger.
