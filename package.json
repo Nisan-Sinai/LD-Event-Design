@@ -5,6 +5,7 @@
   "type": "module",
   "description": "טופס הזמנה והסכם דיגיטלי לעיצוב אירועים - LD Event Design",
   "scripts": {
+    "postinstall": "node scripts/materializePromoVideo.mjs",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "type-check": "tsc --noEmit",
