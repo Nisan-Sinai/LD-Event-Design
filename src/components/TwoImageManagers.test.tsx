@@ -8,7 +8,7 @@ import type { PackageOverride } from '../lib/packages';
 const state = vi.hoisted(() => ({
   overrides: {} as Record<string, PackageOverride>,
   saveOverride: vi.fn(async (_o: PackageOverride, _options?: unknown) => {}),
-  saveImage: vi.fn(async (_id: string, _url: string | null, _slot?: 1 | 2) => {}),
+  saveImage: vi.fn(async (_id: string, _url: string | null, _slot?: 1 | 2 | 3 | 4) => {}),
   removeOverride: vi.fn(async (_id: string) => {}),
   upload: vi.fn(async (_file: File) => 'https://cdn.example/second.webp')
 }));
@@ -45,24 +45,26 @@ beforeEach(() => {
   state.upload.mockClear().mockResolvedValue('https://cdn.example/second.webp');
 });
 
-describe('inline two-image admin controls', () => {
-  it('keeps both product images inside the existing product card and saves image 2 separately', async () => {
+describe('inline image admin controls', () => {
+  it('keeps four product images inside the existing product card and saves image 4 separately', async () => {
     render(<I18nProvider><ProductManager /></I18nProvider>);
     const card = screen.getByDisplayValue(SHOP_PRODUCTS[0].title).closest('article') as HTMLElement;
     const inputs = card.querySelectorAll<HTMLInputElement>('input[type="file"]');
 
-    expect(inputs).toHaveLength(2);
+    expect(inputs).toHaveLength(4);
     expect(card).toHaveTextContent('תמונת מוצר 1');
     expect(card).toHaveTextContent('תמונת מוצר 2');
+    expect(card).toHaveTextContent('תמונת מוצר 3');
+    expect(card).toHaveTextContent('תמונת מוצר 4');
 
-    fireEvent.change(inputs[1], {
-      target: { files: [new File(['image'], 'second.png', { type: 'image/png' })] }
+    fireEvent.change(inputs[3], {
+      target: { files: [new File(['image'], 'fourth.png', { type: 'image/png' })] }
     });
 
     await waitFor(() => expect(state.saveImage).toHaveBeenCalledWith(
       SHOP_PRODUCTS[0].id,
       'https://cdn.example/second.webp',
-      2
+      4
     ));
   });
 
