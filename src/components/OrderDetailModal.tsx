@@ -1,9 +1,10 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { X, User, Calendar, MapPin, Phone, Mail, Package, Gift, ClipboardList, Palette } from 'lucide-react';
+import { X, User, Calendar, MapPin, Phone, Mail, Package, Gift, ClipboardList, Palette, PenTool } from 'lucide-react';
 import { useI18n } from '../i18n/i18n';
-import { fetchOrderById, type OrderDetail } from '../lib/orders';
+import { fetchOrderById, signatureUrl, type OrderDetail } from '../lib/orders';
 
 const WEBSITE_QUOTE_SOURCE = 'website-quote-builder';
+const WEBSITE_ORDER_SOURCE = 'website-order-selection';
 
 interface QuoteMetadata {
   customColors: string;
@@ -71,11 +72,59 @@ function Section({ icon, title, children }: { icon: ReactNode; title: string; ch
   );
 }
 
+function SignaturePreview({
+  label,
+  url,
+  signedOn,
+  openLabel,
+  unavailableLabel
+}: {
+  label: string;
+  url: string | null;
+  signedOn: string | null;
+  openLabel: string;
+  unavailableLabel: string;
+}) {
+  return (
+    <div className="min-w-0 rounded-xl border border-[#EAE3D2] bg-white p-3">
+      <div className="mb-2 flex min-w-0 flex-wrap items-center justify-between gap-2">
+        <strong className="min-w-0 break-words text-xs text-[#6D5434]">{label}</strong>
+        {signedOn ? <span className="text-[11px] text-gray-400">{signedOn}</span> : null}
+      </div>
+      {url ? (
+        <>
+          <a href={url} target="_blank" rel="noopener noreferrer" className="block rounded-xl border border-[#EFE7D8] bg-white p-2">
+            <img
+              src={url}
+              alt={label}
+              className="mx-auto max-h-40 w-full object-contain"
+              loading="lazy"
+            />
+          </a>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 inline-flex text-xs font-bold text-[#8C6D3F] underline underline-offset-2"
+          >
+            {openLabel}
+          </a>
+        </>
+      ) : (
+        <p className="text-xs text-gray-400">{unavailableLabel}</p>
+      )}
+    </div>
+  );
+}
+
 export function OrderDetailModal({ orderId, onClose, showInternal = false }: { orderId: string | null; onClose: () => void; showInternal?: boolean }) {
   const { t, dir } = useI18n();
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  const [primarySignatureUrl, setPrimarySignatureUrl] = useState<string | null>(null);
+  const [secondarySignatureUrl, setSecondarySignatureUrl] = useState<string | null>(null);
+  const [signatureLoading, setSignatureLoading] = useState(false);
 
   useEffect(() => {
     if (!orderId) return;
@@ -83,6 +132,8 @@ export function OrderDetailModal({ orderId, onClose, showInternal = false }: { o
     setOrder(null);
     setError(false);
     setLoading(true);
+    setPrimarySignatureUrl(null);
+    setSecondarySignatureUrl(null);
 
     fetchOrderById(orderId)
       .then((o) => {
@@ -100,6 +151,30 @@ export function OrderDetailModal({ orderId, onClose, showInternal = false }: { o
       cancelled = true;
     };
   }, [orderId]);
+
+  useEffect(() => {
+    if (!showInternal || !order || order.order_source !== WEBSITE_ORDER_SOURCE) return;
+    if (!order.groom_signature_path && !order.bride_signature_path) return;
+
+    let cancelled = false;
+    setSignatureLoading(true);
+    Promise.all([
+      signatureUrl(order.groom_signature_path),
+      signatureUrl(order.bride_signature_path)
+    ])
+      .then(([primary, secondary]) => {
+        if (cancelled) return;
+        setPrimarySignatureUrl(primary);
+        setSecondarySignatureUrl(secondary);
+      })
+      .finally(() => {
+        if (!cancelled) setSignatureLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [order, showInternal]);
 
   useEffect(() => {
     if (!orderId) return;
@@ -128,7 +203,13 @@ export function OrderDetailModal({ orderId, onClose, showInternal = false }: { o
         customColors: 'צבעים נוספים',
         customRequest: 'בקשה אישית',
         customerNotes: 'הערות ובקשות נוספות',
-        websiteQuote: 'בקשת הצעת מחיר מהאתר'
+        websiteQuote: 'בקשת הצעת מחיר מהאתר',
+        signatures: 'חתימות',
+        customerSignature: 'חתימת הלקוח',
+        additionalSignature: 'חתימה נוספת',
+        openSignature: 'פתיחת החתימה בגודל מלא',
+        signatureLoading: 'טוען חתימה…',
+        signatureUnavailable: 'החתימה שמורה אך לא ניתן לטעון אותה כרגע.'
       }
     : {
         preferences: 'Design preferences & requests',
@@ -138,7 +219,13 @@ export function OrderDetailModal({ orderId, onClose, showInternal = false }: { o
         customColors: 'Additional colors',
         customRequest: 'Custom request',
         customerNotes: 'Additional notes',
-        websiteQuote: 'Website quote request'
+        websiteQuote: 'Website quote request',
+        signatures: 'Signatures',
+        customerSignature: 'Customer signature',
+        additionalSignature: 'Additional signature',
+        openSignature: 'Open signature full size',
+        signatureLoading: 'Loading signature…',
+        signatureUnavailable: 'The signature is stored but cannot be loaded right now.'
       };
 
   const quoteMetadata = order
@@ -155,6 +242,12 @@ export function OrderDetailModal({ orderId, onClose, showInternal = false }: { o
       ? localCopy.websiteQuote
       : labelOr(`admin.source_${order.order_source}`, order.order_source)
     : null;
+  const showWebsiteOrderSignatures = Boolean(
+    showInternal &&
+    order?.order_source === WEBSITE_ORDER_SOURCE &&
+    (order.groom_signature_path || order.bride_signature_path)
+  );
+
   return (
     <div
       className="fixed inset-0 z-[120] flex items-center justify-center overflow-x-hidden bg-black/50 p-2 sm:p-4"
@@ -249,6 +342,32 @@ export function OrderDetailModal({ orderId, onClose, showInternal = false }: { o
                 </div>
               </Section>
 
+              {showWebsiteOrderSignatures && (
+                <Section icon={<PenTool className="h-4 w-4 shrink-0" aria-hidden="true" />} title={localCopy.signatures}>
+                  {signatureLoading ? <p className="text-xs text-gray-400">{localCopy.signatureLoading}</p> : null}
+                  <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+                    {order.groom_signature_path ? (
+                      <SignaturePreview
+                        label={localCopy.customerSignature}
+                        url={primarySignatureUrl}
+                        signedOn={order.groom_sign_date}
+                        openLabel={localCopy.openSignature}
+                        unavailableLabel={localCopy.signatureUnavailable}
+                      />
+                    ) : null}
+                    {order.bride_signature_path ? (
+                      <SignaturePreview
+                        label={localCopy.additionalSignature}
+                        url={secondarySignatureUrl}
+                        signedOn={order.bride_sign_date}
+                        openLabel={localCopy.openSignature}
+                        unavailableLabel={localCopy.signatureUnavailable}
+                      />
+                    ) : null}
+                  </div>
+                </Section>
+              )}
+
               {showInternal && (orderSourceLabel || order.received_by || internalNotes) && (
                 <Section icon={<ClipboardList className="h-4 w-4 shrink-0" aria-hidden="true" />} title={t('orderDetail.sectionAdmin')}>
                   <Row label={t('orderDetail.source')} value={orderSourceLabel} />
@@ -256,7 +375,6 @@ export function OrderDetailModal({ orderId, onClose, showInternal = false }: { o
                   <Row label={t('orderDetail.internalNotes')} value={internalNotes ? <span className="whitespace-pre-wrap [overflow-wrap:anywhere]">{internalNotes}</span> : null} />
                 </Section>
               )}
-
             </>
           )}
         </div>
