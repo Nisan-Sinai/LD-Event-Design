@@ -11,28 +11,43 @@ import { uploadPackageImage, type PackageOverride } from '../lib/packages';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { usePackages } from '../packages/PackagesProvider';
 
+type ImageSlot = 1 | 2 | 3 | 4;
+
 interface ProductDraft {
   title: string;
   subtitle: string;
   price: string;
   image: string;
   image2: string;
+  image3: string;
+  image4: string;
   category: ShopProductCategory | '';
 }
 
 interface ManagedProduct extends ShopProduct {
   image2: string;
+  image3: string;
+  image4: string;
   hidden: boolean;
   custom: boolean;
   hasOverride: boolean;
 }
 
-const EMPTY_DRAFT: ProductDraft = { title: '', subtitle: '', price: '', image: '', image2: '', category: '' };
+const EMPTY_DRAFT: ProductDraft = {
+  title: '',
+  subtitle: '',
+  price: '',
+  image: '',
+  image2: '',
+  image3: '',
+  image4: '',
+  category: ''
+};
 
 const COPY = {
   he: {
     title: 'מוצרים קטנים בחנות',
-    subtitle: 'כאן לירון יכולה להעלות שתי תמונות, לשנות מחיר וטקסט, להסתיר מוצר או להוסיף מוצר חדש.',
+    subtitle: 'כאן לירון יכולה להעלות עד 4 תמונות, לשנות מחיר וטקסט, להסתיר מוצר או להוסיף מוצר חדש.',
     add: 'הוספת מוצר',
     newProduct: 'מוצר חדש',
     category: 'קטגוריה',
@@ -58,11 +73,11 @@ const COPY = {
     hidden: 'מוסתר',
     edited: 'נערך',
     noImage: 'ללא תמונה',
-    imageHint: 'מומלץ להעלות תמונה ריבועית או ביחס 4:5 באיכות גבוהה.'
+    imageHint: 'אפשר להעלות עד 4 תמונות. מומלץ להשתמש בתמונות ריבועיות או ביחס 4:5 באיכות גבוהה.'
   },
   en: {
     title: 'Small shop products',
-    subtitle: 'Upload two product images, change prices and text, hide products or create new products.',
+    subtitle: 'Upload up to 4 product images, change prices and text, hide products or create new products.',
     add: 'Add product',
     newProduct: 'New product',
     category: 'Category',
@@ -88,7 +103,7 @@ const COPY = {
     hidden: 'Hidden',
     edited: 'Edited',
     noImage: 'No image',
-    imageHint: 'A high-quality square or 4:5 image is recommended.'
+    imageHint: 'You can upload up to 4 images. High-quality square or 4:5 images are recommended.'
   }
 } as const;
 
@@ -99,6 +114,8 @@ function toDraft(product: ManagedProduct): ProductDraft {
     price: String(product.price),
     image: product.image ?? '',
     image2: product.image2,
+    image3: product.image3,
+    image4: product.image4,
     category: product.category
   };
 }
@@ -126,6 +143,8 @@ export function ProductManager() {
       price: override?.price ?? product.price,
       image: override?.image_url ?? product.image,
       image2: override?.image_url_2 ?? '',
+      image3: override?.image_url_3 ?? '',
+      image4: override?.image_url_4 ?? '',
       category: (override?.category ?? product.category) as ShopProductCategory,
       svgType: override?.svg_type ?? product.svgType,
       hidden: override?.hidden ?? false,
@@ -145,6 +164,8 @@ export function ProductManager() {
       price: override.price ?? 0,
       image: override.image_url ?? undefined,
       image2: override.image_url_2 ?? '',
+      image3: override.image_url_3 ?? '',
+      image4: override.image_url_4 ?? '',
       svgType: override.svg_type ?? 'default',
       hidden: override.hidden,
       custom: true,
@@ -191,6 +212,8 @@ export function ProductManager() {
     benefits: null,
     image_url: draft.image.trim() || null,
     image_url_2: draft.image2.trim() || null,
+    image_url_3: draft.image3.trim() || null,
+    image_url_4: draft.image4.trim() || null,
     category: draft.category || product.category,
     svg_type: product.svgType,
     pricing_tiers: null,
@@ -199,10 +222,10 @@ export function ProductManager() {
     sort_order: product.custom ? overrides[product.id]?.sort_order ?? Date.now() : null
   });
 
-  const persistImage = (product: ManagedProduct, imageUrl: string, slot: 1 | 2) =>
+  const persistImage = (product: ManagedProduct, imageUrl: string, slot: ImageSlot) =>
     run(product.id, () => slot === 1
       ? saveImage(product.id, imageUrl.trim() || null)
-      : saveImage(product.id, imageUrl.trim() || null, 2));
+      : saveImage(product.id, imageUrl.trim() || null, slot));
 
   const saveProduct = (product: ManagedProduct) => {
     const draft = draftFor(product);
@@ -221,7 +244,7 @@ export function ProductManager() {
     uploadKey: string,
     file: File | undefined,
     apply: (url: string) => void,
-    slot: 1 | 2,
+    slot: ImageSlot,
     product?: ManagedProduct
   ) => {
     if (!file) return;
@@ -254,6 +277,8 @@ export function ProductManager() {
       benefits: null,
       image_url: newDraft.image.trim() || null,
       image_url_2: newDraft.image2.trim() || null,
+      image_url_3: newDraft.image3.trim() || null,
+      image_url_4: newDraft.image4.trim() || null,
       category: newDraft.category,
       svg_type: 'default',
       pricing_tiers: null,
@@ -269,7 +294,7 @@ export function ProductManager() {
     uploadKey: string,
     url: string,
     apply: (url: string) => void,
-    slot: 1 | 2,
+    slot: ImageSlot,
     product?: ManagedProduct
   ) => (
     <div className="min-w-0 rounded-2xl border border-[#EAE3D2] bg-[#FAF7F2] p-2.5">
@@ -284,7 +309,7 @@ export function ProductManager() {
                 apply('');
                 if (product) void persistImage(product, '', slot);
               }}
-              aria-label={slot === 1 ? copy.removeImage : `${copy.removeImage} 2`}
+              aria-label={slot === 1 ? copy.removeImage : `${copy.removeImage} ${slot}`}
               className="absolute end-1.5 top-1.5 rounded-full bg-white/95 p-1.5 text-gray-500 shadow hover:text-red-600"
             >
               <X className="h-3.5 w-3.5" aria-hidden="true" />
@@ -299,7 +324,7 @@ export function ProductManager() {
       </div>
       <label className="mt-2 flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#B29259] px-2 py-2 text-[10px] font-bold text-[#8C6D3F] hover:bg-white">
         <ImagePlus className="h-3.5 w-3.5" aria-hidden="true" />
-        {uploadingId === uploadKey ? copy.uploading : url ? `${copy.upload} ${slot}` : `${copy.upload} ${slot}`}
+        {uploadingId === uploadKey ? copy.uploading : `${copy.upload} ${slot}`}
         <input
           type="file"
           accept="image/*,.heic,.heif"
@@ -339,9 +364,11 @@ export function ProductManager() {
             <label className="lg:col-span-2"><span className={labelClass}>{copy.name}</span><input value={newDraft.title} onChange={(event) => setNewDraft({ ...newDraft, title: event.target.value })} className={inputClass} /></label>
             <label><span className={labelClass}>{copy.price}</span><input type="number" min="0" value={newDraft.price} onChange={(event) => setNewDraft({ ...newDraft, price: event.target.value })} className={inputClass} /></label>
             <label className="sm:col-span-2 lg:col-span-4"><span className={labelClass}>{copy.description}</span><input value={newDraft.subtitle} onChange={(event) => setNewDraft({ ...newDraft, subtitle: event.target.value })} className={inputClass} /></label>
-            <div className="grid grid-cols-2 gap-3 sm:col-span-2 lg:col-span-4">
+            <div className="grid grid-cols-2 gap-3 sm:col-span-2 lg:col-span-4 lg:grid-cols-4">
               {imageControl('__new_product__:1', newDraft.image, (image) => setNewDraft((current) => ({ ...current, image })), 1)}
               {imageControl('__new_product__:2', newDraft.image2, (image2) => setNewDraft((current) => ({ ...current, image2 })), 2)}
+              {imageControl('__new_product__:3', newDraft.image3, (image3) => setNewDraft((current) => ({ ...current, image3 })), 3)}
+              {imageControl('__new_product__:4', newDraft.image4, (image4) => setNewDraft((current) => ({ ...current, image4 })), 4)}
             </div>
           </div>
           {errorId === '__new_product__' && <p role="alert" className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-red-600"><AlertCircle className="h-4 w-4" aria-hidden="true" />{copy.required}</p>}
@@ -367,10 +394,12 @@ export function ProductManager() {
                 </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-[minmax(220px,260px)_1fr]">
+              <div className="grid gap-4 sm:grid-cols-[minmax(260px,360px)_1fr]">
                 <div className="grid grid-cols-2 gap-2">
                   {imageControl(`${product.id}:1`, draft.image, (image) => setField(product, 'image', image), 1, product)}
                   {imageControl(`${product.id}:2`, draft.image2, (image2) => setField(product, 'image2', image2), 2, product)}
+                  {imageControl(`${product.id}:3`, draft.image3, (image3) => setField(product, 'image3', image3), 3, product)}
+                  {imageControl(`${product.id}:4`, draft.image4, (image4) => setField(product, 'image4', image4), 4, product)}
                 </div>
                 <div className="grid gap-3">
                   <label><span className={labelClass}>{copy.category}</span><select value={draft.category} onChange={(event) => setField(product, 'category', event.target.value)} className={inputClass}>{Object.values(SHOP_PRODUCT_CATEGORIES).map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
