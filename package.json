@@ -17,8 +17,8 @@
     "qa": "npm run audit:prod && npm run type-check && npm run test:coverage && npm run build && npm run test:e2e"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.112.1",
-    "lucide-react": "^1.28.0",
+    "@supabase/supabase-js": "^2.112.2",
+    "lucide-react": "^1.30.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router": "^8.3.0"
