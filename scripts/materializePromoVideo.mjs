@@ -6,15 +6,16 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const chunksDir = join(root, 'src', 'assets', 'promo-video');
 const outputPath = join(root, 'public', 'media', 'ld-event-design-promo.mp4');
-const expectedSize = 271485;
-const expectedSha256 = 'cc22df57b1682b4b4398a7e80ed674fc6c20bb67624b62ad3bbf71a572e74faa';
+const expectedSize = 115907;
+const expectedSha256 = '343a4aff43470ebaf8a556c4df94fa42a590162cc964469dfd0ae41885a945b0';
+const expectedChunkCount = 7;
 
 const chunkNames = (await readdir(chunksDir))
   .filter((name) => /^chunk-\d+\.b64$/.test(name))
   .sort();
 
-if (chunkNames.length !== 19) {
-  throw new Error(`Expected 19 promo-video chunks, found ${chunkNames.length}`);
+if (chunkNames.length !== expectedChunkCount) {
+  throw new Error(`Expected ${expectedChunkCount} promo-video chunks, found ${chunkNames.length}`);
 }
 
 const base64 = (await Promise.all(chunkNames.map((name) => readFile(join(chunksDir, name), 'utf8')))).join('');
