@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { I18nProvider } from '../i18n/i18n';
 import { SHOP_PRODUCTS } from '../catalog/shopProducts';
 import { PACKAGES } from '../App';
@@ -46,7 +46,7 @@ beforeEach(() => {
 });
 
 describe('inline image admin controls', () => {
-  it('keeps four product images inside the existing product card and saves image 4 separately', async () => {
+  it('keeps four product images inside the card and saves image 4 only after confirmation', async () => {
     render(<I18nProvider><ProductManager /></I18nProvider>);
     const card = screen.getByDisplayValue(SHOP_PRODUCTS[0].title).closest('article') as HTMLElement;
     const inputs = card.querySelectorAll<HTMLInputElement>('input[type="file"]');
@@ -61,6 +61,10 @@ describe('inline image admin controls', () => {
       target: { files: [new File(['image'], 'fourth.png', { type: 'image/png' })] }
     });
 
+    await waitFor(() => expect(state.upload).toHaveBeenCalled());
+    expect(state.saveImage).not.toHaveBeenCalled();
+    fireEvent.click(within(card).getByRole('button', { name: '✅ שמור 4' }));
+
     await waitFor(() => expect(state.saveImage).toHaveBeenCalledWith(
       SHOP_PRODUCTS[0].id,
       'https://cdn.example/second.webp',
@@ -68,7 +72,7 @@ describe('inline image admin controls', () => {
     ));
   });
 
-  it('keeps both package images inside the existing package row and saves image 2 separately', async () => {
+  it('keeps both package images inside the row and saves image 2 only after confirmation', async () => {
     render(<I18nProvider><PackageManager /></I18nProvider>);
     const row = screen.getByLabelText(`כותרת — ${PACKAGES[0].title}`).closest('.rounded-xl') as HTMLElement;
     const inputs = row.querySelectorAll<HTMLInputElement>('input[type="file"]');
@@ -80,6 +84,10 @@ describe('inline image admin controls', () => {
     fireEvent.change(inputs[1], {
       target: { files: [new File(['image'], 'second.png', { type: 'image/png' })] }
     });
+
+    await waitFor(() => expect(state.upload).toHaveBeenCalled());
+    expect(state.saveImage).not.toHaveBeenCalled();
+    fireEvent.click(within(row).getByRole('button', { name: '✅ שמור 2' }));
 
     await waitFor(() => expect(state.saveImage).toHaveBeenCalledWith(
       PACKAGES[0].id,
