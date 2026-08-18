@@ -52,7 +52,7 @@ beforeEach(() => {
 });
 
 describe('SiteLayout custom branding', () => {
-  it('keeps the brand text visible and gives the uploaded logo a prominent responsive size', () => {
+  it('keeps the original compact header proportions while showing the uploaded logo and brand text', () => {
     render(
       <I18nProvider>
         <MemoryRouter>
@@ -64,13 +64,13 @@ describe('SiteLayout custom branding', () => {
     const header = within(screen.getByRole('banner'));
     const headerLogo = header.getByRole('img', { name: 'לוגו LD Event Design' });
     expect(headerLogo).toHaveClass('h-full', 'w-full', 'object-contain');
-    expect(headerLogo.parentElement).toHaveClass('h-24', 'w-36', 'sm:h-28', 'sm:w-44');
+    expect(headerLogo.parentElement).toHaveClass('h-14', 'w-20', 'sm:h-16', 'sm:w-24');
     expect(header.getByRole('heading', { name: 'LD Event Design' })).toBeVisible();
     expect(header.getByText(/MAKING ALL DREAMS COME TRUE/i)).toBeVisible();
 
     const footer = within(screen.getByRole('contentinfo'));
     const footerLogo = footer.getByRole('img', { name: 'לוגו LD Event Design' });
-    expect(footerLogo.parentElement).toHaveClass('h-24', 'w-36');
+    expect(footerLogo.parentElement).toHaveClass('h-16', 'w-24');
     expect(footer.getByText('LD Event Design')).toBeVisible();
   });
 });
