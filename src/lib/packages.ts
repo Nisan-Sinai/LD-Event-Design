@@ -30,7 +30,7 @@ export type OverrideMap = Record<string, PackageOverride>;
 const COLS =
   'package_id,price,title,subtitle,description,benefits,image_url,image_url_2,image_url_3,image_url_4,category,svg_type,pricing_tiers,hidden,is_custom,sort_order';
 
-const MAX_SOURCE_IMAGE_BYTES = 30 * 1024 * 1024;
+const MAX_SOURCE_IMAGE_BYTES = 50 * 1024 * 1024;
 const MAX_UPLOAD_IMAGE_BYTES = 6 * 1024 * 1024;
 const MAX_IMAGE_DIMENSION = 2400;
 
@@ -102,6 +102,11 @@ interface PreparedPackageImage {
   contentType: string;
 }
 
+interface DetectedImageFormat {
+  extension: string;
+  contentType: string;
+}
+
 function rawFileExtension(name: string): string | undefined {
   const candidate = name.split('.').pop()?.trim().toLowerCase();
   if (!candidate || BLOCKED_FILE_EXTENSIONS.has(candidate)) return undefined;
@@ -124,15 +129,85 @@ function extensionFromMimeType(mimeType: string): string | undefined {
   return /^[a-z0-9.-]{1,20}$/.test(simple) ? simple.replace(/[^a-z0-9]/g, '').slice(0, 10) || undefined : undefined;
 }
 
-export function validatePackageImage(file: File): string {
+function validateImageSafety(file: File): void {
   if (file.size <= 0) throw new Error('Image file is empty');
-  if (file.size > MAX_SOURCE_IMAGE_BYTES) throw new Error('Image file is larger than 30 MB');
+  if (file.size > MAX_SOURCE_IMAGE_BYTES) throw new Error('Image file is larger than 50 MB');
 
   const mimeType = file.type.trim().toLowerCase();
   if (BLOCKED_IMAGE_MIME_TYPES.has(mimeType)) {
     throw new Error('SVG/XML images are not allowed for security reasons');
   }
 
+  const extension = rawFileExtension(file.name);
+  if (extension && BLOCKED_FILE_EXTENSIONS.has(extension)) {
+    throw new Error('SVG/XML images are not allowed for security reasons');
+  }
+}
+
+function ascii(bytes: Uint8Array, start: number, length: number): string {
+  return String.fromCharCode(...bytes.slice(start, start + length));
+}
+
+async function detectImageFormatFromSignature(file: File): Promise<DetectedImageFormat | undefined> {
+  const bytes = new Uint8Array(await file.slice(0, 32).arrayBuffer());
+  if (bytes.length < 4) return undefined;
+
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+    return { extension: 'jpg', contentType: 'image/jpeg' };
+  }
+  if (
+    bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47 &&
+    bytes[4] === 0x0d && bytes[5] === 0x0a && bytes[6] === 0x1a && bytes[7] === 0x0a
+  ) {
+    return { extension: 'png', contentType: 'image/png' };
+  }
+  if (ascii(bytes, 0, 4) === 'GIF8') {
+    return { extension: 'gif', contentType: 'image/gif' };
+  }
+  if (ascii(bytes, 0, 4) === 'RIFF' && ascii(bytes, 8, 4) === 'WEBP') {
+    return { extension: 'webp', contentType: 'image/webp' };
+  }
+  if (bytes[0] === 0x42 && bytes[1] === 0x4d) {
+    return { extension: 'bmp', contentType: 'image/bmp' };
+  }
+  if (
+    (bytes[0] === 0x49 && bytes[1] === 0x49 && bytes[2] === 0x2a && bytes[3] === 0x00) ||
+    (bytes[0] === 0x4d && bytes[1] === 0x4d && bytes[2] === 0x00 && bytes[3] === 0x2a)
+  ) {
+    return { extension: 'tiff', contentType: 'image/tiff' };
+  }
+  if (bytes[0] === 0x00 && bytes[1] === 0x00 && bytes[2] === 0x01 && bytes[3] === 0x00) {
+    return { extension: 'ico', contentType: 'image/x-icon' };
+  }
+  if (bytes[0] === 0xff && bytes[1] === 0x0a) {
+    return { extension: 'jxl', contentType: 'image/jxl' };
+  }
+  if (
+    bytes[0] === 0x00 && bytes[1] === 0x00 && bytes[2] === 0x00 && bytes[3] === 0x0c &&
+    ascii(bytes, 4, 4) === 'JXL '
+  ) {
+    return { extension: 'jxl', contentType: 'image/jxl' };
+  }
+  if (bytes.length >= 12 && ascii(bytes, 4, 4) === 'ftyp') {
+    const brand = ascii(bytes, 8, 4).toLowerCase();
+    if (brand === 'avif' || brand === 'avis') {
+      return { extension: 'avif', contentType: 'image/avif' };
+    }
+    if (['heic', 'heix', 'hevc', 'hevx', 'heim', 'heis'].includes(brand)) {
+      return { extension: 'heic', contentType: 'image/heic' };
+    }
+    if (brand === 'mif1' || brand === 'msf1') {
+      return { extension: 'heif', contentType: 'image/heif' };
+    }
+  }
+
+  return undefined;
+}
+
+export function validatePackageImage(file: File): string {
+  validateImageSafety(file);
+
+  const mimeType = file.type.trim().toLowerCase();
   const fileExtension = rawFileExtension(file.name);
   const knownFileExtension = knownExtensionFromFileName(file.name);
   const isGenericMime = mimeType === '' || mimeType === 'application/octet-stream';
@@ -245,8 +320,17 @@ async function imageToCanvas(file: File): Promise<{ canvas: HTMLCanvasElement; c
 }
 
 async function preparePackageImage(file: File): Promise<PreparedPackageImage> {
-  const extension = validatePackageImage(file);
-  const mimeType = file.type.trim().toLowerCase();
+  validateImageSafety(file);
+
+  const rawMimeType = file.type.trim().toLowerCase();
+  const isGenericMime = rawMimeType === '' || rawMimeType === 'application/octet-stream';
+  const detected = isGenericMime ? await detectImageFormatFromSignature(file) : undefined;
+  const extension = detected?.extension ?? validatePackageImage(file);
+  const mimeType = detected?.contentType ?? rawMimeType;
+  const contentType =
+    mimeType && mimeType !== 'application/octet-stream'
+      ? mimeType
+      : UPLOAD_CONTENT_TYPES[extension] || 'application/octet-stream';
   const needsConversion =
     file.size > MAX_UPLOAD_IMAGE_BYTES || extension === 'heic' || extension === 'heif';
 
@@ -254,7 +338,7 @@ async function preparePackageImage(file: File): Promise<PreparedPackageImage> {
     return {
       body: file,
       extension,
-      contentType: mimeType || UPLOAD_CONTENT_TYPES[extension] || 'application/octet-stream'
+      contentType
     };
   }
 
@@ -285,7 +369,7 @@ async function preparePackageImage(file: File): Promise<PreparedPackageImage> {
     return {
       body: file,
       extension,
-      contentType: mimeType || UPLOAD_CONTENT_TYPES[extension] || 'application/octet-stream'
+      contentType
     };
   } finally {
     cleanup();
