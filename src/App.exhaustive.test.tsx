@@ -100,9 +100,12 @@ beforeEach(() => {
 describe('App exhaustive UI branches', () => {
   it('opens every legal document and closes by inner-safe click, Escape, X, bottom button and backdrop', () => {
     renderApp();
-    const legalNav = screen.getByRole('navigation', { name: 'תנאי שימוש' });
+    const footer = document.querySelector('footer');
+    expect(footer).toBeTruthy();
+    const legalNav = footer!.querySelector('nav');
+    expect(legalNav).toBeTruthy();
 
-    fireEvent.click(within(legalNav).getByRole('button', { name: 'מדיניות פרטיות' }));
+    fireEvent.click(within(legalNav!).getByRole('button', { name: 'מדיניות פרטיות' }));
     let dialog = screen.getByRole('dialog');
     expect(dialog).toHaveTextContent('מדיניות פרטיות');
     fireEvent.click(dialog.querySelector('div')!);
@@ -112,7 +115,7 @@ describe('App exhaustive UI branches', () => {
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
-    fireEvent.click(within(legalNav).getByRole('button', { name: 'תנאי שימוש' }));
+    fireEvent.click(within(legalNav!).getByRole('button', { name: 'תנאי שימוש' }));
     dialog = screen.getByRole('dialog');
     fireEvent.click(within(dialog).getAllByRole('button', { name: 'סגירה' })[0]);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -124,7 +127,7 @@ describe('App exhaustive UI branches', () => {
     fireEvent.click(closeButtons[closeButtons.length - 1]);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
-    fireEvent.click(within(legalNav).getByRole('button', { name: 'מדיניות פרטיות' }));
+    fireEvent.click(within(legalNav!).getByRole('button', { name: 'מדיניות פרטיות' }));
     dialog = screen.getByRole('dialog');
     fireEvent.click(dialog);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -133,12 +136,13 @@ describe('App exhaustive UI branches', () => {
   it('opens legal terms/privacy from step 3 and updates both signature dates', () => {
     reachStep3();
     const checkbox = screen.getByRole('checkbox');
-    const termsContainer = checkbox.closest('div')!;
-    fireEvent.click(within(termsContainer).getByRole('button', { name: 'תנאי שימוש' }));
+    const termsLabel = checkbox.closest('label');
+    expect(termsLabel).toBeTruthy();
+    fireEvent.click(within(termsLabel!).getByRole('button', { name: 'תנאי שימוש' }));
     expect(screen.getByRole('dialog')).toHaveTextContent('תנאי שימוש');
     fireEvent.click(screen.getByRole('dialog'));
 
-    fireEvent.click(within(termsContainer).getByRole('button', { name: 'מדיניות פרטיות' }));
+    fireEvent.click(within(termsLabel!).getByRole('button', { name: 'מדיניות פרטיות' }));
     expect(screen.getByRole('dialog')).toHaveTextContent('מדיניות פרטיות');
     fireEvent.click(screen.getByRole('dialog'));
 
