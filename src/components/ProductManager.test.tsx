@@ -82,7 +82,7 @@ describe('ProductManager', () => {
   it('renders every small product with editable fields', () => {
     renderManager();
     expect(screen.getByText('מוצרים קטנים בחנות')).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: 'שמירה' })).toHaveLength(SHOP_PRODUCTS.length);
+    expect(screen.getAllByRole('button', { name: 'שמור פרטי מוצר' })).toHaveLength(SHOP_PRODUCTS.length);
     expect(screen.getByDisplayValue(firstProduct.title)).toBeInTheDocument();
     expect(screen.getAllByDisplayValue(String(firstProduct.price)).length).toBeGreaterThan(0);
   });
@@ -98,7 +98,7 @@ describe('ProductManager', () => {
     fireEvent.change(inputs[0], { target: { value: 'מוצר חדש' } });
     fireEvent.change(inputs[1], { target: { value: 'תיאור חדש' } });
     fireEvent.change(price, { target: { value: '777' } });
-    fireEvent.click(within(card).getByRole('button', { name: 'שמירה' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'שמור פרטי מוצר' }));
 
     await waitFor(() => expect(state.saveOverride).toHaveBeenCalled());
     expect(state.saveOverride.mock.calls[0][0]).toMatchObject({
@@ -244,7 +244,7 @@ describe('ProductManager', () => {
     state.saveOverride.mockRejectedValueOnce(new Error('rls'));
     renderManager();
     const card = productCard();
-    fireEvent.click(within(card).getByRole('button', { name: 'שמירה' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'שמור פרטי מוצר' }));
     await waitFor(() => expect(within(card).getByRole('alert')).toHaveTextContent('השמירה נכשלה'));
   });
 
