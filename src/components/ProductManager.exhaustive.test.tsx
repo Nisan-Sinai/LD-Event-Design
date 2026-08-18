@@ -32,7 +32,6 @@ import { ProductManager } from './ProductManager';
 
 function ov(input: Partial<PackageOverride> & { package_id: string }): PackageOverride {
   return {
-    package_id: input.package_id,
     price: null,
     title: null,
     subtitle: null,
@@ -48,7 +47,8 @@ function ov(input: Partial<PackageOverride> & { package_id: string }): PackageOv
     hidden: false,
     is_custom: false,
     sort_order: null,
-    ...input
+    ...input,
+    package_id: input.package_id
   };
 }
 
