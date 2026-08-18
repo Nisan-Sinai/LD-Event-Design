@@ -40,7 +40,7 @@ beforeEach(() => {
 describe('CartDrawer', () => {
   it('renders a closed empty drawer without locking the page', () => {
     renderDrawer(false);
-    expect(screen.getByRole('dialog', { name: 'סל הצעת מחיר' }).parentElement).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByRole('dialog', { name: 'סל הצעת מחיר', hidden: true }).parentElement).toHaveAttribute('aria-hidden', 'true');
     expect(screen.getByText('הסל מחכה לעיצוב שלכם')).toBeInTheDocument();
     expect(document.body.style.overflow).toBe('');
   });
@@ -76,7 +76,8 @@ describe('CartDrawer', () => {
     state.preferences = { couponCode: '', couponApplied: false, customColors: 'לבן וזהב', customRequest: 'בלי ורוד' };
     const { onClose } = renderDrawer();
 
-    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute('src', 'https://example.com/a.jpg');
+    expect(document.querySelector('img[src="https://example.com/a.jpg"]')).toBeTruthy();
+    expect(document.querySelectorAll('article img')).toHaveLength(1);
     expect(screen.getByText('לבן וזהב')).toBeInTheDocument();
     expect(screen.getByText('בלי ורוד')).toBeInTheDocument();
     expect(screen.getByText(/חסרים/)).toBeInTheDocument();
