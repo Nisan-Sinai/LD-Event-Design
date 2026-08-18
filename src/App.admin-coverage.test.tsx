@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router';
 import { I18nProvider } from './i18n/i18n';
 
 const env = vi.hoisted(() => ({
-  submit: vi.fn(async () => ({ id: 'admin-coverage-order' })),
+  submit: vi.fn(async (_order: unknown, _groomSignature?: unknown, _brideSignature?: unknown) => ({ id: 'admin-coverage-order' })),
   signOut: vi.fn()
 }));
 
