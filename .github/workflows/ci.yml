@@ -14,11 +14,11 @@ concurrency:
 
 jobs:
   unit:
-    name: Audit · Type-check · Unit tests · Build
+    name: Type-check · Unit tests · Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
