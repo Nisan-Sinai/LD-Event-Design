@@ -72,14 +72,16 @@ describe('inline image admin controls', () => {
     ));
   });
 
-  it('keeps both package images inside the row and saves image 2 only after confirmation', async () => {
+  it('keeps four package images inside the row and saves image 2 only after confirmation', async () => {
     render(<I18nProvider><PackageManager /></I18nProvider>);
     const row = screen.getByLabelText(`כותרת — ${PACKAGES[0].title}`).closest('.rounded-xl') as HTMLElement;
     const inputs = row.querySelectorAll<HTMLInputElement>('input[type="file"]');
 
-    expect(inputs).toHaveLength(2);
+    expect(inputs).toHaveLength(4);
     expect(row).toHaveTextContent('תמונה 1');
     expect(row).toHaveTextContent('תמונה 2');
+    expect(row).toHaveTextContent('תמונה 3');
+    expect(row).toHaveTextContent('תמונה 4');
 
     fireEvent.change(inputs[1], {
       target: { files: [new File(['image'], 'second.png', { type: 'image/png' })] }
