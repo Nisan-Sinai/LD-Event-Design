@@ -43,6 +43,22 @@ describe('inferPackageMediaUrls', () => {
     ]);
   });
 
+  it('still resolves the gallery when image slot 1 is empty', () => {
+    expect(inferPackageMediaUrls('https://example.com/two.jpg', {
+      pkg: override({
+        package_id: 'pkg',
+        image_url: null,
+        image_url_2: 'https://example.com/two.jpg',
+        image_url_3: 'https://example.com/three.jpg',
+        image_url_4: 'https://example.com/four.jpg'
+      })
+    })).toEqual([
+      'https://example.com/two.jpg',
+      'https://example.com/three.jpg',
+      'https://example.com/four.jpg'
+    ]);
+  });
+
   it('deduplicates/ignores blanks and returns empty when no package matches', () => {
     const overrides = {
       pkg: override({
