@@ -127,6 +127,8 @@ describe('App additional coverage', () => {
     const privacyDialog = screen.getByRole('dialog');
     fireEvent.click(screen.getByRole('heading', { name: 'מדיניות פרטיות' }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: 'Enter' });
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
@@ -203,8 +205,23 @@ describe('App additional coverage', () => {
     fireEvent.touchEnd(bride, { changedTouches: [{ clientX: 22, clientY: 22 }] });
 
     const clearButtons = screen.getAllByRole('button', { name: 'נקה' });
+    expect(clearButtons).toHaveLength(2);
     fireEvent.click(clearButtons[1]);
-    expect(clearButtons[1]).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'נקה' })).toHaveLength(1);
+  });
+
+  it('updates both signature dates on step 3', () => {
+    reachStep3();
+    const dateInputs = Array.from(document.querySelectorAll('input[type="date"]')) as HTMLInputElement[];
+    expect(dateInputs.length).toBeGreaterThanOrEqual(3);
+    const groomDate = dateInputs[dateInputs.length - 2];
+    const brideDate = dateInputs[dateInputs.length - 1];
+
+    fireEvent.change(groomDate, { target: { value: '2026-08-18' } });
+    fireEvent.change(brideDate, { target: { value: '2026-08-19' } });
+
+    expect(groomDate).toHaveValue('2026-08-18');
+    expect(brideDate).toHaveValue('2026-08-19');
   });
 
   it('shows a recoverable submit error when Supabase order persistence rejects', async () => {
@@ -261,7 +278,7 @@ describe('App additional coverage', () => {
     next2();
     fireEvent.change(screen.getByLabelText('הנחת מנהל (₪)'), { target: { value: '100' } });
 
-    expect(screen.getByLabelText('הנחת מנהל (₪)')).toHaveValue('100');
+    expect(screen.getByLabelText('הנחת מנהל (₪)')).toHaveValue(100);
   });
 
   it('opens legal terms and privacy from the inline step-3 controls', () => {
