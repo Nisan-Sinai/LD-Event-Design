@@ -50,6 +50,7 @@ export function PackageManager() {
   const { t, lang } = useI18n();
   const { overrides, saveOverride, saveImage, removeOverride } = usePackages();
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
+  const [imageDrafts, setImageDrafts] = useState<Record<string, string>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [errorId, setErrorId] = useState<string | null>(null);
@@ -58,6 +59,10 @@ export function PackageManager() {
   const [newDraft, setNewDraft] = useState<Draft>(EMPTY_NEW);
 
   if (!isSupabaseConfigured) return null;
+
+  const imageSavedLabel = lang === 'he' ? '✅ שמור' : '✅ Saved';
+  const imageSaveLabel = lang === 'he' ? '✅ שמור' : '✅ Save';
+  const imageUndoLabel = lang === 'he' ? '↩️ חזור בלי לשמור' : '↩️ Revert without saving';
 
   const baseItems: Item[] = PACKAGES.map((p) => {
     const o = overrides[p.id];
@@ -154,16 +159,27 @@ export function PackageManager() {
   const toggleHidden = (item: Item) => run(item.id, () => saveOverride(buildOverride(item, draftFor(item), !item.hidden)));
   const removeItem = (item: Item) => run(item.id, () => removeOverride(item.id));
 
-  const persistImage = (item: Item, imageUrl: string, slot: 1 | 2) =>
-    run(item.id, () => slot === 1
-      ? saveImage(item.id, strOrNull(imageUrl))
-      : saveImage(item.id, strOrNull(imageUrl), 2));
+  const persistImage = async (item: Item, imageUrl: string, slot: 1 | 2) => {
+    const key = `${item.id}:${slot}`;
+    setBusyId(key);
+    setErrorId(null);
+    try {
+      await (slot === 1
+        ? saveImage(item.id, strOrNull(imageUrl))
+        : saveImage(item.id, strOrNull(imageUrl), 2));
+      setSavedId(key);
+      setTimeout(() => setSavedId((cur) => (cur === key ? null : cur)), 2000);
+    } catch {
+      setErrorId(item.id);
+    } finally {
+      setBusyId((cur) => (cur === key ? null : cur));
+    }
+  };
 
   const pickImage = async (
     uploadKey: string,
     file: File | undefined,
     apply: (url: string) => void,
-    slot: 1 | 2,
     item?: Item
   ) => {
     if (!file) return;
@@ -172,7 +188,6 @@ export function PackageManager() {
     try {
       const url = await uploadPackageImage(file);
       apply(url);
-      if (item) await persistImage(item, url, slot);
     } catch {
       setErrorId(item?.id ?? '__new__');
     } finally {
@@ -217,46 +232,96 @@ export function PackageManager() {
     onUrl: (u: string) => void,
     slot: 1 | 2,
     item?: Item
-  ) => (
-    <div className="min-w-0 rounded-xl border border-[#EAE3D2] bg-[#FAF7F2] p-2.5">
-      <label className={labelCls}>{t('packageManager.image')} {slot}</label>
-      <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-lg border border-[#EAE3D2] bg-white">
-        {url ? (
-          <>
-            <img src={url} alt="" className="h-full w-full object-cover" />
-            <button
-              type="button"
-              onClick={() => {
-                onUrl('');
-                if (item) void persistImage(item, '', slot);
-              }}
-              aria-label={slot === 1 ? t('packageManager.removeImage') : `${t('packageManager.removeImage')} 2`}
-              className="absolute end-1.5 top-1.5 rounded-full border border-gray-200 bg-white/95 p-1 text-gray-400 shadow-sm hover:text-red-500"
-            >
-              <X className="h-3 w-3" aria-hidden="true" />
-            </button>
-          </>
-        ) : (
-          <ImagePlus className="h-6 w-6 text-[#B29259]/50" aria-hidden="true" />
+  ) => {
+    const savedUrl = item ? (slot === 1 ? item.current.image_url : item.current.image_url_2) : url;
+    const displayUrl = item ? imageDrafts[uploadKey] ?? savedUrl : url;
+    const changed = Boolean(item && displayUrl !== savedUrl);
+    const imageBusy = busyId === uploadKey;
+
+    const setDisplayUrl = (nextUrl: string) => {
+      if (!item) {
+        onUrl(nextUrl);
+        return;
+      }
+      setImageDrafts((current) => ({ ...current, [uploadKey]: nextUrl }));
+    };
+
+    const undoImage = () => {
+      if (!item) return;
+      setImageDrafts((current) => {
+        const next = { ...current };
+        delete next[uploadKey];
+        return next;
+      });
+    };
+
+    return (
+      <div className="min-w-0 rounded-xl border border-[#EAE3D2] bg-[#FAF7F2] p-2.5">
+        <label className={labelCls}>{t('packageManager.image')} {slot}</label>
+        <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-lg border border-[#EAE3D2] bg-white">
+          {displayUrl ? (
+            <>
+              <img src={displayUrl} alt="" className="h-full w-full object-cover" />
+              <button
+                type="button"
+                onClick={() => setDisplayUrl('')}
+                aria-label={slot === 1 ? t('packageManager.removeImage') : `${t('packageManager.removeImage')} 2`}
+                className="absolute end-1.5 top-1.5 rounded-full border border-gray-200 bg-white/95 p-1 text-gray-400 shadow-sm hover:text-red-500"
+              >
+                <X className="h-3 w-3" aria-hidden="true" />
+              </button>
+            </>
+          ) : (
+            <ImagePlus className="h-6 w-6 text-[#B29259]/50" aria-hidden="true" />
+          )}
+        </div>
+        <label className="mt-2 flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-dashed border-[#B29259]/50 px-2 py-2 text-[10px] font-bold text-[#8C6D3F] transition-colors hover:border-[#B29259] hover:bg-white">
+          <ImagePlus className="h-3.5 w-3.5" aria-hidden="true" />
+          {uploadingId === uploadKey ? t('packageManager.uploading') : `${t('packageManager.uploadImage')} ${slot}`}
+          <input
+            type="file"
+            accept="image/*,.heic,.heif"
+            className="sr-only"
+            aria-label={`${t('packageManager.uploadImage')} ${slot}`}
+            disabled={uploadingId === uploadKey || imageBusy}
+            onChange={(e) => {
+              void pickImage(uploadKey, e.target.files?.[0], setDisplayUrl, item);
+              e.target.value = '';
+            }}
+          />
+        </label>
+
+        {item && (
+          changed ? (
+            <div className="mt-2 grid grid-cols-1 gap-1.5">
+              <button
+                type="button"
+                onClick={() => void persistImage(item, displayUrl, slot)}
+                disabled={imageBusy || uploadingId === uploadKey}
+                aria-label={`${imageSaveLabel} ${slot}`}
+                className="rounded-lg bg-emerald-600 px-2 py-2 text-[10px] font-extrabold text-white disabled:opacity-50"
+              >
+                {imageBusy ? t('packageManager.saving') : imageSaveLabel}
+              </button>
+              <button
+                type="button"
+                onClick={undoImage}
+                disabled={imageBusy || uploadingId === uploadKey}
+                aria-label={`${imageUndoLabel} ${slot}`}
+                className="rounded-lg border border-gray-200 bg-white px-2 py-2 text-[10px] font-bold text-gray-600 disabled:opacity-50"
+              >
+                {imageUndoLabel}
+              </button>
+            </div>
+          ) : (
+            <div className="mt-2 text-center text-[10px] font-extrabold text-emerald-700">
+              {savedId === uploadKey ? t('packageManager.saved') : imageSavedLabel}
+            </div>
+          )
         )}
       </div>
-      <label className="mt-2 flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-dashed border-[#B29259]/50 px-2 py-2 text-[10px] font-bold text-[#8C6D3F] transition-colors hover:border-[#B29259] hover:bg-white">
-        <ImagePlus className="h-3.5 w-3.5" aria-hidden="true" />
-        {uploadingId === uploadKey ? t('packageManager.uploading') : `${t('packageManager.uploadImage')} ${slot}`}
-        <input
-          type="file"
-          accept="image/*,.heic,.heif"
-          className="sr-only"
-          aria-label={`${t('packageManager.uploadImage')} ${slot}`}
-          disabled={uploadingId === uploadKey || Boolean(item && busyId === item.id)}
-          onChange={(e) => {
-            void pickImage(uploadKey, e.target.files?.[0], onUrl, slot, item);
-            e.target.value = '';
-          }}
-        />
-      </label>
-    </div>
-  );
+    );
+  };
 
   return (
     <section className="mb-6 rounded-2xl border border-[#EAE3D2] bg-white p-5">
