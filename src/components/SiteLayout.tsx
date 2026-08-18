@@ -125,25 +125,20 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
 
       <header className="sticky top-0 z-50 border-b border-white/70 bg-[#FDFBF7]/82 shadow-[0_8px_35px_rgba(44,44,44,0.05)] backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-          <Link to="/" className={`group flex min-w-0 items-center ${logoUrl ? '' : 'gap-2.5'}`}>
+          <Link to="/" className="group flex min-w-0 items-center gap-3">
             {logoUrl ? (
-              <>
-                <span className="flex h-16 w-[9.75rem] shrink-0 items-center justify-center overflow-hidden rounded-[1.35rem] border border-[#E8C5B8]/70 bg-white px-2 py-1.5 shadow-sm sm:h-[4.5rem] sm:w-52">
-                  <img src={logoUrl} alt="לוגו LD Event Design" className="h-full w-full object-contain" />
-                </span>
-                <h1 className="sr-only">LD Event Design</h1>
-              </>
+              <span className="flex h-24 w-36 shrink-0 items-center justify-center overflow-hidden rounded-[1.5rem] border border-[#E8C5B8]/70 bg-white p-1.5 shadow-md sm:h-28 sm:w-44">
+                <img src={logoUrl} alt="לוגו LD Event Design" className="h-full w-full object-contain" />
+              </span>
             ) : (
-              <>
-                <div className="rounded-2xl bg-gradient-to-br from-[#D4AF37] via-[#C69A71] to-[#B8860B] p-2 text-white shadow-lg transition-transform group-hover:rotate-3 group-hover:scale-105">
-                  <Sparkles className="h-5 w-5" aria-hidden="true" />
-                </div>
-                <div className="text-start">
-                  <h1 className="font-display text-lg font-black tracking-wide text-[#2C2C2C] sm:text-xl">LD Event Design</h1>
-                  <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-[#9B7762]">{t('brand.tagline')}</p>
-                </div>
-              </>
+              <div className="rounded-2xl bg-gradient-to-br from-[#D4AF37] via-[#C69A71] to-[#B8860B] p-3 text-white shadow-lg transition-transform group-hover:rotate-3 group-hover:scale-105">
+                <Sparkles className="h-6 w-6" aria-hidden="true" />
+              </div>
             )}
+            <div className="min-w-0 text-start">
+              <h1 className="font-display text-xl font-black tracking-wide text-[#2C2C2C] sm:text-2xl">LD Event Design</h1>
+              <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[#9B7762] sm:text-xs">{t('brand.tagline')}</p>
+            </div>
           </Link>
 
           <nav className="order-last flex w-full items-center justify-center gap-1 border-t border-[#E8C5B8]/55 pt-2 sm:order-none sm:w-auto sm:border-0 sm:pt-0" aria-label={t('nav.menu')}>
@@ -191,17 +186,18 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
       <footer className="mt-16 bg-[#24211F] text-[#F4EDE7]">
         <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 py-14 sm:grid-cols-3">
           <div>
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-3">
               {logoUrl ? (
-                <span className="flex h-20 w-56 items-center justify-center overflow-hidden rounded-2xl bg-white p-2 shadow-sm">
+                <span className="flex h-24 w-36 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-1.5 shadow-sm">
                   <img src={logoUrl} alt="לוגו LD Event Design" className="h-full w-full object-contain" />
                 </span>
               ) : (
-                <>
-                  <div className="rounded-2xl bg-gradient-to-br from-[#D4AF37] to-[#B8860B] p-2 text-white"><Sparkles className="h-4 w-4" aria-hidden="true" /></div>
-                  <span className="font-display text-xl font-black text-white">LD Event Design</span>
-                </>
+                <div className="rounded-2xl bg-gradient-to-br from-[#D4AF37] to-[#B8860B] p-3 text-white"><Sparkles className="h-5 w-5" aria-hidden="true" /></div>
               )}
+              <div>
+                <span className="font-display text-xl font-black text-white">LD Event Design</span>
+                <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.18em] text-[#D4AF37]">{t('brand.tagline')}</p>
+              </div>
             </div>
             <p className="mt-4 max-w-xs text-xs leading-relaxed text-white/55">עיצוב אירועים נשי, מדויק ומלא רגש — מהרעיון הראשון ועד לרגע שבו האורחים נכנסים.</p>
             <a href="tel:+972545740423" className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-[#E8C5B8] hover:text-white">
