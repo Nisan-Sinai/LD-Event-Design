@@ -118,6 +118,7 @@ function createSlot(product: ManagedGalleryProduct, slot: SlotNumber) {
           remove.disabled = false;
         }
       });
+      preview.append(remove);
     } else {
       const empty = el('div', 'px-3 text-center');
       const icon = el('div', 'text-2xl text-[#B29259]/60');
