@@ -127,8 +127,8 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <Link to="/" className="group flex min-w-0 items-center gap-2.5">
             {logoUrl ? (
-              <span className="flex h-14 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[#E8C5B8]/70 bg-white p-1 shadow-sm sm:h-16 sm:w-24">
-                <img src={logoUrl} alt="לוגו LD Event Design" className="h-full w-full object-contain" />
+              <span className="flex h-14 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[#E8C5B8]/70 bg-white shadow-sm sm:h-16 sm:w-24">
+                <img src={logoUrl} alt="לוגו LD Event Design" className="h-full w-full object-cover object-center" />
               </span>
             ) : (
               <div className="rounded-2xl bg-gradient-to-br from-[#D4AF37] via-[#C69A71] to-[#B8860B] p-2 text-white shadow-lg transition-transform group-hover:rotate-3 group-hover:scale-105">
@@ -188,8 +188,8 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
           <div>
             <div className="flex items-center gap-3">
               {logoUrl ? (
-                <span className="flex h-16 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-1 shadow-sm">
-                  <img src={logoUrl} alt="לוגו LD Event Design" className="h-full w-full object-contain" />
+                <span className="flex h-16 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm">
+                  <img src={logoUrl} alt="לוגו LD Event Design" className="h-full w-full object-cover object-center" />
                 </span>
               ) : (
                 <div className="rounded-2xl bg-gradient-to-br from-[#D4AF37] to-[#B8860B] p-3 text-white"><Sparkles className="h-5 w-5" aria-hidden="true" /></div>
