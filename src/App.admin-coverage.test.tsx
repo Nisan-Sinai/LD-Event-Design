@@ -52,13 +52,17 @@ function fillStep1() {
   fireEvent.change(screen.getByLabelText(/אימייל/), { target: { value: 'admin@example.com' } });
 }
 
-function reachAdminStep3() {
-  renderApp();
-  fireEvent.click(screen.getByRole('button', { name: /בעל העסק \/ מנהל/ }));
+function advanceToStep3() {
   fillStep1();
   fireEvent.click(screen.getByRole('button', { name: /המשך לבחירת חבילת עיצוב/ }));
   fireEvent.click(screen.getByText('חבילת עיצוב חתונה - Classic S'));
   fireEvent.click(screen.getByRole('button', { name: /המשך לתוספות וחתימה/ }));
+}
+
+function reachAdminStep3() {
+  renderApp();
+  fireEvent.click(screen.getByRole('button', { name: /בעל העסק \/ מנהל/ }));
+  advanceToStep3();
 }
 
 function completeRequiredStep3() {
@@ -80,11 +84,13 @@ beforeEach(() => {
 
 describe('App admin coverage', () => {
   it('submits admin-only order metadata through the persisted order payload', async () => {
-    reachAdminStep3();
+    renderApp();
+    fireEvent.click(screen.getByRole('button', { name: /בעל העסק \/ מנהל/ }));
     fireEvent.change(screen.getByLabelText('מקור ההזמנה'), { target: { value: 'whatsapp' } });
     fireEvent.change(screen.getByLabelText('מי קיבל את ההזמנה'), { target: { value: 'employee' } });
     fireEvent.change(screen.getByLabelText('סטטוס הזמנה'), { target: { value: 'approved' } });
     fireEvent.change(screen.getByLabelText('הערות פנימיות (לא ללקוח)'), { target: { value: '  הערת כיסוי  ' } });
+    advanceToStep3();
     completeRequiredStep3();
 
     fireEvent.click(screen.getByRole('button', { name: /אישור והדפסת ההזמנה/ }));
