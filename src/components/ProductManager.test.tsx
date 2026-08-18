@@ -8,7 +8,7 @@ const state = vi.hoisted(() => ({
   configured: true,
   overrides: {} as Record<string, PackageOverride>,
   saveOverride: vi.fn(async (_override: PackageOverride, _options?: unknown) => {}),
-  saveImage: vi.fn(async (_id: string, _url: string | null) => {}),
+  saveImage: vi.fn(async (_id: string, _url: string | null, _slot?: 1 | 2 | 3 | 4) => {}),
   removeOverride: vi.fn(async (_id: string) => {}),
   upload: vi.fn(async (_file: File) => 'https://cdn.example/product.webp')
 }));
@@ -112,18 +112,22 @@ describe('ProductManager', () => {
     expect(state.saveImage).not.toHaveBeenCalled();
   });
 
-  it('uploads and saves only the product image immediately', async () => {
+  it('previews an uploaded product image and saves it only after explicit confirmation', async () => {
     renderManager();
     const card = productCard();
     const fileInput = card.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(fileInput, { target: { files: [new File(['image'], 'product.png', { type: 'image/png' })] } });
 
     await waitFor(() => expect(state.upload).toHaveBeenCalled());
+    expect(state.saveImage).not.toHaveBeenCalled();
+    expect(card.querySelector('img')).toHaveAttribute('src', 'https://cdn.example/product.webp');
+
+    fireEvent.click(within(card).getByRole('button', { name: '✅ שמור 1' }));
     await waitFor(() => expect(state.saveImage).toHaveBeenCalledWith(firstProduct.id, 'https://cdn.example/product.webp'));
     expect(state.saveOverride).not.toHaveBeenCalled();
   });
 
-  it('removes an existing image using only image persistence', async () => {
+  it('removes an existing image only after explicit image save', async () => {
     state.overrides = {
       [firstProduct.id]: override({ package_id: firstProduct.id, image_url: 'https://cdn.example/old.webp' })
     };
@@ -132,8 +136,28 @@ describe('ProductManager', () => {
     expect(card.querySelector('img')).toBeInTheDocument();
     fireEvent.click(within(card).getByRole('button', { name: 'הסרת תמונה' }));
     expect(card.querySelector('img')).not.toBeInTheDocument();
+    expect(state.saveImage).not.toHaveBeenCalled();
+
+    fireEvent.click(within(card).getByRole('button', { name: '✅ שמור 1' }));
     await waitFor(() => expect(state.saveImage).toHaveBeenCalledWith(firstProduct.id, null));
     expect(state.saveOverride).not.toHaveBeenCalled();
+  });
+
+  it('reverts an unsaved image preview to the last saved image', async () => {
+    state.overrides = {
+      [firstProduct.id]: override({ package_id: firstProduct.id, image_url: 'https://cdn.example/old.webp' })
+    };
+    renderManager();
+    const card = productCard();
+    const fileInput = card.querySelector('input[type="file"]') as HTMLInputElement;
+
+    fireEvent.change(fileInput, { target: { files: [new File(['image'], 'new.png', { type: 'image/png' })] } });
+    await waitFor(() => expect(card.querySelector('img')).toHaveAttribute('src', 'https://cdn.example/product.webp'));
+    expect(state.saveImage).not.toHaveBeenCalled();
+
+    fireEvent.click(within(card).getByRole('button', { name: '↩️ חזור בלי לשמור 1' }));
+    expect(card.querySelector('img')).toHaveAttribute('src', 'https://cdn.example/old.webp');
+    expect(state.saveImage).not.toHaveBeenCalled();
   });
 
   it('hides a product in the public shop', async () => {
