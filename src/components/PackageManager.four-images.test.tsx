@@ -34,7 +34,6 @@ import { PackageManager } from './PackageManager';
 
 const CLASSIC_S = 'חבילת עיצוב חתונה - Classic S';
 const ov = (input: Partial<PackageOverride> & { package_id: string }): PackageOverride => ({
-  package_id: input.package_id,
   price: null,
   title: null,
   subtitle: null,
@@ -50,7 +49,8 @@ const ov = (input: Partial<PackageOverride> & { package_id: string }): PackageOv
   hidden: false,
   is_custom: false,
   sort_order: null,
-  ...input
+  ...input,
+  package_id: input.package_id
 });
 
 const renderPM = () => render(<I18nProvider><PackageManager /></I18nProvider>);
