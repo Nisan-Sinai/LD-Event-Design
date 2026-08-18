@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const state = vi.hoisted(() => ({
@@ -122,7 +122,7 @@ describe('LeadCaptureModal', () => {
     rendered.unmount();
   });
 
-  it('validates full name/phone and clears the error when a field changes', async () => {
+  it('validates full name/phone and clears the error when a field changes', () => {
     render(<LeadCaptureModal />);
     showByTimer();
     fireEvent.submit(screen.getByRole('button', { name: 'כן, אשמח לשיחת ייעוץ במתנה' }).closest('form')!);
@@ -171,12 +171,15 @@ describe('LeadCaptureModal', () => {
     expect(state.submit).toHaveBeenCalledWith({
       fullName: 'ניסן סיני',
       phone: '054-1234567',
-      email: ' nisan@example.com ',
+      email: 'nisan@example.com',
       estimatedEventDate: '2026-09-01'
     });
 
-    await act(async () => resolve({ id: 'lead-1' }));
-    expect(await screen.findByText('הפרטים התקבלו באהבה')).toBeInTheDocument();
+    await act(async () => {
+      resolve({ id: 'lead-1' });
+      await Promise.resolve();
+    });
+    expect(screen.getByText('הפרטים התקבלו באהבה')).toBeInTheDocument();
     expect(window.sessionStorage.getItem('ld-event-design-lead-popup-dismissed')).toBe('1');
     fireEvent.click(screen.getByRole('button', { name: 'איזה כיף, תודה!' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -187,8 +190,12 @@ describe('LeadCaptureModal', () => {
     render(<LeadCaptureModal />);
     showByTimer();
     fillValidForm();
-    fireEvent.click(screen.getByRole('button', { name: 'כן, אשמח לשיחת ייעוץ במתנה' }));
-    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('לא הצלחנו לשלוח כרגע'));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'כן, אשמח לשיחת ייעוץ במתנה' }));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(screen.getByRole('alert')).toHaveTextContent('לא הצלחנו לשלוח כרגע');
     expect(screen.getByRole('button', { name: 'כן, אשמח לשיחת ייעוץ במתנה' })).toBeEnabled();
   });
 });
