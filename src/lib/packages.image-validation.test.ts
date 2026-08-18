@@ -12,7 +12,13 @@ describe('validatePackageImage', () => {
     ['image/jpeg', 'jpg'],
     ['image/png', 'png'],
     ['image/webp', 'webp'],
-    ['image/avif', 'avif']
+    ['image/avif', 'avif'],
+    ['image/heic', 'heic'],
+    ['image/heif', 'heif'],
+    ['image/gif', 'gif'],
+    ['image/bmp', 'bmp'],
+    ['image/tiff', 'tiff'],
+    ['image/jxl', 'jxl']
   ])('accepts %s and returns the safe extension', (type, extension) => {
     expect(validatePackageImage(image(`photo.${extension}`, type))).toBe(extension);
   });
@@ -24,6 +30,11 @@ describe('validatePackageImage', () => {
   it('accepts Android images with a missing or generic MIME type', () => {
     expect(validatePackageImage(image('camera.JPEG', ''))).toBe('jpg');
     expect(validatePackageImage(image('camera.jpeg', 'application/octet-stream'))).toBe('jpg');
+    expect(validatePackageImage(image('camera.HEIC', 'application/octet-stream'))).toBe('heic');
+  });
+
+  it('accepts image MIME types that are not hard-coded when the file extension is safe', () => {
+    expect(validatePackageImage(image('camera.cr3', 'image/x-canon-cr3'))).toBe('cr3');
   });
 
   it('rejects an empty image', () => {
@@ -34,8 +45,13 @@ describe('validatePackageImage', () => {
     expect(() => validatePackageImage(image('huge.jpg', 'image/jpeg', 30 * 1024 * 1024 + 1))).toThrow(/30 MB/i);
   });
 
-  it('rejects unsupported or spoofed file formats', () => {
-    expect(() => validatePackageImage(image('vector.svg', 'image/svg+xml'))).toThrow(/unsupported/i);
+  it('rejects active SVG/XML image formats', () => {
+    expect(() => validatePackageImage(image('vector.svg', 'image/svg+xml'))).toThrow(/security/i);
+    expect(() => validatePackageImage(image('vector.xml', 'application/xml'))).toThrow(/security|unsupported/i);
+  });
+
+  it('rejects unsupported non-image content', () => {
     expect(() => validatePackageImage(image('script.jpg', 'text/javascript'))).toThrow(/unsupported/i);
+    expect(() => validatePackageImage(image('unknown.bin', 'application/octet-stream'))).toThrow(/unsupported/i);
   });
 });
