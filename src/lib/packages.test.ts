@@ -251,7 +251,7 @@ describe('uploadPackageImage', () => {
 
     await uploadPackageImage(new File(['x'], 'camera', { type: 'image/jpg' }));
     expect(m.uploadedPath).toMatch(/\.jpg$/);
-    expect(m.uploadOpts).toMatchObject({ contentType: 'image/jpeg' });
+    expect(m.uploadOpts).toMatchObject({ contentType: 'image/jpg' });
   });
 
   it('resizes large phone photos before uploading them', async () => {
