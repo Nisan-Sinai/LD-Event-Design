@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import {
   fetchPackageOverrides,
   savePackageOverride,
@@ -32,14 +32,19 @@ const PackagesContext = createContext<PackagesValue>({
 export function PackagesProvider({ children }: { children: React.ReactNode }) {
   const [overrides, setOverrides] = useState<OverrideMap>({});
   const [loading, setLoading] = useState(true);
+  const refreshGeneration = useRef(0);
 
   const refresh = useCallback(async () => {
+    const generation = ++refreshGeneration.current;
     try {
-      setOverrides(await fetchPackageOverrides());
+      const next = await fetchPackageOverrides();
+      // Several image slots can be saved almost simultaneously on mobile. An older GET may finish
+      // after a newer GET and must never replace the newer gallery state with a stale snapshot.
+      if (generation === refreshGeneration.current) setOverrides(next);
     } catch {
       /* אין גישה / Supabase לא מוגדר — נשארים עם ברירות המחדל */
     } finally {
-      setLoading(false);
+      if (generation === refreshGeneration.current) setLoading(false);
     }
   }, []);
 
@@ -57,8 +62,7 @@ export function PackagesProvider({ children }: { children: React.ReactNode }) {
     imageUrl: string | null,
     slot: 1 | 2 | 3 | 4 = 1
   ) => {
-    if (slot === 1) await savePackageImage(packageId, imageUrl);
-    else await savePackageImage(packageId, imageUrl, slot);
+    await savePackageImage(packageId, imageUrl, slot);
     await refresh();
   }, [refresh]);
 
