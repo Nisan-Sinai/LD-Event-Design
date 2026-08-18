@@ -54,7 +54,7 @@ afterEach(() => {
 });
 
 describe('package image preparation edge cases', () => {
-  it('rejects generic MIME files when the filename has no supported extension', () => {
+  it('keeps synchronous validation strict for generic MIME files without a known extension', () => {
     expect(() =>
       validatePackageImage(
         new File(['x'], 'camera', { type: 'application/octet-stream' })
@@ -62,49 +62,66 @@ describe('package image preparation edge cases', () => {
     ).toThrow(/unsupported image format/i);
   });
 
-  it('explains when the browser cannot resize a large image', async () => {
-    vi.stubGlobal('createImageBitmap', undefined);
-
-    await expect(uploadPackageImage(largeJpeg())).rejects.toThrow(
-      /cannot resize/i
+  it('detects a JPEG signature when Android omits MIME and filename extension', async () => {
+    const file = new File(
+      [new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46])],
+      'camera',
+      { type: 'application/octet-stream' }
     );
-    expect(state.uploadedPath).toBeNull();
+
+    const url = await uploadPackageImage(file);
+
+    expect(state.uploadedBody).toBe(file);
+    expect(state.uploadedPath).toMatch(/\.jpg$/);
+    expect(state.uploadedOptions).toMatchObject({ contentType: 'image/jpeg' });
+    expect(url).toBe(`https://cdn.example/${state.uploadedPath}`);
   });
 
-  it('rejects decoded images with invalid dimensions and closes the bitmap', async () => {
+  it('uploads the original image when decoded dimensions are invalid', async () => {
+    const file = largeJpeg();
     const decoded = bitmap(0, 0);
     vi.stubGlobal('createImageBitmap', vi.fn().mockResolvedValue(decoded));
 
-    await expect(uploadPackageImage(largeJpeg())).rejects.toThrow(
-      /dimensions are invalid/i
-    );
+    const url = await uploadPackageImage(file);
+
+    expect(state.uploadedBody).toBe(file);
+    expect(state.uploadedPath).toMatch(/\.jpg$/);
+    expect(state.uploadedOptions).toMatchObject({ contentType: 'image/jpeg' });
+    expect(url).toBe(`https://cdn.example/${state.uploadedPath}`);
     expect(decoded.close).toHaveBeenCalledOnce();
   });
 
-  it('rejects conversion when a canvas 2D context is unavailable', async () => {
+  it('uploads the original image when a canvas 2D context is unavailable', async () => {
+    const file = largeJpeg();
     const decoded = bitmap();
     vi.stubGlobal('createImageBitmap', vi.fn().mockResolvedValue(decoded));
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
 
-    await expect(uploadPackageImage(largeJpeg())).rejects.toThrow(
-      /conversion is unavailable/i
-    );
+    await uploadPackageImage(file);
+
+    expect(state.uploadedBody).toBe(file);
+    expect(state.uploadedPath).toMatch(/\.jpg$/);
+    expect(state.uploadedOptions).toMatchObject({ contentType: 'image/jpeg' });
     expect(decoded.close).toHaveBeenCalledOnce();
   });
 
-  it('rejects conversion when the browser cannot encode the canvas', async () => {
+  it('uploads the original image when the browser cannot encode the canvas', async () => {
+    const file = largeJpeg();
     const decoded = bitmap();
     vi.stubGlobal('createImageBitmap', vi.fn().mockResolvedValue(decoded));
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
       drawImage: vi.fn()
     } as unknown as CanvasRenderingContext2D);
-    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(
-      (callback) => callback(null)
-    );
+    const toBlob = vi
+      .spyOn(HTMLCanvasElement.prototype, 'toBlob')
+      .mockImplementation((callback) => callback(null));
 
-    await expect(uploadPackageImage(largeJpeg())).rejects.toThrow(
-      /conversion failed/i
-    );
+    await uploadPackageImage(file);
+
+    expect(toBlob).toHaveBeenCalledTimes(2);
+    expect(state.uploadedBody).toBe(file);
+    expect(state.uploadedPath).toMatch(/\.jpg$/);
+    expect(state.uploadedOptions).toMatchObject({ contentType: 'image/jpeg' });
     expect(decoded.close).toHaveBeenCalledOnce();
   });
 
@@ -134,7 +151,8 @@ describe('package image preparation edge cases', () => {
     expect(decoded.close).toHaveBeenCalledOnce();
   });
 
-  it('rejects an image that remains too large after all quality retries', async () => {
+  it('uploads the original image when conversion cannot get below the preferred size', async () => {
+    const file = largeJpeg();
     const decoded = bitmap();
     const tooLarge = new Blob([new Uint8Array(6 * 1024 * 1024 + 1)], {
       type: 'image/webp'
@@ -148,11 +166,12 @@ describe('package image preparation edge cases', () => {
       .spyOn(HTMLCanvasElement.prototype, 'toBlob')
       .mockImplementation((callback) => callback(tooLarge));
 
-    await expect(uploadPackageImage(largeJpeg())).rejects.toThrow(
-      /still too large/i
-    );
+    await uploadPackageImage(file);
+
     expect(toBlob.mock.calls.length).toBeGreaterThan(1);
-    expect(state.uploadedPath).toBeNull();
+    expect(state.uploadedBody).toBe(file);
+    expect(state.uploadedPath).toMatch(/\.jpg$/);
+    expect(state.uploadedOptions).toMatchObject({ contentType: 'image/jpeg' });
     expect(decoded.close).toHaveBeenCalledOnce();
   });
 
@@ -177,13 +196,16 @@ describe('package image preparation edge cases', () => {
     expect(decoded.close).toHaveBeenCalledOnce();
   });
 
-  it('closes no bitmap when decoding itself fails', async () => {
-    vi.stubGlobal(
-      'createImageBitmap',
-      vi.fn().mockRejectedValue(new Error('decode failed'))
-    );
+  it('uploads the original HEIC when browser conversion cannot decode valid dimensions', async () => {
+    const file = new File(['heic'], 'photo.heic', { type: 'image/heic' });
+    const decoded = bitmap(0, 0);
+    vi.stubGlobal('createImageBitmap', vi.fn().mockResolvedValue(decoded));
 
-    await expect(uploadPackageImage(largeJpeg())).rejects.toThrow(/decode failed/i);
-    expect(state.uploadedPath).toBeNull();
+    await uploadPackageImage(file);
+
+    expect(state.uploadedBody).toBe(file);
+    expect(state.uploadedPath).toMatch(/\.heic$/);
+    expect(state.uploadedOptions).toMatchObject({ contentType: 'image/heic' });
+    expect(decoded.close).toHaveBeenCalledOnce();
   });
 });
