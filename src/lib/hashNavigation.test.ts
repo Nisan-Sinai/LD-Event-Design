@@ -51,6 +51,15 @@ describe('hashNavigation', () => {
     expect(target.scrollIntoView).toHaveBeenCalledWith({ block: 'start', behavior: 'auto' });
   });
 
+  it('keeps a malformed percent-encoded hash as its raw id', () => {
+    const target = document.createElement('section');
+    target.id = 'bad%ZZ';
+    document.body.appendChild(target);
+
+    expect(scrollToHashTarget('#bad%ZZ')).toBe(true);
+    expect(target.scrollIntoView).toHaveBeenCalledWith({ block: 'start', behavior: 'auto' });
+  });
+
   it('returns false for empty or missing targets', () => {
     expect(scrollToHashTarget('')).toBe(false);
     expect(scrollToHashTarget('#missing')).toBe(false);

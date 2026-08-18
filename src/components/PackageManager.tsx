@@ -15,6 +15,8 @@ interface Draft {
   price: string;
   image_url: string;
   image_url_2: string;
+  image_url_3: string;
+  image_url_4: string;
   category: string;
 }
 
@@ -28,6 +30,8 @@ interface Item {
   svgType: string | null;
 }
 
+type ImageSlot = 1 | 2 | 3 | 4;
+
 const EMPTY_NEW: Draft = {
   title: '',
   subtitle: '',
@@ -36,6 +40,8 @@ const EMPTY_NEW: Draft = {
   price: '',
   image_url: '',
   image_url_2: '',
+  image_url_3: '',
+  image_url_4: '',
   category: ''
 };
 
@@ -43,7 +49,7 @@ const strOrNull = (v: string) => (v.trim() === '' ? null : v.trim());
 const numOrNull = (v: string) => (v.trim() === '' ? null : Math.max(0, Number(v) || 0));
 
 /**
- * ניהול קטלוג מלא בידי המנהל — עריכת כל השדות, שתי תמונות, הסתרה,
+ * ניהול קטלוג מלא בידי המנהל — עריכת כל השדות, ארבע תמונות, הסתרה,
  * הוספת חבילות חדשות ומחיקה. נשמר ב-Supabase (כתיבה למנהל בלבד ב-RLS).
  */
 export function PackageManager() {
@@ -77,6 +83,8 @@ export function PackageManager() {
         price: String(o?.price ?? p.price),
         image_url: o?.image_url ?? '',
         image_url_2: o?.image_url_2 ?? '',
+        image_url_3: o?.image_url_3 ?? '',
+        image_url_4: o?.image_url_4 ?? '',
         category: p.category
       },
       hidden: o?.hidden ?? false,
@@ -99,6 +107,8 @@ export function PackageManager() {
         price: String(o.price ?? 0),
         image_url: o.image_url ?? '',
         image_url_2: o.image_url_2 ?? '',
+        image_url_3: o.image_url_3 ?? '',
+        image_url_4: o.image_url_4 ?? '',
         category: o.category ?? ''
       },
       hidden: o.hidden,
@@ -128,6 +138,8 @@ export function PackageManager() {
     benefits: strOrNull(d.benefits),
     image_url: strOrNull(d.image_url),
     image_url_2: strOrNull(d.image_url_2),
+    image_url_3: strOrNull(d.image_url_3),
+    image_url_4: strOrNull(d.image_url_4),
     category: item.isCustom ? strOrNull(d.category) : null,
     svg_type: item.svgType,
     pricing_tiers: item.pricingTiers,
@@ -159,14 +171,14 @@ export function PackageManager() {
   const toggleHidden = (item: Item) => run(item.id, () => saveOverride(buildOverride(item, draftFor(item), !item.hidden)));
   const removeItem = (item: Item) => run(item.id, () => removeOverride(item.id));
 
-  const persistImage = async (item: Item, imageUrl: string, slot: 1 | 2) => {
+  const persistImage = async (item: Item, imageUrl: string, slot: ImageSlot) => {
     const key = `${item.id}:${slot}`;
     setBusyId(key);
     setErrorId(null);
     try {
       await (slot === 1
         ? saveImage(item.id, strOrNull(imageUrl))
-        : saveImage(item.id, strOrNull(imageUrl), 2));
+        : saveImage(item.id, strOrNull(imageUrl), slot));
       setSavedId(key);
       setTimeout(() => setSavedId((cur) => (cur === key ? null : cur)), 2000);
     } catch {
@@ -211,6 +223,8 @@ export function PackageManager() {
         benefits: strOrNull(newDraft.benefits),
         image_url: strOrNull(newDraft.image_url),
         image_url_2: strOrNull(newDraft.image_url_2),
+        image_url_3: strOrNull(newDraft.image_url_3),
+        image_url_4: strOrNull(newDraft.image_url_4),
         category: newDraft.category,
         svg_type: null,
         pricing_tiers: null,
@@ -230,10 +244,12 @@ export function PackageManager() {
     uploadKey: string,
     url: string,
     onUrl: (u: string) => void,
-    slot: 1 | 2,
+    slot: ImageSlot,
     item?: Item
   ) => {
-    const savedUrl = item ? (slot === 1 ? item.current.image_url : item.current.image_url_2) : url;
+    const savedUrl = item
+      ? [item.current.image_url, item.current.image_url_2, item.current.image_url_3, item.current.image_url_4][slot - 1]
+      : url;
     const displayUrl = item ? imageDrafts[uploadKey] ?? savedUrl : url;
     const changed = Boolean(item && displayUrl !== savedUrl);
     const imageBusy = busyId === uploadKey;
@@ -265,7 +281,7 @@ export function PackageManager() {
               <button
                 type="button"
                 onClick={() => setDisplayUrl('')}
-                aria-label={slot === 1 ? t('packageManager.removeImage') : `${t('packageManager.removeImage')} 2`}
+                aria-label={slot === 1 ? t('packageManager.removeImage') : `${t('packageManager.removeImage')} ${slot}`}
                 className="absolute end-1.5 top-1.5 rounded-full border border-gray-200 bg-white/95 p-1 text-gray-400 shadow-sm hover:text-red-500"
               >
                 <X className="h-3 w-3" aria-hidden="true" />
@@ -376,9 +392,11 @@ export function PackageManager() {
               <label className={labelCls}>{t('packageManager.descriptionField')}</label>
               <textarea rows={2} aria-label={`${t('packageManager.descriptionField')} — ${t('packageManager.newPackage')}`} value={newDraft.description} onChange={(e) => setNewDraft({ ...newDraft, description: e.target.value })} className={inputCls} />
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:col-span-6">
+            <div className="grid grid-cols-2 gap-2 sm:col-span-6 sm:grid-cols-4">
               {imageControl('__new__:1', newDraft.image_url, (image_url) => setNewDraft((current) => ({ ...current, image_url })), 1)}
               {imageControl('__new__:2', newDraft.image_url_2, (image_url_2) => setNewDraft((current) => ({ ...current, image_url_2 })), 2)}
+              {imageControl('__new__:3', newDraft.image_url_3, (image_url_3) => setNewDraft((current) => ({ ...current, image_url_3 })), 3)}
+              {imageControl('__new__:4', newDraft.image_url_4, (image_url_4) => setNewDraft((current) => ({ ...current, image_url_4 })), 4)}
             </div>
           </div>
           <p className="text-[10px] text-gray-400">{t('packageManager.requiredNote')}</p>
@@ -437,9 +455,11 @@ export function PackageManager() {
                   <label className={labelCls}>{t('packageManager.benefitsField')}</label>
                   <input type="text" value={d.benefits} aria-label={aria(t('packageManager.benefitsField'))} onChange={(e) => setField(item, 'benefits', e.target.value)} className={inputCls} />
                 </div>
-                <div className="grid grid-cols-2 gap-2 sm:col-span-4">
+                <div className="grid grid-cols-2 gap-2 sm:col-span-4 sm:grid-cols-4">
                   {imageControl(`${item.id}:1`, d.image_url, (u) => setField(item, 'image_url', u), 1, item)}
                   {imageControl(`${item.id}:2`, d.image_url_2, (u) => setField(item, 'image_url_2', u), 2, item)}
+                  {imageControl(`${item.id}:3`, d.image_url_3, (u) => setField(item, 'image_url_3', u), 3, item)}
+                  {imageControl(`${item.id}:4`, d.image_url_4, (u) => setField(item, 'image_url_4', u), 4, item)}
                 </div>
               </div>
 
