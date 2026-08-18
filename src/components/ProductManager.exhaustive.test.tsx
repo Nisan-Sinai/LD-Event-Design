@@ -55,6 +55,7 @@ function ov(input: Partial<PackageOverride> & { package_id: string }): PackageOv
 const renderManager = () => render(<I18nProvider><ProductManager /></I18nProvider>);
 const first = SHOP_PRODUCTS[0];
 const cardFor = (title = first.title) => screen.getByDisplayValue(title).closest('article') as HTMLElement;
+const activeNewProductForm = () => screen.getByRole('button', { name: 'יצירת מוצר' }).closest('.rounded-2xl') as HTMLElement;
 
 beforeEach(() => {
   state.overrides = {};
@@ -169,7 +170,7 @@ describe('ProductManager exhaustive branches', () => {
     state.upload.mockRejectedValueOnce(new Error('bad upload'));
     renderManager();
     fireEvent.click(screen.getByRole('button', { name: 'הוספת מוצר' }));
-    const form = screen.getByText('מוצר חדש').closest('.rounded-2xl') as HTMLElement;
+    const form = activeNewProductForm();
     const input = form.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [new File(['x'], 'bad.png', { type: 'image/png' })] } });
     await waitFor(() => expect(within(form).getByRole('alert')).toHaveTextContent('יש למלא קטגוריה, שם ומחיר.'));
@@ -183,7 +184,7 @@ describe('ProductManager exhaustive branches', () => {
       .mockResolvedValueOnce('https://cdn.example/4.webp');
     renderManager();
     fireEvent.click(screen.getByRole('button', { name: 'הוספת מוצר' }));
-    const form = screen.getByText('מוצר חדש').closest('.rounded-2xl') as HTMLElement;
+    const form = activeNewProductForm();
     fireEvent.change(within(form).getByRole('combobox'), { target: { value: SHOP_PRODUCT_CATEGORIES.CENTERPIECES } });
     const textboxes = within(form).getAllByRole('textbox');
     fireEvent.change(textboxes[0], { target: { value: '  ארבע תמונות  ' } });
