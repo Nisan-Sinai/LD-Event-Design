@@ -20,11 +20,20 @@ import { PackagesProvider, usePackages } from './PackagesProvider';
 
 const ov = (o: Partial<PackageOverride> & { package_id: string }): PackageOverride => ({
   price: null, title: null, subtitle: null, description: null, benefits: null,
-  image_url: null, category: null, svg_type: null, pricing_tiers: null,
+  image_url: null, image_url_2: null, image_url_3: null, image_url_4: null,
+  category: null, svg_type: null, pricing_tiers: null,
   hidden: false, is_custom: false, sort_order: null, ...o
 });
 
 const wrapper = ({ children }: { children: ReactNode }) => <PackagesProvider>{children}</PackagesProvider>;
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
 
 beforeEach(() => {
   m.fetch.mockReset().mockResolvedValue({});
@@ -54,7 +63,7 @@ describe('PackagesProvider', () => {
     expect(result.current.overrides.x).toMatchObject({ package_id: 'x', price: 5 });
   });
 
-  it('saveImage persists only the image and refreshes local state', async () => {
+  it('saveImage persists slot 1 explicitly and refreshes local state', async () => {
     m.fetch
       .mockResolvedValueOnce({ x: ov({ package_id: 'x', image_url: null }) })
       .mockResolvedValueOnce({ x: ov({ package_id: 'x', image_url: 'https://cdn.example/new.webp' }) });
@@ -63,8 +72,72 @@ describe('PackagesProvider', () => {
     await act(async () => {
       await result.current.saveImage('x', 'https://cdn.example/new.webp');
     });
-    expect(m.saveImage).toHaveBeenCalledWith('x', 'https://cdn.example/new.webp');
+    expect(m.saveImage).toHaveBeenCalledWith('x', 'https://cdn.example/new.webp', 1);
     expect(result.current.overrides.x.image_url).toBe('https://cdn.example/new.webp');
+  });
+
+  it('passes image slots 2, 3 and 4 through without collapsing them into slot 1', async () => {
+    const latest = ov({
+      package_id: 'x',
+      image_url: 'one',
+      image_url_2: 'two',
+      image_url_3: 'three',
+      image_url_4: 'four'
+    });
+    m.fetch.mockResolvedValue({ x: latest });
+    const { result } = renderHook(() => usePackages(), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      await result.current.saveImage('x', 'two', 2);
+      await result.current.saveImage('x', 'three', 3);
+      await result.current.saveImage('x', 'four', 4);
+    });
+
+    expect(m.saveImage).toHaveBeenNthCalledWith(1, 'x', 'two', 2);
+    expect(m.saveImage).toHaveBeenNthCalledWith(2, 'x', 'three', 3);
+    expect(m.saveImage).toHaveBeenNthCalledWith(3, 'x', 'four', 4);
+    expect(result.current.overrides.x).toMatchObject({
+      image_url: 'one',
+      image_url_2: 'two',
+      image_url_3: 'three',
+      image_url_4: 'four'
+    });
+  });
+
+  it('ignores an older refresh that finishes after a newer multi-image refresh', async () => {
+    const older = deferred<Record<string, PackageOverride>>();
+    const newer = deferred<Record<string, PackageOverride>>();
+    m.fetch
+      .mockResolvedValueOnce({ x: ov({ package_id: 'x', image_url: 'one' }) })
+      .mockImplementationOnce(() => older.promise)
+      .mockImplementationOnce(() => newer.promise);
+
+    const { result } = renderHook(() => usePackages(), { wrapper });
+    await waitFor(() => expect(result.current.overrides.x?.image_url).toBe('one'));
+
+    let saveTwo!: Promise<void>;
+    let saveThree!: Promise<void>;
+    await act(async () => {
+      saveTwo = result.current.saveImage('x', 'two', 2);
+      saveThree = result.current.saveImage('x', 'three', 3);
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      newer.resolve({
+        x: ov({ package_id: 'x', image_url: 'one', image_url_2: 'two', image_url_3: 'three' })
+      });
+      await saveThree;
+    });
+    expect(result.current.overrides.x).toMatchObject({ image_url_2: 'two', image_url_3: 'three' });
+
+    await act(async () => {
+      older.resolve({ x: ov({ package_id: 'x', image_url: 'one', image_url_2: 'two' }) });
+      await saveTwo;
+    });
+
+    expect(result.current.overrides.x).toMatchObject({ image_url_2: 'two', image_url_3: 'three' });
   });
 
   it('removeOverride deletes and refreshes local state', async () => {
