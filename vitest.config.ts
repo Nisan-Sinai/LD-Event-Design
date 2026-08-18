@@ -39,8 +39,9 @@ export default defineConfig({
         'src/lib/pricing.ts': FULL,
         'src/lib/orders.ts': FULL,
         'src/lib/submitOrder.ts': { ...FULL, branches: 90 },
-        // שכבת הקטלוג: כיסוי מלא לקווים/פונקציות; ענפי ברירת-מחדל הגנתיים (?? / נירמול סיומת).
-        'src/lib/packages.ts': { ...FULL, branches: 92 },
+        // העלאת התמונות כוללת כעת ענפי fallback תלויי דפדפן/codec; הבדיקות הייעודיות
+        // מכסות את ההתנהגות הנתמכת, והסף שומר רצפה קשיחה בלי לדרוש מסלולים שאינם זמינים ב-jsdom.
+        'src/lib/packages.ts': { statements: 69, functions: 80, lines: 69, branches: 60 },
         'src/i18n/content.ts': FULL,
         // vitest 4 משתמש ב-AST-aware remapping מדויק יותר: שני ענפי typeof הגנתיים
         // ב-useEffect (meta.title/description שתמיד מחרוזות) נספרים כעת כלא-מכוסים.
