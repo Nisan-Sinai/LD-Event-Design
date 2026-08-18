@@ -52,7 +52,7 @@ describe('BrandingManager', () => {
       image_url: 'https://cdn.example/brand-logo.png',
       hidden: true,
       is_custom: false
-    })));
+    }), { includeImage: true }));
     expect(screen.getByRole('status')).toHaveTextContent('הלוגו נשמר');
   });
 
