@@ -4,7 +4,6 @@ import { inferPackageMediaUrls, PackageMediaCarousel } from './PackageMediaCarou
 import type { PackageOverride } from '../lib/packages';
 
 const override = (input: Partial<PackageOverride> & { package_id: string }): PackageOverride => ({
-  package_id: input.package_id,
   price: null,
   title: null,
   subtitle: null,
@@ -20,7 +19,8 @@ const override = (input: Partial<PackageOverride> & { package_id: string }): Pac
   hidden: false,
   is_custom: false,
   sort_order: null,
-  ...input
+  ...input,
+  package_id: input.package_id
 });
 
 describe('inferPackageMediaUrls', () => {
