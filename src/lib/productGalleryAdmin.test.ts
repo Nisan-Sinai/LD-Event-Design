@@ -139,8 +139,11 @@ describe('installProductGalleryAdmin', () => {
     expect(p).toHaveTextContent('לניהול מלא של 4 התמונות');
     expect(manager.querySelectorAll('[data-gallery-slot]')).toHaveLength((SHOP_PRODUCTS.length + 2) * 4);
 
-    expect(manager.querySelector(`[aria-label="הסרת תמונה 1 של שם מנהל"]`)).toBeTruthy();
-    expect(manager.querySelector(`[aria-label="העלאת תמונה 1 של שם מנהל"]`)?.parentElement).toHaveTextContent('החלפת תמונה 1');
+    const editedCard = Array.from(manager.querySelectorAll<HTMLElement>('article')).find((card) => card.querySelector('h4')?.textContent === 'שם מנהל')!;
+    const firstSlot = editedCard.querySelector<HTMLElement>('[data-gallery-slot="1"]')!;
+    expect(firstSlot.querySelector('img')).toHaveAttribute('src', 'https://cdn.example/old.jpg');
+    expect(firstSlot.querySelector('button[aria-label^="הסרת תמונה 1"]')).toBeTruthy();
+    expect(firstSlot.querySelector('input[type="file"]')?.parentElement).toHaveTextContent('החלפת תמונה 1');
 
     document.getElementById('root')!.append(document.createElement('span'));
     await tick();
@@ -151,13 +154,14 @@ describe('installProductGalleryAdmin', () => {
     expect(document.querySelector('[data-four-image-admin="true"]')).toBeNull();
   });
 
-  it('uploads each slot, persists it, creates local override state and removes it again', async () => {
+  it('uploads a slot, persists it, creates local override state and removes it again', async () => {
     const first = SHOP_PRODUCTS[0];
     const { host } = addAdminHost('different copy');
     const dispose = installProductGalleryAdmin();
     await tick();
 
     const input = host.querySelector<HTMLInputElement>(`[aria-label="העלאת תמונה 2 של ${first.title}"]`)!;
+    const slot = input.closest<HTMLElement>('[data-gallery-slot="2"]')!;
     fireEvent.change(input, {
       target: { files: [new File(['img'], 'photo.jpg', { type: 'image/jpeg' })] }
     });
@@ -166,12 +170,12 @@ describe('installProductGalleryAdmin', () => {
 
     expect(state.upload).toHaveBeenCalledTimes(1);
     expect(state.saveImage).toHaveBeenCalledWith(first.id, 'https://cdn.example/new.jpg', 2);
-    const slot = input.closest<HTMLElement>('[data-gallery-slot="2"]')!;
     expect(slot.querySelector('img')).toHaveAttribute('src', 'https://cdn.example/new.jpg');
     expect(slot).toHaveTextContent('נשמר');
     expect(input.parentElement).toHaveTextContent('החלפת תמונה 2');
 
-    const remove = slot.querySelector<HTMLButtonElement>(`[aria-label="הסרת תמונה 2 של ${first.title}"]`)!;
+    const remove = slot.querySelector<HTMLButtonElement>('button[aria-label^="הסרת תמונה 2"]')!;
+    expect(remove).toBeTruthy();
     remove.click();
     await tick();
     expect(state.saveImage).toHaveBeenLastCalledWith(first.id, null, 2);
@@ -202,10 +206,12 @@ describe('installProductGalleryAdmin', () => {
     expect(input.disabled).toBe(false);
 
     state.saveImage.mockRejectedValueOnce(new Error('remove'));
-    const remove = host.querySelector<HTMLButtonElement>(`[aria-label="הסרת תמונה 1 של ${first.title}"]`)!;
+    const firstSlot = host.querySelector<HTMLElement>('[data-four-image-admin="true"] article [data-gallery-slot="1"]')!;
+    const remove = firstSlot.querySelector<HTMLButtonElement>('button[aria-label^="הסרת תמונה 1"]')!;
+    expect(remove).toBeTruthy();
     remove.click();
     await tick();
-    expect(remove.closest('[data-gallery-slot="1"]')).toHaveTextContent('שגיאה');
+    expect(firstSlot).toHaveTextContent('שגיאה');
     expect(remove.disabled).toBe(false);
     dispose();
 
