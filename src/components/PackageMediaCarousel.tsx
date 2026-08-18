@@ -1,5 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, PlayCircle } from 'lucide-react';
+import { usePackages } from '../packages/PackagesProvider';
+import type { OverrideMap } from '../lib/packages';
 
 type MediaSlide =
   | { type: 'image'; src: string; alt: string }
@@ -21,6 +23,20 @@ function normalizeMediaUrls(mediaUrls?: string[], mediaUrl?: string): string[] {
     });
 }
 
+export function inferPackageMediaUrls(mediaUrl: string | undefined, overrides: OverrideMap): string[] {
+  if (!mediaUrl) return [];
+  for (const override of Object.values(overrides)) {
+    const urls = normalizeMediaUrls([
+      override.image_url ?? '',
+      override.image_url_2 ?? '',
+      override.image_url_3 ?? '',
+      override.image_url_4 ?? ''
+    ]);
+    if (urls.includes(mediaUrl)) return urls;
+  }
+  return [];
+}
+
 export function PackageMediaCarousel({
   title,
   mediaUrl,
@@ -32,7 +48,9 @@ export function PackageMediaCarousel({
   mediaUrls?: string[];
   art: ReactNode;
 }) {
-  const uploadedMedia = normalizeMediaUrls(mediaUrls, mediaUrl).slice(0, 4);
+  const { overrides } = usePackages();
+  const inferredUrls = mediaUrls?.length ? mediaUrls : inferPackageMediaUrls(mediaUrl, overrides);
+  const uploadedMedia = normalizeMediaUrls(inferredUrls, mediaUrl).slice(0, 4);
   const slides: MediaSlide[] = [
     ...uploadedMedia.map((url, mediaIndex): MediaSlide => (
       isVideo(url)
