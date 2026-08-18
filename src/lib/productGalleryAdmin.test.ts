@@ -142,7 +142,8 @@ describe('installProductGalleryAdmin', () => {
     const editedCard = Array.from(manager.querySelectorAll<HTMLElement>('article')).find((card) => card.querySelector('h4')?.textContent === 'שם מנהל')!;
     const firstSlot = editedCard.querySelector<HTMLElement>('[data-gallery-slot="1"]')!;
     expect(firstSlot.querySelector('img')).toHaveAttribute('src', 'https://cdn.example/old.jpg');
-    expect(firstSlot.querySelector('button[aria-label^="הסרת תמונה 1"]')).toBeTruthy();
+    const existingRemove = firstSlot.querySelector<HTMLButtonElement>('button');
+    expect(existingRemove?.getAttribute('aria-label')).toContain('הסרת תמונה 1');
     expect(firstSlot.querySelector('input[type="file"]')?.parentElement).toHaveTextContent('החלפת תמונה 1');
 
     document.getElementById('root')!.append(document.createElement('span'));
@@ -174,8 +175,8 @@ describe('installProductGalleryAdmin', () => {
     expect(slot).toHaveTextContent('נשמר');
     expect(input.parentElement).toHaveTextContent('החלפת תמונה 2');
 
-    const remove = slot.querySelector<HTMLButtonElement>('button[aria-label^="הסרת תמונה 2"]')!;
-    expect(remove).toBeTruthy();
+    const remove = slot.querySelector<HTMLButtonElement>('button')!;
+    expect(remove.getAttribute('aria-label')).toContain('הסרת תמונה 2');
     remove.click();
     await tick();
     expect(state.saveImage).toHaveBeenLastCalledWith(first.id, null, 2);
@@ -207,8 +208,8 @@ describe('installProductGalleryAdmin', () => {
 
     state.saveImage.mockRejectedValueOnce(new Error('remove'));
     const firstSlot = host.querySelector<HTMLElement>('[data-four-image-admin="true"] article [data-gallery-slot="1"]')!;
-    const remove = firstSlot.querySelector<HTMLButtonElement>('button[aria-label^="הסרת תמונה 1"]')!;
-    expect(remove).toBeTruthy();
+    const remove = firstSlot.querySelector<HTMLButtonElement>('button')!;
+    expect(remove.getAttribute('aria-label')).toContain('הסרת תמונה 1');
     remove.click();
     await tick();
     expect(firstSlot).toHaveTextContent('שגיאה');
