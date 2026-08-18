@@ -53,6 +53,7 @@ const ov = (input: Partial<PackageOverride> & { package_id: string }): PackageOv
 
 const renderPM = () => render(<I18nProvider><PackageManager /></I18nProvider>);
 const rowFor = (title = first.title) => screen.getByLabelText(`כותרת — ${title}`).closest('.rounded-xl') as HTMLElement;
+const activeNewPackageForm = () => screen.getByRole('button', { name: 'יצירת חבילה' }).closest('.rounded-xl') as HTMLElement;
 
 beforeEach(() => {
   state.overrides = {};
@@ -117,9 +118,10 @@ describe('PackageManager exhaustive branches', () => {
     state.upload.mockRejectedValueOnce(new Error('upload failed'));
     renderPM();
     fireEvent.click(screen.getByRole('button', { name: 'הוספת חבילה חדשה' }));
-    const input = screen.getAllByLabelText('העלאת תמונה 1')[0] as HTMLInputElement;
+    const form = activeNewPackageForm();
+    const input = within(form).getByLabelText('העלאת תמונה 1') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [new File(['x'], 'bad.png', { type: 'image/png' })] } });
-    await waitFor(() => expect(screen.getByText(/קטגוריה, כותרת ומחיר/)).toBeInTheDocument());
+    await waitFor(() => expect(within(form).getAllByText(/קטגוריה.*כותרת.*מחיר/)).toHaveLength(2));
   });
 
   it('normalizes empty optional fields and a negative custom-package price on creation', async () => {
@@ -151,11 +153,12 @@ describe('PackageManager exhaustive branches', () => {
     state.saveOverride.mockRejectedValueOnce(new Error('RLS'));
     renderPM();
     fireEvent.click(screen.getByRole('button', { name: 'הוספת חבילה חדשה' }));
-    fireEvent.change(screen.getByLabelText('קטגוריה — חבילה חדשה'), { target: { value: 'חתונה' } });
-    fireEvent.change(screen.getByLabelText('כותרת — חבילה חדשה'), { target: { value: 'חדשה' } });
-    fireEvent.change(screen.getByLabelText('מחיר (₪) — חבילה חדשה'), { target: { value: '100' } });
-    fireEvent.click(screen.getByRole('button', { name: 'יצירת חבילה' }));
-    await waitFor(() => expect(screen.getByText(/קטגוריה, כותרת ומחיר/)).toBeInTheDocument());
+    const form = activeNewPackageForm();
+    fireEvent.change(within(form).getByLabelText('קטגוריה — חבילה חדשה'), { target: { value: 'חתונה' } });
+    fireEvent.change(within(form).getByLabelText('כותרת — חבילה חדשה'), { target: { value: 'חדשה' } });
+    fireEvent.change(within(form).getByLabelText('מחיר (₪) — חבילה חדשה'), { target: { value: '100' } });
+    fireEvent.click(within(form).getByRole('button', { name: 'יצירת חבילה' }));
+    await waitFor(() => expect(within(form).getAllByText(/קטגוריה.*כותרת.*מחיר/)).toHaveLength(2));
   });
 
   it('leaves a pristine base-package save button disabled and shows the pricing-tier note when relevant', () => {
@@ -170,7 +173,8 @@ describe('PackageManager exhaustive branches', () => {
   it('handles an image change without a selected file for a new package', async () => {
     renderPM();
     fireEvent.click(screen.getByRole('button', { name: 'הוספת חבילה חדשה' }));
-    const input = screen.getAllByLabelText('העלאת תמונה 4')[0] as HTMLInputElement;
+    const form = activeNewPackageForm();
+    const input = within(form).getByLabelText('העלאת תמונה 4') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [] } });
     await act(async () => Promise.resolve());
     expect(state.upload).not.toHaveBeenCalled();
