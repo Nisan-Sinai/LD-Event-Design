@@ -32,7 +32,6 @@ import { PACKAGES } from '../App';
 
 const first = PACKAGES[0];
 const ov = (input: Partial<PackageOverride> & { package_id: string }): PackageOverride => ({
-  package_id: input.package_id,
   price: null,
   title: null,
   subtitle: null,
@@ -48,7 +47,8 @@ const ov = (input: Partial<PackageOverride> & { package_id: string }): PackageOv
   hidden: false,
   is_custom: false,
   sort_order: null,
-  ...input
+  ...input,
+  package_id: input.package_id
 });
 
 const renderPM = () => render(<I18nProvider><PackageManager /></I18nProvider>);
@@ -102,11 +102,9 @@ describe('PackageManager exhaustive branches', () => {
   });
 
   it.each([2, 3, 4] as const)('persists a blank image slot %s as null', async (slot) => {
+    const imageKey = `image_url_${slot}` as 'image_url_2' | 'image_url_3' | 'image_url_4';
     state.overrides = {
-      [first.id]: ov({
-        package_id: first.id,
-        [`image_url_${slot}`]: `https://cdn.example/${slot}.png`
-      } as Partial<PackageOverride> & { package_id: string })
+      [first.id]: ov({ package_id: first.id, [imageKey]: `https://cdn.example/${slot}.png` })
     };
     renderPM();
     const row = rowFor();
