@@ -4,7 +4,7 @@ import type { PackageOverride } from '../lib/packages';
 import { renderWithProviders } from '../test/render';
 
 const state = vi.hoisted(() => ({
-  rows: new Map<string, Record<string, unknown>>(),
+  rows: new Map<string, PackageOverride>(),
   uploadedPath: '',
   upsert: vi.fn(),
   remove: vi.fn(),
@@ -99,7 +99,7 @@ describe('BrandingManager integration', () => {
     await waitFor(() => expect(state.rows.get(BRANDING_OVERRIDE_ID)?.image_url).toMatch(/^https:\/\/storage\.example\/package-images\//));
 
     const preview = await screen.findByRole('img', { name: 'תצוגה מקדימה של הלוגו' });
-    expect(preview).toHaveAttribute('src', state.rows.get(BRANDING_OVERRIDE_ID)?.image_url);
+    expect(preview).toHaveAttribute('src', state.rows.get(BRANDING_OVERRIDE_ID)?.image_url ?? undefined);
     expect(screen.getByRole('button', { name: 'הסרת הלוגו' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'הסרת הלוגו' }));
