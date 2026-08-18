@@ -27,6 +27,10 @@ describe('validatePackageImage', () => {
     expect(validatePackageImage(image('large.jpg', 'image/jpeg', 8 * 1024 * 1024 + 1))).toBe('jpg');
   });
 
+  it('accepts mobile photos up to 50 MB', () => {
+    expect(validatePackageImage(image('large.jpg', 'image/jpeg', 49 * 1024 * 1024))).toBe('jpg');
+  });
+
   it('accepts Android images with a missing or generic MIME type', () => {
     expect(validatePackageImage(image('camera.JPEG', ''))).toBe('jpg');
     expect(validatePackageImage(image('camera.jpeg', 'application/octet-stream'))).toBe('jpg');
@@ -41,8 +45,8 @@ describe('validatePackageImage', () => {
     expect(() => validatePackageImage(image('empty.jpg', 'image/jpeg', 0))).toThrow(/empty/i);
   });
 
-  it('rejects an image larger than 30 MB', () => {
-    expect(() => validatePackageImage(image('huge.jpg', 'image/jpeg', 30 * 1024 * 1024 + 1))).toThrow(/30 MB/i);
+  it('rejects an image larger than 50 MB', () => {
+    expect(() => validatePackageImage(image('huge.jpg', 'image/jpeg', 50 * 1024 * 1024 + 1))).toThrow(/50 MB/i);
   });
 
   it('rejects active SVG/XML image formats', () => {
