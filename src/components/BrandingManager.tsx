@@ -45,7 +45,7 @@ export function BrandingManager() {
     setError('');
     try {
       const url = await uploadPackageImage(file);
-      await saveOverride(createBrandingOverride(url));
+      await saveOverride(createBrandingOverride(url), { includeImage: true });
       setSaved(true);
     } catch {
       setError(copy.error);
