@@ -10,26 +10,40 @@ function isVideo(url: string) {
   return /\.(mp4|webm|mov)(\?.*)?$/i.test(url);
 }
 
+function normalizeMediaUrls(mediaUrls?: string[], mediaUrl?: string): string[] {
+  const seen = new Set<string>();
+  return [...(mediaUrls ?? []), ...(mediaUrl ? [mediaUrl] : [])]
+    .map((url) => url.trim())
+    .filter((url) => {
+      if (!url || seen.has(url)) return false;
+      seen.add(url);
+      return true;
+    });
+}
+
 export function PackageMediaCarousel({
   title,
   mediaUrl,
+  mediaUrls,
   art
 }: {
   title: string;
   mediaUrl?: string;
+  mediaUrls?: string[];
   art: ReactNode;
 }) {
-  const slides: MediaSlide[] = mediaUrl
-    ? [
-        isVideo(mediaUrl)
-          ? { type: 'video', src: mediaUrl, alt: `סרטון ${title}` }
-          : { type: 'image', src: mediaUrl, alt: title },
-        { type: 'art', content: art, alt: `המחשת עיצוב ${title}` }
-      ]
-    : [{ type: 'art', content: art, alt: `המחשת עיצוב ${title}` }];
+  const uploadedMedia = normalizeMediaUrls(mediaUrls, mediaUrl).slice(0, 4);
+  const slides: MediaSlide[] = [
+    ...uploadedMedia.map((url, mediaIndex): MediaSlide => (
+      isVideo(url)
+        ? { type: 'video', src: url, alt: `סרטון ${title} ${mediaIndex + 1}` }
+        : { type: 'image', src: url, alt: uploadedMedia.length > 1 ? `${title} — תמונה ${mediaIndex + 1}` : title }
+    )),
+    { type: 'art', content: art, alt: `המחשת עיצוב ${title}` }
+  ];
 
   const [index, setIndex] = useState(0);
-  const current = slides[index];
+  const current = slides[index] ?? slides[0];
   const move = (direction: number) => setIndex((value) => (value + direction + slides.length) % slides.length);
 
   return (
