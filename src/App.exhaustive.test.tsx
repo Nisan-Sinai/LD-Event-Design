@@ -120,7 +120,8 @@ describe('App exhaustive UI branches', () => {
     fireEvent.click(screen.getByRole('button', { name: 'mock-accessibility-statement' }));
     dialog = screen.getByRole('dialog');
     expect(dialog).toHaveTextContent('הצהרת נגישות');
-    fireEvent.click(within(dialog).getAllByRole('button', { name: 'סגירה' }).at(-1)!);
+    const closeButtons = within(dialog).getAllByRole('button', { name: 'סגירה' });
+    fireEvent.click(closeButtons[closeButtons.length - 1]);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
     fireEvent.click(within(legalNav).getByRole('button', { name: 'מדיניות פרטיות' }));
@@ -143,10 +144,12 @@ describe('App exhaustive UI branches', () => {
 
     const dates = screen.getAllByDisplayValue('') as HTMLInputElement[];
     const dateInputs = dates.filter((input) => input.type === 'date');
-    fireEvent.change(dateInputs.at(-2)!, { target: { value: '2026-08-18' } });
-    fireEvent.change(dateInputs.at(-1)!, { target: { value: '2026-08-19' } });
-    expect(dateInputs.at(-2)).toHaveValue('2026-08-18');
-    expect(dateInputs.at(-1)).toHaveValue('2026-08-19');
+    const groomDate = dateInputs[dateInputs.length - 2];
+    const brideDate = dateInputs[dateInputs.length - 1];
+    fireEvent.change(groomDate, { target: { value: '2026-08-18' } });
+    fireEvent.change(brideDate, { target: { value: '2026-08-19' } });
+    expect(groomDate).toHaveValue('2026-08-18');
+    expect(brideDate).toHaveValue('2026-08-19');
   });
 
   it('covers touch signature coordinates with non-zero canvas geometry and clears the bride signature', () => {
