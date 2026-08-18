@@ -1,3 +1,4 @@
+// Coverage-focused admin regressions; this comment also retriggers a clean CI runner after a stalled browser install.
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
