@@ -213,9 +213,9 @@ describe('App additional coverage', () => {
   it('updates both signature dates on step 3', () => {
     reachStep3();
     const dateInputs = Array.from(document.querySelectorAll('input[type="date"]')) as HTMLInputElement[];
-    expect(dateInputs.length).toBeGreaterThanOrEqual(3);
-    const groomDate = dateInputs[dateInputs.length - 2];
-    const brideDate = dateInputs[dateInputs.length - 1];
+    expect(dateInputs).toHaveLength(2);
+    const groomDate = dateInputs[0];
+    const brideDate = dateInputs[1];
 
     fireEvent.change(groomDate, { target: { value: '2026-08-18' } });
     fireEvent.change(brideDate, { target: { value: '2026-08-19' } });
