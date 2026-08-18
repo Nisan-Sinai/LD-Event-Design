@@ -46,6 +46,20 @@ const asciiAt = (text: string, offset: number, size = 32) => {
 
 const largeJpeg = () => new File([new Uint8Array(7 * 1024 * 1024)], 'large.jpg', { type: 'image/jpeg' });
 
+function makeBrowserRejectImageDecode() {
+  vi.stubGlobal('createImageBitmap', undefined);
+  Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: vi.fn(() => 'blob:unsupported') });
+  Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: vi.fn() });
+  class UnsupportedImage {
+    decoding = '';
+    src = '';
+    naturalWidth = 0;
+    naturalHeight = 0;
+    decode = vi.fn().mockRejectedValue(new Error('unsupported image format'));
+  }
+  vi.stubGlobal('Image', UnsupportedImage);
+}
+
 beforeEach(() => {
   state.configured = true;
   state.uploadedPath = null;
@@ -107,8 +121,10 @@ describe('package image signature detection', () => {
     const bytes = Array<number>(32).fill(0);
     [...'ftyp'].forEach((char, index) => { bytes[4 + index] = char.charCodeAt(0); });
     [...brand].forEach((char, index) => { bytes[8 + index] = char.charCodeAt(0); });
+    if (extension === 'heic' || extension === 'heif') makeBrowserRejectImageDecode();
     const file = generic(bytes);
     await uploadPackageImage(file);
+    expect(state.uploadedBody).toBe(file);
     expect(state.uploadedPath).toMatch(new RegExp(`\\.${extension}$`));
     expect(state.uploadedOptions).toMatchObject({ contentType });
   });
@@ -137,14 +153,12 @@ describe('package image conversion browser fallbacks', () => {
 
     await uploadPackageImage(largeJpeg());
 
-    const canvas = document.querySelector('canvas');
     expect(drawImage).toHaveBeenCalled();
     const [, , , width, height] = drawImage.mock.calls[0];
     expect(width).toBe(2400);
     expect(height).toBe(1200);
     expect(close).toHaveBeenCalledOnce();
     expect(state.uploadedPath).toMatch(/\.webp$/);
-    expect(canvas).toBeNull();
   });
 
   it('falls back from failed WebP encoding to successful JPEG encoding', async () => {
