@@ -96,10 +96,17 @@ describe('BrandingManager integration', () => {
     fireEvent.change(screen.getByLabelText('העלאת לוגו'), { target: { files: [file] } });
 
     await waitFor(() => expect(state.upload).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(state.rows.get(BRANDING_OVERRIDE_ID)?.image_url).toMatch(/^https:\/\/storage\.example\/package-images\//));
+    await waitFor(() => expect(state.uploadedPath).not.toBe(''));
+    const expectedUrl = `https://storage.example/package-images/${state.uploadedPath}`;
+
+    await waitFor(() => expect(state.rows.get(BRANDING_OVERRIDE_ID)?.image_url).toBe(expectedUrl));
+    expect(state.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ package_id: BRANDING_OVERRIDE_ID, image_url: expectedUrl }),
+      { onConflict: 'package_id' }
+    );
 
     const preview = await screen.findByRole('img', { name: 'תצוגה מקדימה של הלוגו' });
-    expect(preview).toHaveAttribute('src', state.rows.get(BRANDING_OVERRIDE_ID)?.image_url ?? undefined);
+    expect(preview).toHaveAttribute('src', expectedUrl);
     expect(screen.getByRole('button', { name: 'הסרת הלוגו' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'הסרת הלוגו' }));
