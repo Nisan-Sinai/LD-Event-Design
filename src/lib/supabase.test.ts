@@ -19,18 +19,16 @@ describe('supabase client configuration', () => {
   });
 
   it.each([
-    ['', ''],
-    ['https://project.supabase.co', ''],
-    ['', 'anon-key']
-  ])('falls back safely when configuration is incomplete', async (url, key) => {
+    [undefined, undefined, 'http://localhost:54321', 'public-anon-key'],
+    ['https://project.supabase.co', undefined, 'https://project.supabase.co', 'public-anon-key'],
+    [undefined, 'anon-key', 'http://localhost:54321', 'anon-key'],
+    ['', '', '', '']
+  ] as const)('handles incomplete configuration without reporting configured', async (url, key, clientUrl, clientKey) => {
     vi.stubEnv('VITE_SUPABASE_URL', url);
     vi.stubEnv('VITE_SUPABASE_ANON_KEY', key);
     const module = await import('./supabase');
     expect(module.isSupabaseConfigured).toBe(false);
-    expect(createClient).toHaveBeenCalledWith(
-      url || 'http://localhost:54321',
-      key || 'public-anon-key'
-    );
+    expect(createClient).toHaveBeenCalledWith(clientUrl, clientKey);
     vi.resetModules();
     createClient.mockClear();
   });
