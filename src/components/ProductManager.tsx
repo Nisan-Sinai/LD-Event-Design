@@ -63,6 +63,9 @@ const COPY = {
     save: 'שמירה',
     saving: 'שומר…',
     saved: 'נשמר',
+    imageSaved: '✅ שמור',
+    saveImage: '✅ שמור',
+    undoImage: '↩️ חזור בלי לשמור',
     hide: 'הסתרה מהחנות',
     show: 'הצגה בחנות',
     reset: 'שחזור ברירת מחדל',
@@ -73,7 +76,7 @@ const COPY = {
     hidden: 'מוסתר',
     edited: 'נערך',
     noImage: 'ללא תמונה',
-    imageHint: 'אפשר להעלות עד 4 תמונות. מומלץ להשתמש בתמונות ריבועיות או ביחס 4:5 באיכות גבוהה.'
+    imageHint: 'אפשר להעלות עד 4 תמונות. בחירת תמונה מציגה תצוגה מקדימה; לחצו ✅ שמור כדי לפרסם אותה.'
   },
   en: {
     title: 'Small shop products',
@@ -93,6 +96,9 @@ const COPY = {
     save: 'Save',
     saving: 'Saving…',
     saved: 'Saved',
+    imageSaved: '✅ Saved',
+    saveImage: '✅ Save',
+    undoImage: '↩️ Revert without saving',
     hide: 'Hide from shop',
     show: 'Show in shop',
     reset: 'Restore default',
@@ -103,7 +109,7 @@ const COPY = {
     hidden: 'Hidden',
     edited: 'Edited',
     noImage: 'No image',
-    imageHint: 'You can upload up to 4 images. High-quality square or 4:5 images are recommended.'
+    imageHint: 'Selecting an image only previews it. Press ✅ Save below that image to publish it.'
   }
 } as const;
 
@@ -120,11 +126,19 @@ function toDraft(product: ManagedProduct): ProductDraft {
   };
 }
 
+function savedImageFor(product: ManagedProduct, slot: ImageSlot): string {
+  if (slot === 1) return product.image ?? '';
+  if (slot === 2) return product.image2;
+  if (slot === 3) return product.image3;
+  return product.image4;
+}
+
 export function ProductManager() {
   const { lang } = useI18n();
   const copy = COPY[lang];
   const { overrides, saveOverride, saveImage, removeOverride } = usePackages();
   const [drafts, setDrafts] = useState<Record<string, ProductDraft>>({});
+  const [imageDrafts, setImageDrafts] = useState<Record<string, string>>({});
   const [newDraft, setNewDraft] = useState<ProductDraft>(EMPTY_DRAFT);
   const [showAdd, setShowAdd] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -222,10 +236,22 @@ export function ProductManager() {
     sort_order: product.custom ? overrides[product.id]?.sort_order ?? Date.now() : null
   });
 
-  const persistImage = (product: ManagedProduct, imageUrl: string, slot: ImageSlot) =>
-    run(product.id, () => slot === 1
-      ? saveImage(product.id, imageUrl.trim() || null)
-      : saveImage(product.id, imageUrl.trim() || null, slot));
+  const persistImage = async (product: ManagedProduct, imageUrl: string, slot: ImageSlot) => {
+    const key = `${product.id}:${slot}`;
+    setBusyId(key);
+    setErrorId(null);
+    try {
+      await (slot === 1
+        ? saveImage(product.id, imageUrl.trim() || null)
+        : saveImage(product.id, imageUrl.trim() || null, slot));
+      setSavedId(key);
+      window.setTimeout(() => setSavedId((current) => (current === key ? null : current)), 1800);
+    } catch {
+      setErrorId(product.id);
+    } finally {
+      setBusyId((current) => (current === key ? null : current));
+    }
+  };
 
   const saveProduct = (product: ManagedProduct) => {
     const draft = draftFor(product);
@@ -244,7 +270,6 @@ export function ProductManager() {
     uploadKey: string,
     file: File | undefined,
     apply: (url: string) => void,
-    slot: ImageSlot,
     product?: ManagedProduct
   ) => {
     if (!file) return;
@@ -253,7 +278,6 @@ export function ProductManager() {
     try {
       const url = await uploadPackageImage(file);
       apply(url);
-      if (product) await persistImage(product, url, slot);
     } catch {
       setErrorId(product?.id ?? '__new_product__');
     } finally {
@@ -296,49 +320,97 @@ export function ProductManager() {
     apply: (url: string) => void,
     slot: ImageSlot,
     product?: ManagedProduct
-  ) => (
-    <div className="min-w-0 rounded-2xl border border-[#EAE3D2] bg-[#FAF7F2] p-2.5">
-      <span className={labelClass}>{copy.image} {slot}</span>
-      <div className="relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-xl border border-[#EAE3D2] bg-white">
-        {url ? (
-          <>
-            <img src={url} alt="" className="h-full w-full object-cover" />
-            <button
-              type="button"
-              onClick={() => {
-                apply('');
-                if (product) void persistImage(product, '', slot);
-              }}
-              aria-label={slot === 1 ? copy.removeImage : `${copy.removeImage} ${slot}`}
-              className="absolute end-1.5 top-1.5 rounded-full bg-white/95 p-1.5 text-gray-500 shadow hover:text-red-600"
-            >
-              <X className="h-3.5 w-3.5" aria-hidden="true" />
-            </button>
-          </>
-        ) : (
-          <div className="text-center">
-            <ImagePlus className="mx-auto h-6 w-6 text-[#B29259]/60" aria-hidden="true" />
-            <span className="mt-1 block text-[9px] font-bold text-gray-400">{copy.noImage}</span>
-          </div>
+  ) => {
+    const savedUrl = product ? savedImageFor(product, slot) : url;
+    const displayUrl = product ? imageDrafts[uploadKey] ?? savedUrl : url;
+    const changed = Boolean(product && displayUrl !== savedUrl);
+    const imageBusy = busyId === uploadKey;
+    const setDisplayUrl = (nextUrl: string) => {
+      if (!product) {
+        apply(nextUrl);
+        return;
+      }
+      setImageDrafts((current) => ({ ...current, [uploadKey]: nextUrl }));
+    };
+    const undoImage = () => {
+      if (!product) return;
+      setImageDrafts((current) => {
+        const next = { ...current };
+        delete next[uploadKey];
+        return next;
+      });
+    };
+
+    return (
+      <div className="min-w-0 rounded-2xl border border-[#EAE3D2] bg-[#FAF7F2] p-2.5">
+        <span className={labelClass}>{copy.image} {slot}</span>
+        <div className="relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-xl border border-[#EAE3D2] bg-white">
+          {displayUrl ? (
+            <>
+              <img src={displayUrl} alt="" className="h-full w-full object-cover" />
+              <button
+                type="button"
+                onClick={() => setDisplayUrl('')}
+                aria-label={slot === 1 ? copy.removeImage : `${copy.removeImage} ${slot}`}
+                className="absolute end-1.5 top-1.5 rounded-full bg-white/95 p-1.5 text-gray-500 shadow hover:text-red-600"
+              >
+                <X className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+            </>
+          ) : (
+            <div className="text-center">
+              <ImagePlus className="mx-auto h-6 w-6 text-[#B29259]/60" aria-hidden="true" />
+              <span className="mt-1 block text-[9px] font-bold text-gray-400">{copy.noImage}</span>
+            </div>
+          )}
+        </div>
+        <label className="mt-2 flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#B29259] px-2 py-2 text-[10px] font-bold text-[#8C6D3F] hover:bg-white">
+          <ImagePlus className="h-3.5 w-3.5" aria-hidden="true" />
+          {uploadingId === uploadKey ? copy.uploading : `${copy.upload} ${slot}`}
+          <input
+            type="file"
+            accept="image/*,.heic,.heif"
+            className="sr-only"
+            aria-label={`${copy.upload} ${slot}`}
+            disabled={uploadingId === uploadKey || imageBusy}
+            onChange={(event) => {
+              void uploadImage(uploadKey, event.target.files?.[0], setDisplayUrl, product);
+              event.target.value = '';
+            }}
+          />
+        </label>
+
+        {product && (
+          changed ? (
+            <div className="mt-2 grid grid-cols-1 gap-1.5">
+              <button
+                type="button"
+                onClick={() => void persistImage(product, displayUrl, slot)}
+                disabled={imageBusy || uploadingId === uploadKey}
+                aria-label={`${copy.saveImage} ${slot}`}
+                className="rounded-lg bg-emerald-600 px-2 py-2 text-[10px] font-extrabold text-white disabled:opacity-50"
+              >
+                {imageBusy ? copy.saving : copy.saveImage}
+              </button>
+              <button
+                type="button"
+                onClick={undoImage}
+                disabled={imageBusy || uploadingId === uploadKey}
+                aria-label={`${copy.undoImage} ${slot}`}
+                className="rounded-lg border border-gray-200 bg-white px-2 py-2 text-[10px] font-bold text-gray-600 disabled:opacity-50"
+              >
+                {copy.undoImage}
+              </button>
+            </div>
+          ) : (
+            <div className="mt-2 text-center text-[10px] font-extrabold text-emerald-700">
+              {savedId === uploadKey ? copy.saved : copy.imageSaved}
+            </div>
+          )
         )}
       </div>
-      <label className="mt-2 flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#B29259] px-2 py-2 text-[10px] font-bold text-[#8C6D3F] hover:bg-white">
-        <ImagePlus className="h-3.5 w-3.5" aria-hidden="true" />
-        {uploadingId === uploadKey ? copy.uploading : `${copy.upload} ${slot}`}
-        <input
-          type="file"
-          accept="image/*,.heic,.heif"
-          className="sr-only"
-          aria-label={`${copy.upload} ${slot}`}
-          disabled={uploadingId === uploadKey || Boolean(product && busyId === product.id)}
-          onChange={(event) => {
-            void uploadImage(uploadKey, event.target.files?.[0], apply, slot, product);
-            event.target.value = '';
-          }}
-        />
-      </label>
-    </div>
-  );
+    );
+  };
 
   return (
     <section className="mb-6 rounded-3xl border border-[#EAE3D2] bg-white p-5 sm:p-6">
