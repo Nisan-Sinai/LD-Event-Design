@@ -32,7 +32,6 @@ const tick = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
 function override(input: Partial<PackageOverride> & { package_id: string }): PackageOverride {
   return {
-    package_id: input.package_id,
     price: null,
     title: null,
     subtitle: null,
@@ -48,7 +47,8 @@ function override(input: Partial<PackageOverride> & { package_id: string }): Pac
     hidden: false,
     is_custom: false,
     sort_order: null,
-    ...input
+    ...input,
+    package_id: input.package_id
   };
 }
 
@@ -139,7 +139,6 @@ describe('installProductGalleryAdmin', () => {
     expect(p).toHaveTextContent('לניהול מלא של 4 התמונות');
     expect(manager.querySelectorAll('[data-gallery-slot]')).toHaveLength((SHOP_PRODUCTS.length + 2) * 4);
 
-    // Existing image takes the replace-label branch and creates a remove action.
     expect(manager.querySelector(`[aria-label="הסרת תמונה 1 של שם מנהל"]`)).toBeTruthy();
     expect(manager.querySelector(`[aria-label="העלאת תמונה 1 של שם מנהל"]`)?.parentElement).toHaveTextContent('החלפת תמונה 1');
 
@@ -179,7 +178,6 @@ describe('installProductGalleryAdmin', () => {
     expect(slot.querySelector('img')).toBeNull();
     expect(slot).toHaveTextContent('אין תמונה');
 
-    // Change event with no file exits without persistence.
     const calls = state.saveImage.mock.calls.length;
     fireEvent.change(input, { target: { files: [] } });
     await tick();
