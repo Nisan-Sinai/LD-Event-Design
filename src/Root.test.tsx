@@ -25,15 +25,22 @@ import { Root } from './Root';
 const scrollTo = vi.fn();
 const scrollIntoView = vi.fn();
 
+async function flushLazy() {
+  await act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+}
+
 async function renderAt(path: string, expected: string) {
   window.history.replaceState({}, '', path);
   const rendered = render(<Root />);
-  expect(await screen.findByText(expected)).toBeInTheDocument();
+  await flushLazy();
+  expect(screen.getByText(expected)).toBeInTheDocument();
   return rendered;
 }
 
 beforeEach(() => {
-  vi.useFakeTimers();
   scrollTo.mockReset();
   scrollIntoView.mockReset();
   Object.defineProperty(window, 'scrollTo', { configurable: true, value: scrollTo });
@@ -48,8 +55,6 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
-  vi.runOnlyPendingTimers();
-  vi.useRealTimers();
   vi.restoreAllMocks();
 });
 
@@ -70,31 +75,30 @@ describe('Root', () => {
   });
 
   it('redirects unknown routes to home', async () => {
-    await renderAt('/does-not-exist', 'HOME');
+    const rendered = await renderAt('/does-not-exist', 'HOME');
     expect(window.location.pathname).toBe('/');
+    rendered.unmount();
   });
 
   it('redirects the legacy order route to the package builder hash', async () => {
     window.history.replaceState({}, '', '/order');
-    render(<Root />);
-    await act(async () => {
-      await Promise.resolve();
-    });
+    const rendered = render(<Root />);
+    await flushLazy();
     expect(window.location.pathname).toBe('/');
     expect(window.location.hash).toBe('#packages');
+    rendered.unmount();
   });
 
-  it('aligns an existing decoded hash target immediately and during settling passes', async () => {
+  it('aligns an existing decoded hash target immediately and during animation-frame passes', async () => {
     window.history.replaceState({}, '', '/#design%2Ddetails');
     const target = document.createElement('section');
     target.id = 'design-details';
     document.body.append(target);
 
     const rendered = render(<Root />);
-    await screen.findByText('HOME');
+    await flushLazy();
+    expect(screen.getByText('HOME')).toBeInTheDocument();
     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start', behavior: 'auto' });
-
-    act(() => vi.advanceTimersByTime(120));
     expect(scrollIntoView.mock.calls.length).toBeGreaterThanOrEqual(3);
     rendered.unmount();
     expect(window.cancelAnimationFrame).toHaveBeenCalledWith(7);
@@ -103,27 +107,24 @@ describe('Root', () => {
   it('keeps an invalid encoded hash and waits until lazy content creates its target', async () => {
     window.history.replaceState({}, '', '/#bad%ZZ');
     const rendered = render(<Root />);
-    await screen.findByText('HOME');
+    await flushLazy();
+    expect(screen.getByText('HOME')).toBeInTheDocument();
     expect(scrollIntoView).not.toHaveBeenCalled();
 
     const target = document.createElement('div');
     target.id = 'bad%ZZ';
     document.body.append(target);
-    await act(async () => {
-      await Promise.resolve();
-    });
+    await flushLazy();
     expect(scrollIntoView).toHaveBeenCalled();
-
-    act(() => vi.advanceTimersByTime(2500));
     rendered.unmount();
   });
 
   it('cancels outstanding alignment work when a missing hash route unmounts', async () => {
     window.history.replaceState({}, '', '/#never-created');
     const rendered = render(<Root />);
-    await screen.findByText('HOME');
+    await flushLazy();
+    expect(screen.getByText('HOME')).toBeInTheDocument();
     rendered.unmount();
-    act(() => vi.runOnlyPendingTimers());
     expect(window.cancelAnimationFrame).toHaveBeenCalled();
   });
 });
