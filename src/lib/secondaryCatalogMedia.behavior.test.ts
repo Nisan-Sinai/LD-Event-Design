@@ -106,7 +106,7 @@ describe('installSecondaryCatalogMedia', () => {
 
     next.click();
     expect(media.dataset.catalogGalleryIndex).toBe('1');
-    expect(images[1].style.opacity).toBe('1');
+    expect(media.querySelector<HTMLImageElement>('[data-catalog-image-index="1"]')?.style.opacity).toBe('1');
     previous.click();
     expect(media.dataset.catalogGalleryIndex).toBe('0');
     dots[3].click();
@@ -126,7 +126,6 @@ describe('installSecondaryCatalogMedia', () => {
     media.dispatchEvent(touch('touchend', 150, 200));
     expect(media.dataset.catalogGalleryIndex).toBe('1');
 
-    // Re-applying identical data must not duplicate generated controls.
     document.getElementById('root')!.append(document.createElement('span'));
     await tick();
     expect(media.querySelectorAll('[data-catalog-gallery-generated="next"]')).toHaveLength(1);
