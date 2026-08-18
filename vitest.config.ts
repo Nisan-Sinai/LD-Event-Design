@@ -42,6 +42,7 @@ export default defineConfig({
         // העלאת התמונות כוללת כעת ענפי fallback תלויי דפדפן/codec; הבדיקות הייעודיות
         // מכסות את ההתנהגות הנתמכת, והסף שומר רצפה קשיחה בלי לדרוש מסלולים שאינם זמינים ב-jsdom.
         'src/lib/packages.ts': { statements: 69, functions: 80, lines: 69, branches: 60 },
+        'src/packages/PackagesProvider.tsx': FULL,
         'src/i18n/content.ts': FULL,
         // vitest 4 משתמש ב-AST-aware remapping מדויק יותר: שני ענפי typeof הגנתיים
         // ב-useEffect (meta.title/description שתמיד מחרוזות) נספרים כעת כלא-מכוסים.
