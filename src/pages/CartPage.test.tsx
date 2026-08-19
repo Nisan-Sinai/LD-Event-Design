@@ -115,4 +115,20 @@ describe('CartPage', () => {
     expect(screen.getByText('Your design cart')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Continue to complete your selection' })).toBeInTheDocument();
   });
+
+  it('localizes built-in shop products already stored in the cart when English is selected', () => {
+    window.localStorage.setItem('ld-lang', 'en');
+    renderCart([{
+      id: 'product-composite-5-6',
+      title: 'קומפוזיציית פרחים ונרות לשולחן',
+      subtitle: '5–6 אגרטלי ניצן ונרות לשולחן סטנדרטי',
+      category: 'מרכזי שולחן',
+      price: 2900,
+      quantity: 1,
+      svgType: 'floral'
+    }]);
+
+    expect(screen.getByText('Flower & Candle Table Composition')).toBeInTheDocument();
+    expect(screen.getByText('Table centerpieces')).toBeInTheDocument();
+  });
 });
