@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { ArrowLeft, ArrowRight, Check, Minus, Palette, Plus, ShoppingBag, Sparkles, Trash2 } from 'lucide-react';
 import { ArtDefsHost, renderPackageSVG } from '../App';
-import { MINIMUM_ORDER, useCart } from '../cart/CartProvider';
+import { MINIMUM_ORDER, useCart, type CartItem } from '../cart/CartProvider';
 import { QuoteNotice } from '../components/QuoteNotice';
-import { useI18n } from '../i18n/i18n';
+import { categoryLabel, PACKAGE_EN } from '../i18n/content';
+import { useI18n, type Lang } from '../i18n/i18n';
+import { localizedProductCategory, localizedProductText } from '../i18n/products';
 
 const COPY = {
   he: {
@@ -14,6 +16,8 @@ const COPY = {
     back: 'חזרה לחנות',
     remove: 'הסרה',
     quantity: 'כמות',
+    decrease: (title: string) => `הפחתת כמות ${title}`,
+    increase: (title: string) => `הגדלת כמות ${title}`,
     subtotal: 'אומדן נוכחי',
     total: 'סה״כ אומדן',
     minimum: 'מינימום להזמנה הינו 2,900 ש״ח',
@@ -22,12 +26,18 @@ const COPY = {
     clear: 'ריקון העגלה',
     guest: 'אין צורך בהרשמה. כל הבחירות נשמרות לקראת השלמת ההזמנה מולנו.',
     cartLabel: 'עגלת קניות',
+    designChoices: 'הבחירות העיצוביות שלכם',
     colors: 'צבעי האקססוריז, הפרחים או הבלונים',
     notSelected: 'טרם נכתבו — נסגור יחד בהמשך',
     request: 'בקשה עיצובית אישית',
+    noRequest: 'לא נוספה בקשה מיוחדת',
+    updateDesign: 'עדכון בחירות העיצוב',
     coupon: 'קוד קופון',
+    couponPlaceholder: 'הקלידו קוד',
     apply: 'הפעלת קופון',
-    checking: 'בודק…'
+    checking: 'בודק…',
+    couponSuccess: 'קופון התקבל! מתנה מפתיעה מחכה לכם בשיחת הטלפון איתנו :)',
+    cancel: 'ביטול'
   },
   en: {
     title: 'Your design cart',
@@ -36,6 +46,8 @@ const COPY = {
     back: 'Back to shop',
     remove: 'Remove',
     quantity: 'Quantity',
+    decrease: (title: string) => `Decrease quantity of ${title}`,
+    increase: (title: string) => `Increase quantity of ${title}`,
     subtotal: 'Current estimate',
     total: 'Estimated total',
     minimum: 'Minimum order is ₪2,900',
@@ -44,21 +56,49 @@ const COPY = {
     clear: 'Clear cart',
     guest: 'No registration required. No payment is collected now — choose your order and we will contact you to complete it.',
     cartLabel: 'Shopping cart',
+    designChoices: 'Your design choices',
     colors: 'Accessory, flower or balloon colors',
     notSelected: 'Not entered yet — we can refine them together',
     request: 'Custom design request',
+    noRequest: 'No special request added',
+    updateDesign: 'Update design choices',
     coupon: 'Promo code',
+    couponPlaceholder: 'Enter code',
     apply: 'Apply code',
-    checking: 'Checking…'
+    checking: 'Checking…',
+    couponSuccess: 'Promo code accepted! A special surprise is waiting for you when we speak :)',
+    cancel: 'Cancel'
   }
 } as const;
 
-function money(value: number) {
-  return `₪${value.toLocaleString('he-IL')}`;
+function money(value: number, lang: Lang) {
+  return `₪${value.toLocaleString(lang === 'he' ? 'he-IL' : 'en-US')}`;
+}
+
+function localizedCartItem(item: CartItem, lang: Lang) {
+  if (lang !== 'en') return item;
+
+  const packageText = PACKAGE_EN[item.id];
+  if (packageText) {
+    return {
+      ...item,
+      title: packageText.title,
+      subtitle: packageText.subtitle,
+      category: categoryLabel(item.category, lang)
+    };
+  }
+
+  const productText = localizedProductText(item.id, item, lang);
+  return {
+    ...item,
+    title: productText.title,
+    subtitle: productText.subtitle,
+    category: localizedProductCategory(item.category, lang)
+  };
 }
 
 export function CartPage() {
-  const { t, lang } = useI18n();
+  const { t, lang, dir } = useI18n();
   const copy = COPY[lang];
   const {
     items,
@@ -91,7 +131,7 @@ export function CartPage() {
 
   if (items.length === 0) {
     return (
-      <section className="mx-auto max-w-3xl px-4 py-24 text-center">
+      <section className="mx-auto max-w-3xl px-4 py-24 text-center" dir={dir}>
         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#F4E3E3] text-[#B8860B]">
           <ShoppingBag className="h-9 w-9" aria-hidden="true" />
         </div>
@@ -106,7 +146,7 @@ export function CartPage() {
   }
 
   return (
-    <section className="bg-[#FAF6F0] py-10 sm:py-16" aria-label={copy.cartLabel}>
+    <section className="bg-[#FAF6F0] py-10 sm:py-16" aria-label={copy.cartLabel} dir={dir}>
       <ArtDefsHost />
       <div className="mx-auto max-w-6xl px-4">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
@@ -122,53 +162,56 @@ export function CartPage() {
 
         <div className="grid gap-7 lg:grid-cols-[1fr_380px]">
           <div className="space-y-4">
-            {items.map((item) => (
-              <article key={item.id} className="grid gap-4 rounded-[2rem] border border-[#E8C5B8]/70 bg-white p-4 shadow-sm sm:grid-cols-[150px_1fr] sm:p-5">
-                <div className="flex min-h-32 items-center justify-center overflow-hidden rounded-[1.5rem] bg-[#F4E3E3] p-2">
-                  {item.image ? (
-                    <img src={item.image} alt={item.title} className="h-32 w-full rounded-2xl object-cover" />
-                  ) : (
-                    <div className="w-full">{renderPackageSVG(item.svgType)}</div>
-                  )}
-                </div>
-
-                <div className="flex min-w-0 flex-col justify-between gap-4">
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#B8860B]">{item.category}</p>
-                    <h3 className="font-display mt-1 text-xl font-black text-[#2C2C2C]">{item.title}</h3>
-                    <p className="mt-1 text-xs leading-relaxed text-[#766C65]">{item.subtitle}</p>
+            {items.map((item) => {
+              const text = localizedCartItem(item, lang);
+              return (
+                <article key={item.id} className="grid gap-4 rounded-[2rem] border border-[#E8C5B8]/70 bg-white p-4 shadow-sm sm:grid-cols-[150px_1fr] sm:p-5">
+                  <div className="flex min-h-32 items-center justify-center overflow-hidden rounded-[1.5rem] bg-[#F4E3E3] p-2">
+                    {item.image ? (
+                      <img src={item.image} alt={text.title} className="h-32 w-full rounded-2xl object-cover" />
+                    ) : (
+                      <div className="w-full">{renderPackageSVG(item.svgType)}</div>
+                    )}
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center rounded-full border border-[#E8C5B8] bg-[#FAF6F0]" role="group" aria-label={`${copy.quantity}: ${item.title}`}>
-                      <button type="button" onClick={() => updateQuantity(item.id, item.quantity - 1)} aria-label={`הפחתת כמות ${item.title}`} className="p-2.5 text-[#B8860B] hover:bg-white">
-                        <Minus className="h-4 w-4" aria-hidden="true" />
-                      </button>
-                      <span className="min-w-10 text-center text-sm font-bold" aria-live="polite">{item.quantity}</span>
-                      <button type="button" onClick={() => updateQuantity(item.id, item.quantity + 1)} aria-label={`הגדלת כמות ${item.title}`} className="p-2.5 text-[#B8860B] hover:bg-white">
-                        <Plus className="h-4 w-4" aria-hidden="true" />
-                      </button>
+                  <div className="flex min-w-0 flex-col justify-between gap-4">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#B8860B]">{text.category}</p>
+                      <h3 className="font-display mt-1 text-xl font-black text-[#2C2C2C]">{text.title}</h3>
+                      <p className="mt-1 text-xs leading-relaxed text-[#766C65]">{text.subtitle}</p>
                     </div>
 
-                    <div className="flex items-center gap-4">
-                      <strong className="font-display text-xl font-black text-[#B8860B]">{money(item.price * item.quantity)}</strong>
-                      <button type="button" onClick={() => removeItem(item.id)} aria-label={copy.remove} className="inline-flex items-center gap-1 text-xs font-bold text-red-600 hover:underline">
-                        <Trash2 className="h-4 w-4" aria-hidden="true" />
-                        {copy.remove}
-                      </button>
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center rounded-full border border-[#E8C5B8] bg-[#FAF6F0]" role="group" aria-label={`${copy.quantity}: ${text.title}`}>
+                        <button type="button" onClick={() => updateQuantity(item.id, item.quantity - 1)} aria-label={copy.decrease(text.title)} className="p-2.5 text-[#B8860B] hover:bg-white">
+                          <Minus className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                        <span className="min-w-10 text-center text-sm font-bold" aria-live="polite">{item.quantity}</span>
+                        <button type="button" onClick={() => updateQuantity(item.id, item.quantity + 1)} aria-label={copy.increase(text.title)} className="p-2.5 text-[#B8860B] hover:bg-white">
+                          <Plus className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-4">
+                        <strong className="font-display text-xl font-black text-[#B8860B]">{money(item.price * item.quantity, lang)}</strong>
+                        <button type="button" onClick={() => removeItem(item.id)} aria-label={`${copy.remove}: ${text.title}`} className="inline-flex items-center gap-1 text-xs font-bold text-red-600 hover:underline">
+                          <Trash2 className="h-4 w-4" aria-hidden="true" />
+                          {copy.remove}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </article>
-            ))}
+                </article>
+              );
+            })}
 
             <section className="rounded-[2rem] border border-[#E8C5B8]/70 bg-white p-5 sm:p-6">
-              <h3 className="flex items-center gap-2 font-display text-xl font-black text-[#2C2C2C]"><Palette className="h-5 w-5 text-[#B8860B]" aria-hidden="true" />הבחירות העיצוביות שלכם</h3>
+              <h3 className="flex items-center gap-2 font-display text-xl font-black text-[#2C2C2C]"><Palette className="h-5 w-5 text-[#B8860B]" aria-hidden="true" />{copy.designChoices}</h3>
               <dl className="mt-4 grid gap-3 text-sm text-[#6C625A]">
                 <div className="rounded-2xl bg-[#FAF6F0] p-4"><dt className="font-extrabold text-[#2C2C2C]">{copy.colors}</dt><dd className="mt-1 whitespace-pre-wrap">{preferences.customColors || copy.notSelected}</dd></div>
-                <div className="rounded-2xl bg-[#FAF6F0] p-4"><dt className="font-extrabold text-[#2C2C2C]">{copy.request}</dt><dd className="mt-1 whitespace-pre-wrap">{preferences.customRequest || 'לא נוספה בקשה מיוחדת'}</dd></div>
+                <div className="rounded-2xl bg-[#FAF6F0] p-4"><dt className="font-extrabold text-[#2C2C2C]">{copy.request}</dt><dd className="mt-1 whitespace-pre-wrap">{preferences.customRequest || copy.noRequest}</dd></div>
               </dl>
-              <Link to="/#design-details" className="mt-4 inline-flex items-center gap-2 text-xs font-extrabold text-[#B8860B] hover:underline"><Sparkles className="h-4 w-4" aria-hidden="true" />עדכון בחירות העיצוב</Link>
+              <Link to="/#design-details" className="mt-4 inline-flex items-center gap-2 text-xs font-extrabold text-[#B8860B] hover:underline"><Sparkles className="h-4 w-4" aria-hidden="true" />{copy.updateDesign}</Link>
             </section>
           </div>
 
@@ -176,19 +219,19 @@ export function CartPage() {
             <h3 className="font-display text-2xl font-black text-[#2C2C2C]">{copy.total}</h3>
             <div className="mt-5 flex justify-between gap-3 border-b border-[#E8C5B8]/60 pb-4 text-sm">
               <span className="text-[#6C625A]">{copy.subtotal}</span>
-              <strong className="font-display text-2xl font-black text-[#B8860B]">{money(subtotal)}</strong>
+              <strong className="font-display text-2xl font-black text-[#B8860B]">{money(subtotal, lang)}</strong>
             </div>
 
             <div className="mt-5">
               <label htmlFor="cart-coupon" className="text-xs font-extrabold text-[#2C2C2C]">{copy.coupon}</label>
               <div className="mt-2 flex gap-2">
-                <input id="cart-coupon" value={couponInput} onChange={(event) => { setCouponInput(event.target.value); setCouponError(''); }} placeholder="הקלידו קוד" className="min-w-0 flex-1 rounded-full border border-[#E8C5B8] px-4 py-2.5 text-sm outline-none focus:border-[#B8860B]" />
+                <input id="cart-coupon" value={couponInput} onChange={(event) => { setCouponInput(event.target.value); setCouponError(''); }} placeholder={copy.couponPlaceholder} className="min-w-0 flex-1 rounded-full border border-[#E8C5B8] px-4 py-2.5 text-sm outline-none focus:border-[#B8860B]" />
                 <button type="button" onClick={() => void submitCoupon()} disabled={couponBusy} className="rounded-full bg-[#2C2C2C] px-4 py-2.5 text-xs font-bold text-white disabled:cursor-wait disabled:opacity-60">{couponBusy ? copy.checking : copy.apply}</button>
               </div>
               {preferences.couponApplied && (
                 <div role="status" className="mt-3 flex items-start gap-2 rounded-2xl bg-emerald-50 p-3 text-xs font-bold leading-relaxed text-emerald-800">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />קופון התקבל! מתנה מפתיעה מחכה לכם בשיחת הטלפון איתנו :)
-                  <button type="button" onClick={() => { clearCoupon(); setCouponInput(''); }} className="ms-auto underline">ביטול</button>
+                  <Check className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />{copy.couponSuccess}
+                  <button type="button" onClick={() => { clearCoupon(); setCouponInput(''); }} className="ms-auto underline">{copy.cancel}</button>
                 </div>
               )}
               {couponError && <p role="alert" className="mt-2 text-xs font-bold text-red-600">{couponError}</p>}
@@ -196,7 +239,7 @@ export function CartPage() {
 
             <div className={`mt-5 rounded-2xl border p-4 text-xs font-bold leading-relaxed ${canCheckout ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-[#E8C5B8] bg-[#F4E3E3] text-[#7A493D]'}`}>
               <p>{copy.minimum}</p>
-              {!canCheckout && <p className="mt-1">{copy.missing}: {money(minimumMissing)}</p>}
+              {!canCheckout && <p className="mt-1">{copy.missing}: {money(minimumMissing, lang)}</p>}
             </div>
 
             <div className="mt-5"><QuoteNotice compact /></div>
