@@ -1,9 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import { I18nProvider } from '../i18n/i18n';
 import { TestimonialsCarousel } from './TestimonialsCarousel';
+
+function renderCarousel() {
+  return render(<I18nProvider><TestimonialsCarousel /></I18nProvider>);
+}
 
 beforeEach(() => {
   vi.useFakeTimers();
+  window.localStorage.removeItem('ld-lang');
 });
 
 afterEach(() => {
@@ -13,7 +19,7 @@ afterEach(() => {
 
 describe('TestimonialsCarousel', () => {
   it('renders the first testimonial, five stars and active dot', () => {
-    render(<TestimonialsCarousel />);
+    renderCarousel();
     expect(screen.getByText('שני ואיתי')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'תמונת פרופיל של שני ואיתי' })).toHaveTextContent('ש״א');
     expect(screen.getByRole('img', { name: 'דירוג 5 מתוך 5' }).querySelectorAll('svg')).toHaveLength(5);
@@ -21,7 +27,7 @@ describe('TestimonialsCarousel', () => {
   });
 
   it('moves next, previous with wraparound, and jumps directly with dots', () => {
-    render(<TestimonialsCarousel />);
+    renderCarousel();
     fireEvent.click(screen.getByRole('button', { name: 'המלצה הבאה' }));
     expect(screen.getByText('משפחת לוי')).toBeInTheDocument();
 
@@ -36,7 +42,7 @@ describe('TestimonialsCarousel', () => {
   });
 
   it('auto-advances every 6.5 seconds and wraps after the last testimonial', () => {
-    render(<TestimonialsCarousel />);
+    renderCarousel();
     act(() => vi.advanceTimersByTime(6500));
     expect(screen.getByText('משפחת לוי')).toBeInTheDocument();
     act(() => vi.advanceTimersByTime(6500));
@@ -47,7 +53,7 @@ describe('TestimonialsCarousel', () => {
 
   it('clears the interval on unmount', () => {
     const clear = vi.spyOn(window, 'clearInterval');
-    const { unmount } = render(<TestimonialsCarousel />);
+    const { unmount } = renderCarousel();
     unmount();
     expect(clear).toHaveBeenCalled();
   });

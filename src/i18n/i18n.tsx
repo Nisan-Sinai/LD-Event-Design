@@ -76,7 +76,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 
   const t = useCallback(
     (key: string, vars?: Record<string, string | number>) => {
-      const raw = resolve(DICTS[lang], key) ?? resolve(DICTS.he, key);
+      const raw = resolve(DICTS[lang], key);
       let str = typeof raw === 'string' ? raw : key;
       if (vars) {
         for (const [k, v] of Object.entries(vars)) {
@@ -90,7 +90,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 
   const tList = useCallback(
     (key: string) => {
-      const raw = resolve(DICTS[lang], key) ?? resolve(DICTS.he, key);
+      const raw = resolve(DICTS[lang], key);
       return Array.isArray(raw) ? (raw as string[]) : [];
     },
     [lang]

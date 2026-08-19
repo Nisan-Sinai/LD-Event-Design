@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { I18nProvider } from '../i18n/i18n';
 
 const state = vi.hoisted(() => ({
   submit: vi.fn(async () => ({ id: 'lead-1' }))
@@ -8,6 +9,10 @@ const state = vi.hoisted(() => ({
 vi.mock('../lib/submitLead', () => ({ submitLead: state.submit }));
 
 import { LeadCaptureModal } from './LeadCaptureModal';
+
+function renderModal() {
+  return render(<I18nProvider><LeadCaptureModal /></I18nProvider>);
+}
 
 function showByTimer() {
   act(() => {
@@ -22,6 +27,7 @@ function fillValidForm() {
 
 beforeEach(() => {
   vi.useFakeTimers();
+  window.localStorage.removeItem('ld-lang');
   window.sessionStorage.clear();
   state.submit.mockReset().mockResolvedValue({ id: 'lead-1' });
   document.body.style.overflow = '';
@@ -39,14 +45,14 @@ afterEach(() => {
 describe('LeadCaptureModal', () => {
   it('does not schedule or show after this session was already dismissed', () => {
     window.sessionStorage.setItem('ld-event-design-lead-popup-dismissed', '1');
-    render(<LeadCaptureModal />);
+    renderModal();
     showByTimer();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('opens after 14 seconds, locks scroll, focuses the dialog and renders the intended field styling', () => {
     document.body.style.overflow = 'auto';
-    const { unmount } = render(<LeadCaptureModal />);
+    const { unmount } = renderModal();
     showByTimer();
 
     const dialog = screen.getByRole('dialog');
@@ -56,8 +62,8 @@ describe('LeadCaptureModal', () => {
 
     const phone = screen.getByLabelText('טלפון');
     expect(phone).toHaveAttribute('dir', 'ltr');
-    expect(phone).toHaveClass('lead-phone-input', 'pr-11', 'pl-4', 'text-right');
-    expect(phone).not.toHaveClass('ps-11', 'pe-4');
+    expect(phone).toHaveClass('ps-11', 'pe-4', 'text-right');
+    expect(phone).not.toHaveClass('pl-11', 'pr-11');
     expect(screen.getByLabelText('תאריך האירוע')).toHaveAttribute('type', 'date');
     expect(screen.getByText('תאריך האירוע')).toBeVisible();
 
@@ -66,7 +72,7 @@ describe('LeadCaptureModal', () => {
   });
 
   it('opens only after enough scroll and only on a real top-edge exit', () => {
-    const { unmount } = render(<LeadCaptureModal />);
+    const { unmount } = renderModal();
     Object.defineProperty(window, 'scrollY', { configurable: true, value: 400 });
     fireEvent.scroll(window);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -77,7 +83,7 @@ describe('LeadCaptureModal', () => {
     unmount();
 
     window.sessionStorage.clear();
-    render(<LeadCaptureModal />);
+    renderModal();
     fireEvent.mouseLeave(document, { clientY: 50 });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     fireEvent.mouseLeave(document, { clientY: 8 });
@@ -85,7 +91,7 @@ describe('LeadCaptureModal', () => {
   });
 
   it('does not reopen or duplicate the modal after it has already been shown once', () => {
-    render(<LeadCaptureModal />);
+    renderModal();
     showByTimer();
     expect(screen.getAllByRole('dialog')).toHaveLength(1);
     fireEvent.scroll(window);
@@ -95,7 +101,7 @@ describe('LeadCaptureModal', () => {
   });
 
   it('closes from Escape, close button and backdrop, but not from dialog mouse down', () => {
-    render(<LeadCaptureModal />);
+    renderModal();
     showByTimer();
     const dialog = screen.getByRole('dialog');
     fireEvent.keyDown(window, { key: 'Enter' });
@@ -107,14 +113,14 @@ describe('LeadCaptureModal', () => {
     expect(window.sessionStorage.getItem('ld-event-design-lead-popup-dismissed')).toBe('1');
 
     window.sessionStorage.clear();
-    const { unmount } = render(<LeadCaptureModal />);
+    const { unmount } = renderModal();
     showByTimer();
     fireEvent.click(screen.getByRole('button', { name: 'סגירת חלון הייעוץ' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     unmount();
 
     window.sessionStorage.clear();
-    const rendered = render(<LeadCaptureModal />);
+    const rendered = renderModal();
     showByTimer();
     const backdrop = screen.getByRole('dialog').parentElement!;
     fireEvent.mouseDown(backdrop);
@@ -123,7 +129,7 @@ describe('LeadCaptureModal', () => {
   });
 
   it('validates full name/phone and clears the error when a field changes', () => {
-    render(<LeadCaptureModal />);
+    renderModal();
     showByTimer();
     fireEvent.submit(screen.getByRole('button', { name: 'כן, אשמח לשיחת ייעוץ במתנה' }).closest('form')!);
     expect(screen.getByRole('alert')).toHaveTextContent('נא למלא שם מלא ומספר טלפון תקין.');
@@ -137,7 +143,7 @@ describe('LeadCaptureModal', () => {
   });
 
   it('validates email format only when an email was supplied', () => {
-    render(<LeadCaptureModal />);
+    renderModal();
     showByTimer();
     fillValidForm();
     fireEvent.change(screen.getByLabelText('אימייל'), { target: { value: 'not-an-email' } });
@@ -147,7 +153,7 @@ describe('LeadCaptureModal', () => {
   });
 
   it('silently ignores bots that fill the hidden website honeypot', () => {
-    render(<LeadCaptureModal />);
+    renderModal();
     showByTimer();
     fillValidForm();
     const website = document.querySelector<HTMLInputElement>('input[autocomplete="off"]')!;
@@ -160,7 +166,7 @@ describe('LeadCaptureModal', () => {
   it('submits all fields, shows busy state, then success and allows dismissing the success view', async () => {
     let resolve!: (value: { id: string }) => void;
     state.submit.mockImplementationOnce(() => new Promise((done) => { resolve = done; }));
-    render(<LeadCaptureModal />);
+    renderModal();
     showByTimer();
     fillValidForm();
     fireEvent.change(screen.getByLabelText('אימייל'), { target: { value: ' nisan@example.com ' } });
@@ -187,7 +193,7 @@ describe('LeadCaptureModal', () => {
 
   it('shows a recoverable error when lead submission fails and re-enables submit', async () => {
     state.submit.mockRejectedValueOnce(new Error('network'));
-    render(<LeadCaptureModal />);
+    renderModal();
     showByTimer();
     fillValidForm();
     await act(async () => {

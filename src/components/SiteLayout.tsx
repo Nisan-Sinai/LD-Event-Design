@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router';
 import { Facebook, Instagram, LogOut, Phone, ShoppingBag, Sparkles, User as UserIcon, X } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { useCart } from '../cart/CartProvider';
-import { useI18n } from '../i18n/i18n';
+import { useI18n, type Lang } from '../i18n/i18n';
 import { brandLogoUrl } from '../lib/branding';
 import { usePackages } from '../packages/PackagesProvider';
 import { AccessibilityWidget } from './AccessibilityWidget';
@@ -21,22 +21,54 @@ const FOCUSABLE_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])'
 ].join(',');
 
-const CANCELLATION_POLICY = [
-  'במקרה של ביטול עקב כוח עליון — מלחמה או מגפה — הסכום ששולם יועבר לזיכוי לתאריך חלופי על בסיס זמינות. אם לא יימצא תאריך מוסכם, לא יוחזרו 50% מסכום העסקה הכולל.',
-  'במקרה של כל ביטול אחר, לא יוחזר ללקוח כל תשלום והלקוח יחויב במלוא תשלום העסקה.',
-  'אם לא יימצא תאריך חלופי, הלקוח/ה יוכל/תוכל להגיע לקחת את הציוד שהוזמן לאירוע בתשלום מלא של העסקה, ללא הובלה והרכבה ובכפוף להשארת פיקדון עד להחזרת הציוד.',
-  'ניתן לעדכן תוספות קלות בכמויות ההזמנה עד 30 ימי עסקים לפני מועד האירוע.',
-  'האחריות על הציוד בזמן האירוע חלה על הלקוח/ה.',
-  'יתרת התשלום תועבר בהעברה בנקאית כאישור, כשבוע לפני מועד האירוע.'
-];
+const CANCELLATION_POLICY = {
+  he: [
+    'במקרה של ביטול עקב כוח עליון — מלחמה או מגפה — הסכום ששולם יועבר לזיכוי לתאריך חלופי על בסיס זמינות. אם לא יימצא תאריך מוסכם, לא יוחזרו 50% מסכום העסקה הכולל.',
+    'במקרה של כל ביטול אחר, לא יוחזר ללקוח כל תשלום והלקוח יחויב במלוא תשלום העסקה.',
+    'אם לא יימצא תאריך חלופי, הלקוח/ה יוכל/תוכל להגיע לקחת את הציוד שהוזמן לאירוע בתשלום מלא של העסקה, ללא הובלה והרכבה ובכפוף להשארת פיקדון עד להחזרת הציוד.',
+    'ניתן לעדכן תוספות קלות בכמויות ההזמנה עד 30 ימי עסקים לפני מועד האירוע.',
+    'האחריות על הציוד בזמן האירוע חלה על הלקוח/ה.',
+    'יתרת התשלום תועבר בהעברה בנקאית כאישור, כשבוע לפני מועד האירוע.'
+  ],
+  en: [
+    'In the event of cancellation due to force majeure — war or pandemic — the amount paid will be transferred as credit toward an alternative date subject to availability. If no mutually agreed date is found, 50% of the total transaction amount will not be refunded.',
+    'For any other cancellation, no payment will be refunded and the client will be charged the full transaction amount.',
+    'If no alternative date is found, the client may collect the equipment ordered for the event after full payment, without delivery or setup, subject to leaving a deposit until the equipment is returned.',
+    'Minor quantity changes to add-ons may be made up to 30 business days before the event date.',
+    'The client is responsible for the equipment during the event.',
+    'The remaining balance will be paid by bank transfer as confirmation, approximately one week before the event.'
+  ]
+} as const;
 
-function money(value: number) {
-  return `₪${value.toLocaleString('he-IL')}`;
+const COPY = {
+  he: {
+    logoAlt: 'לוגו LD Event Design',
+    footerDescription: 'עיצוב אירועים נשי, מדויק ומלא רגש — מהרעיון הראשון ועד לרגע שבו האורחים נכנסים.',
+    instagram: 'אינסטגרם LD Event Design',
+    facebook: 'פייסבוק LD Event Design',
+    importantInfo: 'מידע חשוב',
+    cancellationPolicy: 'מדיניות ביטולים ושינויים',
+    creditWhatsapp: 'היי ניסן, ראיתי אתר שעיצבת ואשמח לפרטים על בניית אתר 🙂'
+  },
+  en: {
+    logoAlt: 'LD Event Design logo',
+    footerDescription: 'Feminine, precise and heartfelt event design — from the first idea to the moment your guests walk in.',
+    instagram: 'LD Event Design on Instagram',
+    facebook: 'LD Event Design on Facebook',
+    importantInfo: 'Important information',
+    cancellationPolicy: 'Cancellation and change policy',
+    creditWhatsapp: 'Hi Nisan, I saw a website you designed and would love details about building a website 🙂'
+  }
+} as const;
+
+function money(value: number, lang: Lang) {
+  return `₪${value.toLocaleString(lang === 'he' ? 'he-IL' : 'en-US')}`;
 }
 
 export function SiteLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { t, tList, lang, dir, setLang } = useI18n();
+  const copy = COPY[lang];
   const { user, role, roleLoading, signOut } = useAuth();
   const { itemCount, subtotal } = useCart();
   const { overrides } = usePackages();
@@ -128,7 +160,7 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
           <Link to="/" className="group flex min-w-0 items-center gap-2.5">
             {logoUrl ? (
               <span className="flex h-14 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[#E8C5B8]/70 bg-white shadow-sm sm:h-16 sm:w-24">
-                <img src={logoUrl} alt="לוגו LD Event Design" className="h-full w-full object-cover object-center" />
+                <img src={logoUrl} alt={copy.logoAlt} className="h-full w-full object-cover object-center" />
               </span>
             ) : (
               <div className="rounded-2xl bg-gradient-to-br from-[#D4AF37] via-[#C69A71] to-[#B8860B] p-2 text-white shadow-lg transition-transform group-hover:rotate-3 group-hover:scale-105">
@@ -161,7 +193,7 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
               className="relative inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#B8860B] to-[#D4AF37] px-3 py-2.5 text-xs font-extrabold text-white shadow-[0_10px_25px_rgba(184,134,11,0.23)] transition hover:-translate-y-0.5"
             >
               <ShoppingBag className="h-4 w-4" aria-hidden="true" />
-              <span className="hidden md:inline">{money(subtotal)}</span>
+              <span className="hidden md:inline">{money(subtotal, lang)}</span>
               <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[10px] font-black text-[#B8860B]">{itemCount}</span>
             </Link>
 
@@ -189,7 +221,7 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-3">
               {logoUrl ? (
                 <span className="flex h-16 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm">
-                  <img src={logoUrl} alt="לוגו LD Event Design" className="h-full w-full object-cover object-center" />
+                  <img src={logoUrl} alt={copy.logoAlt} className="h-full w-full object-cover object-center" />
                 </span>
               ) : (
                 <div className="rounded-2xl bg-gradient-to-br from-[#D4AF37] to-[#B8860B] p-3 text-white"><Sparkles className="h-5 w-5" aria-hidden="true" /></div>
@@ -199,14 +231,14 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
                 <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.18em] text-[#D4AF37]">{t('brand.tagline')}</p>
               </div>
             </div>
-            <p className="mt-4 max-w-xs text-xs leading-relaxed text-white/55">עיצוב אירועים נשי, מדויק ומלא רגש — מהרעיון הראשון ועד לרגע שבו האורחים נכנסים.</p>
+            <p className="mt-4 max-w-xs text-xs leading-relaxed text-white/55">{copy.footerDescription}</p>
             <a href="tel:+972545740423" className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-[#E8C5B8] hover:text-white">
               <Phone className="h-4 w-4" aria-hidden="true" />
               <span dir="ltr">054-5740423</span>
             </a>
             <div className="mt-5 flex gap-2">
-              <a href="https://www.instagram.com/ld_event_design?igsh=MWpsN2c2OWhyY2FsaQ==" target="_blank" rel="noopener noreferrer" aria-label="אינסטגרם LD Event Design" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5 text-[#E8C5B8] transition hover:-translate-y-1 hover:bg-[#E8C5B8] hover:text-[#24211F]"><Instagram className="h-4 w-4" aria-hidden="true" /></a>
-              <a href="https://www.facebook.com/share/1AvmE8yKWr/" target="_blank" rel="noopener noreferrer" aria-label="פייסבוק LD Event Design" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5 text-[#E8C5B8] transition hover:-translate-y-1 hover:bg-[#E8C5B8] hover:text-[#24211F]"><Facebook className="h-4 w-4" aria-hidden="true" /></a>
+              <a href="https://www.instagram.com/ld_event_design?igsh=MWpsN2c2OWhyY2FsaQ==" target="_blank" rel="noopener noreferrer" aria-label={copy.instagram} className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5 text-[#E8C5B8] transition hover:-translate-y-1 hover:bg-[#E8C5B8] hover:text-[#24211F]"><Instagram className="h-4 w-4" aria-hidden="true" /></a>
+              <a href="https://www.facebook.com/share/1AvmE8yKWr/" target="_blank" rel="noopener noreferrer" aria-label={copy.facebook} className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5 text-[#E8C5B8] transition hover:-translate-y-1 hover:bg-[#E8C5B8] hover:text-[#24211F]"><Facebook className="h-4 w-4" aria-hidden="true" /></a>
             </div>
           </div>
 
@@ -230,10 +262,10 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
           </nav>
 
           <nav aria-label={t('legal.terms')}>
-            <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.3em] text-[#D4AF37]">מידע חשוב</p>
+            <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.3em] text-[#D4AF37]">{copy.importantInfo}</p>
             <ul className="space-y-3 text-sm text-white/70">
               <li><button type="button" onClick={() => openLegalModal('privacy')} className="hover:text-white">{t('legal.privacy')}</button></li>
-              <li><button type="button" onClick={() => openLegalModal('terms')} className="hover:text-white">מדיניות ביטולים ושינויים</button></li>
+              <li><button type="button" onClick={() => openLegalModal('terms')} className="hover:text-white">{copy.cancellationPolicy}</button></li>
               <li><button type="button" onClick={() => openLegalModal('accessibility')} className="hover:text-white">{t('legal.accessibility')}</button></li>
             </ul>
           </nav>
@@ -243,7 +275,7 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
           <p className="mx-auto max-w-6xl px-4 py-5 text-center text-[10px] leading-relaxed text-white/40">
             <bdi dir="ltr">© {new Date().getFullYear()} LD EVENT DESIGN.</bdi> {t('footer.rights')}
             <br />
-            <a href={`https://wa.me/972587170978?text=${encodeURIComponent('היי ניסן, ראיתי אתר שעיצבת ואשמח לפרטים על בניית אתר 🙂')}`} target="_blank" rel="noopener noreferrer" className="text-white/55 underline-offset-2 hover:text-white hover:underline">{t('footer.credit')}</a>
+            <a href={`https://wa.me/972587170978?text=${encodeURIComponent(copy.creditWhatsapp)}`} target="_blank" rel="noopener noreferrer" className="text-white/55 underline-offset-2 hover:text-white hover:underline">{t('footer.credit')}</a>
           </p>
         </div>
       </footer>
@@ -252,12 +284,12 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-[#2C2C2C]/55 p-4 backdrop-blur-sm" onClick={closeLegalModal}>
           <div ref={legalPanelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="site-legal-title" aria-describedby="site-legal-body" className="max-h-[84vh] w-full max-w-2xl overflow-auto rounded-[2rem] border border-white/70 bg-[#FDFBF7] p-6 shadow-[0_35px_100px_rgba(44,44,44,0.3)] outline-none sm:p-8" onClick={(event) => event.stopPropagation()} dir={dir}>
             <div className="mb-4 flex items-center justify-between gap-4">
-              <h2 id="site-legal-title" className="font-display text-xl font-black text-[#2C2C2C]">{legalModal === 'terms' ? 'מדיניות ביטולים ושינויים' : t(`legal.${legalModal}`)}</h2>
+              <h2 id="site-legal-title" className="font-display text-xl font-black text-[#2C2C2C]">{legalModal === 'terms' ? copy.cancellationPolicy : t(`legal.${legalModal}`)}</h2>
               <button type="button" onClick={closeLegalModal} aria-label={t('legal.close')} className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#746B64] shadow-sm hover:text-[#2C2C2C]"><X className="h-5 w-5" aria-hidden="true" /></button>
             </div>
             <div id="site-legal-body" className="space-y-3 text-sm leading-relaxed text-[#5E5752]">
               {legalModal === 'terms'
-                ? CANCELLATION_POLICY.map((paragraph, index) => <p key={paragraph} className="rounded-2xl bg-white p-4"><strong className="text-[#B8860B]">{index + 1}.</strong> {paragraph}</p>)
+                ? CANCELLATION_POLICY[lang].map((paragraph, index) => <p key={paragraph} className="rounded-2xl bg-white p-4"><strong className="text-[#B8860B]">{index + 1}.</strong> {paragraph}</p>)
                 : tList(`legal.${legalModal}Body`).map((paragraph, index) => <p key={index}>{paragraph}</p>)}
             </div>
             <button type="button" onClick={closeLegalModal} className="mt-6 w-full rounded-full bg-gradient-to-r from-[#B8860B] to-[#D4AF37] py-3 text-sm font-extrabold text-white">{t('legal.close')}</button>

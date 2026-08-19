@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
+import { I18nProvider } from '../i18n/i18n';
 
 const state = vi.hoisted(() => ({
   items: [] as Array<{ id: string; title: string; category: string; price: number; quantity: number; image?: string }>,
@@ -19,14 +20,19 @@ vi.mock('../cart/CartProvider', () => ({
 
 import { CartDrawer } from './CartDrawer';
 
+function drawerUi(open = true, onClose = vi.fn()) {
+  return <I18nProvider><MemoryRouter><CartDrawer open={open} onClose={onClose} /></MemoryRouter></I18nProvider>;
+}
+
 function renderDrawer(open = true, onClose = vi.fn()) {
   return {
     onClose,
-    ...render(<MemoryRouter><CartDrawer open={open} onClose={onClose} /></MemoryRouter>)
+    ...render(drawerUi(open, onClose))
   };
 }
 
 beforeEach(() => {
+  window.localStorage.removeItem('ld-lang');
   state.items = [];
   state.subtotal = 0;
   state.preferences = { couponCode: '', couponApplied: false, customColors: '', customRequest: '' };
@@ -111,7 +117,7 @@ describe('CartDrawer', () => {
   it('rejects an invalid coupon, clears the error while editing, and resyncs the input when preferences change', async () => {
     state.items = [{ id: 'a', title: 'חבילה', category: 'אירוע', price: 2500, quantity: 1 }];
     state.subtotal = 2500;
-    const { rerender } = render(<MemoryRouter><CartDrawer open onClose={vi.fn()} /></MemoryRouter>);
+    const { rerender } = render(drawerUi(true, vi.fn()));
     const input = screen.getByLabelText('יש לכם קוד קופון?');
     fireEvent.change(input, { target: { value: 'BAD' } });
     fireEvent.click(screen.getByRole('button', { name: 'הפעלה' }));
@@ -122,7 +128,7 @@ describe('CartDrawer', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 
     state.preferences = { ...state.preferences, couponCode: 'SERVER' };
-    rerender(<MemoryRouter><CartDrawer open onClose={vi.fn()} /></MemoryRouter>);
+    rerender(drawerUi(true, vi.fn()));
     expect(screen.getByLabelText('יש לכם קוד קופון?')).toHaveValue('SERVER');
   });
 

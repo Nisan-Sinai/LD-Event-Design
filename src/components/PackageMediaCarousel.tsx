@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, PlayCircle } from 'lucide-react';
 import { usePackages } from '../packages/PackagesProvider';
 import type { OverrideMap } from '../lib/packages';
+import { useI18n } from '../i18n/i18n';
 
 type MediaSlide =
   | { type: 'image'; src: string; alt: string }
@@ -48,21 +49,43 @@ export function PackageMediaCarousel({
   mediaUrls?: string[];
   art: ReactNode;
 }) {
+  const { lang } = useI18n();
   const { overrides } = usePackages();
   const inferredUrls = mediaUrls?.length ? mediaUrls : inferPackageMediaUrls(mediaUrl, overrides);
   const uploadedMedia = normalizeMediaUrls(inferredUrls, mediaUrl).slice(0, 4);
+  const copy = lang === 'he'
+    ? {
+        video: 'סרטון',
+        videoAlt: (index: number) => `סרטון ${title} ${index}`,
+        imageAlt: (index: number) => `${title} — תמונה ${index}`,
+        artAlt: `המחשת עיצוב ${title}`,
+        previous: `תמונה קודמת של ${title}`,
+        next: `תמונה הבאה של ${title}`,
+        goTo: (index: number) => `מעבר למדיה ${index} של ${title}`
+      }
+    : {
+        video: 'Video',
+        videoAlt: (index: number) => `${title} video ${index}`,
+        imageAlt: (index: number) => `${title} — image ${index}`,
+        artAlt: `${title} design illustration`,
+        previous: `Previous image of ${title}`,
+        next: `Next image of ${title}`,
+        goTo: (index: number) => `Go to media ${index} of ${title}`
+      };
   const slides: MediaSlide[] = [
     ...uploadedMedia.map((url, mediaIndex): MediaSlide => (
       isVideo(url)
-        ? { type: 'video', src: url, alt: `סרטון ${title} ${mediaIndex + 1}` }
-        : { type: 'image', src: url, alt: uploadedMedia.length > 1 ? `${title} — תמונה ${mediaIndex + 1}` : title }
+        ? { type: 'video', src: url, alt: copy.videoAlt(mediaIndex + 1) }
+        : { type: 'image', src: url, alt: uploadedMedia.length > 1 ? copy.imageAlt(mediaIndex + 1) : title }
     )),
-    { type: 'art', content: art, alt: `המחשת עיצוב ${title}` }
+    { type: 'art', content: art, alt: copy.artAlt }
   ];
 
   const [index, setIndex] = useState(0);
   const current = slides[index] ?? slides[0];
   const move = (direction: number) => setIndex((value) => (value + direction + slides.length) % slides.length);
+  const PreviousIcon = lang === 'he' ? ChevronRight : ChevronLeft;
+  const NextIcon = lang === 'he' ? ChevronLeft : ChevronRight;
 
   return (
     <div className="group relative aspect-[16/11] overflow-hidden bg-gradient-to-br from-[#FAF6F0] to-[#F4E3E3]">
@@ -76,21 +99,21 @@ export function PackageMediaCarousel({
 
       {current.type === 'video' && (
         <span className="pointer-events-none absolute start-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-black/55 px-3 py-1.5 text-[11px] font-bold text-white backdrop-blur">
-          <PlayCircle className="h-4 w-4" aria-hidden="true" /> סרטון
+          <PlayCircle className="h-4 w-4" aria-hidden="true" /> {copy.video}
         </span>
       )}
 
       {slides.length > 1 && (
         <>
-          <button type="button" onClick={() => move(-1)} aria-label={`תמונה קודמת של ${title}`} className="absolute start-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#2C2C2C] shadow-lg backdrop-blur transition hover:bg-white">
-            <ChevronRight className="h-4 w-4" aria-hidden="true" />
+          <button type="button" onClick={() => move(-1)} aria-label={copy.previous} className="absolute start-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#2C2C2C] shadow-lg backdrop-blur transition hover:bg-white">
+            <PreviousIcon className="h-4 w-4" aria-hidden="true" />
           </button>
-          <button type="button" onClick={() => move(1)} aria-label={`תמונה הבאה של ${title}`} className="absolute end-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#2C2C2C] shadow-lg backdrop-blur transition hover:bg-white">
-            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+          <button type="button" onClick={() => move(1)} aria-label={copy.next} className="absolute end-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#2C2C2C] shadow-lg backdrop-blur transition hover:bg-white">
+            <NextIcon className="h-4 w-4" aria-hidden="true" />
           </button>
           <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/25 px-2.5 py-1.5 backdrop-blur">
             {slides.map((slide, slideIndex) => (
-              <button key={`${slide.type}-${slideIndex}`} type="button" onClick={() => setIndex(slideIndex)} aria-label={`מעבר למדיה ${slideIndex + 1} של ${title}`} aria-pressed={slideIndex === index} className={`h-1.5 rounded-full transition-all ${slideIndex === index ? 'w-6 bg-white' : 'w-1.5 bg-white/65'}`} />
+              <button key={`${slide.type}-${slideIndex}`} type="button" onClick={() => setIndex(slideIndex)} aria-label={copy.goTo(slideIndex + 1)} aria-pressed={slideIndex === index} className={`h-1.5 rounded-full transition-all ${slideIndex === index ? 'w-6 bg-white' : 'w-1.5 bg-white/65'}`} />
             ))}
           </div>
         </>

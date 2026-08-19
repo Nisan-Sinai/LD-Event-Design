@@ -57,7 +57,7 @@ describe('CartPage', () => {
     const second = { ...item, id: 'bar', title: 'בר מתוק', price: 2500, svgType: 'bar' };
     renderCart([item, second]);
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'הסרה' })[0]);
+    fireEvent.click(screen.getByRole('button', { name: `הסרה: ${item.title}` }));
     expect(screen.queryByText(item.title)).not.toBeInTheDocument();
     expect(screen.getByText(second.title)).toBeInTheDocument();
 
@@ -114,5 +114,21 @@ describe('CartPage', () => {
     renderCart([item]);
     expect(screen.getByText('Your design cart')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Continue to complete your selection' })).toBeInTheDocument();
+  });
+
+  it('localizes built-in shop products already stored in the cart when English is selected', () => {
+    window.localStorage.setItem('ld-lang', 'en');
+    renderCart([{
+      id: 'product-composite-5-6',
+      title: 'קומפוזיציית פרחים ונרות לשולחן',
+      subtitle: '5–6 אגרטלי ניצן ונרות לשולחן סטנדרטי',
+      category: 'מרכזי שולחן',
+      price: 2900,
+      quantity: 1,
+      svgType: 'floral'
+    }]);
+
+    expect(screen.getByText('Flower & Candle Table Composition')).toBeInTheDocument();
+    expect(screen.getByText('Table centerpieces')).toBeInTheDocument();
   });
 });
