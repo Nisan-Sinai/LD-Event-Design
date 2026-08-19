@@ -57,7 +57,7 @@ describe('CartPage', () => {
     const second = { ...item, id: 'bar', title: 'בר מתוק', price: 2500, svgType: 'bar' };
     renderCart([item, second]);
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'הסרה' })[0]);
+    fireEvent.click(screen.getByRole('button', { name: `הסרה: ${item.title}` }));
     expect(screen.queryByText(item.title)).not.toBeInTheDocument();
     expect(screen.getByText(second.title)).toBeInTheDocument();
 
