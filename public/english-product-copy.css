@@ -1,0 +1,8 @@
+/* English product copy is longer than the Hebrew source text.
+   Let storefront cards grow naturally instead of hiding content after two lines. */
+html[lang="en"] #products .line-clamp-2 {
+  display: block;
+  overflow: visible;
+  -webkit-box-orient: initial;
+  -webkit-line-clamp: unset;
+}
