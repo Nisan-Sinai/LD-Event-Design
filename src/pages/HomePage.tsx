@@ -25,8 +25,9 @@ import { LeadCaptureModal } from '../components/LeadCaptureModal';
 import { PackageMediaCarousel } from '../components/PackageMediaCarousel';
 import { QuoteNotice } from '../components/QuoteNotice';
 import { TestimonialsCarousel } from '../components/TestimonialsCarousel';
-import { useI18n } from '../i18n/i18n';
 import { categoryLabel, PACKAGE_EN } from '../i18n/content';
+import { useI18n, type Lang } from '../i18n/i18n';
+import { localizedProductCategory, localizedProductText } from '../i18n/products';
 import { buildCatalog } from '../lib/packages';
 import { usePackages } from '../packages/PackagesProvider';
 
@@ -35,8 +36,14 @@ const COPY = {
     eyebrow: 'עיצוב אירועים בקליק!',
     hero: 'האירוע שלכם. האמנות שלנו.',
     heroBody: 'פורטל אינטראקטיבי להרכבת חבילת עיצוב אישית — מדויקת לסיפור, לצבעים ולחלום שלכם.',
+    heroVideoAlt: 'עיצוב אירועים יוקרתי',
+    buildPersonal: 'הרכבת חבילה אישית',
+    viewPackages: 'צפייה בחבילות',
     products: 'פריטי עיצוב',
+    productsKicker: 'פרטים שנבחרו בקפידה',
+    productsBody: 'בחרו פריטים קטנים, שנו כמויות וצרו שילוב שמרגיש בדיוק שלכם.',
     packages: 'חבילות עיצוב',
+    packagesKicker: 'קולקציות נבחרות',
     add: 'הוספה לסל',
     added: 'נוסף לסל',
     from: 'החל מ־',
@@ -46,23 +53,41 @@ const COPY = {
     reviewCart: 'לסיכום בעגלה',
     item: 'פריט',
     items: 'פריטים',
+    designDetailsKicker: 'בריף צבעים אישי',
     designDetailsTitle: 'בוחרים צבעים במילים שלכם',
     designDetailsBody: 'כתבו בחופשיות אילו צבעים תרצו לאקססוריז, לפרחים או לבלונים. אפשר לציין שילובים, סגנון ודוגמאות — ונחזור אליכם כדי לדייק הכול יחד.',
     colorsLabel: 'צבעי האקססוריז, הפרחים או הבלונים',
     colorsPlaceholder: 'לדוגמה: פרחים לבנים ושמנת, נגיעות זהב באקססוריז ובלונים בגוון ורוד פודרה…',
     quantity: 'כמות',
+    decrease: (title: string) => `הפחתת כמות ${title}`,
+    increase: (title: string) => `הגדלת כמות ${title}`,
     customRequest: 'יש משהו ספציפי שתרצו באירוע ולא מופיע בחבילות?',
     customRequestPlaceholder: 'ספרו לנו עליו כאן ונשמח להגשים לכם אותו!',
     estimate: 'אומדן החבילה שלכם כרגע',
     mediaHint: 'החליקו בין תמונות והמחשות העיצוב',
-    shopNav: 'קטגוריות החנות'
+    shopNav: 'קטגוריות החנות',
+    floralKicker: 'סיפורי פרחים',
+    floralTitle: 'כך נראה אירוע שפורח לחיים',
+    floralBody: 'הצצה לעיצוב אירוע אלגנטי עם סידורי פרחים, תאורה רכה ואווירה מרגשת.',
+    floralVideoAlt: 'סרטון עיצוב אירוע עם סידורי פרחים',
+    instagramKicker: 'השראה חיה',
+    instagramTitle: 'מהאינסטגרם שלנו',
+    openInstagram: (title: string) => `פתיחת אינסטגרם — ${title}`,
+    contactTitle: 'בואו נדבר על האירוע שלכם',
+    contactBody: 'אנחנו כאן לכל שאלה, רעיון או חלום עיצובי — גם לפני שבחרתם חבילה.'
   },
   en: {
     eyebrow: 'Event design in a click!',
     hero: 'Your celebration. Our art.',
     heroBody: 'An interactive portal for building a personal event-design package around your story, colors and vision.',
+    heroVideoAlt: 'Luxury event design',
+    buildPersonal: 'Build a custom package',
+    viewPackages: 'View packages',
     products: 'Design pieces',
+    productsKicker: 'Curated details',
+    productsBody: 'Choose individual pieces, adjust quantities and create a combination that feels exactly right for you.',
     packages: 'Design packages',
+    packagesKicker: 'Curated collections',
     add: 'Add to cart',
     added: 'Added to cart',
     from: 'From',
@@ -72,57 +97,60 @@ const COPY = {
     reviewCart: 'Review in cart',
     item: 'item',
     items: 'items',
+    designDetailsKicker: 'Personal color brief',
     designDetailsTitle: 'Describe your colors in your own words',
     designDetailsBody: 'Tell us which colors you would like for accessories, flowers or balloons. Add combinations, style references and examples, and we will refine everything with you.',
     colorsLabel: 'Accessory, flower or balloon colors',
     colorsPlaceholder: 'For example: white and ivory flowers, gold accessories and powder-pink balloons…',
     quantity: 'Quantity',
+    decrease: (title: string) => `Decrease quantity of ${title}`,
+    increase: (title: string) => `Increase quantity of ${title}`,
     customRequest: 'Is there something special that is not included in the packages?',
     customRequestPlaceholder: 'Tell us about it and we will be happy to make it happen.',
     estimate: 'Your current package estimate',
     mediaHint: 'Swipe through imagery and design illustrations',
-    shopNav: 'Shop categories'
+    shopNav: 'Shop categories',
+    floralKicker: 'Floral stories',
+    floralTitle: 'See an event bloom to life',
+    floralBody: 'A glimpse into an elegant event design with floral arrangements, soft lighting and an emotional atmosphere.',
+    floralVideoAlt: 'Event design video with floral arrangements',
+    instagramKicker: 'Live inspiration',
+    instagramTitle: 'From our Instagram',
+    openInstagram: (title: string) => `Open Instagram — ${title}`,
+    contactTitle: 'Let’s talk about your event',
+    contactBody: 'We are here for every question, idea or design dream — even before you choose a package.'
   }
 } as const;
 
-function money(value: number) {
-  return `₪${value.toLocaleString('he-IL')}`;
+function money(value: number, lang: Lang) {
+  return `₪${value.toLocaleString(lang === 'he' ? 'he-IL' : 'en-US')}`;
 }
 
 interface QuantityStepperProps {
   title: string;
   quantity: number;
   label: string;
+  decreaseLabel: string;
+  increaseLabel: string;
   onIncrease: () => void;
   onDecrease: () => void;
 }
 
-function QuantityStepper({ title, quantity, label, onIncrease, onDecrease }: QuantityStepperProps) {
+function QuantityStepper({ title, quantity, label, decreaseLabel, increaseLabel, onIncrease, onDecrease }: QuantityStepperProps) {
   return (
     <div className="mt-4 flex items-center justify-between gap-3">
       <span className="text-[11px] font-extrabold text-[#6C625A]">{label}</span>
       <div className="inline-flex items-center rounded-full border border-[#E8C5B8] bg-[#FAF6F0]" role="group" aria-label={`${label}: ${title}`}>
-        <button type="button" onClick={onDecrease} disabled={quantity === 0} aria-label={`הפחתת כמות ${title}`} className="p-2 text-[#B8860B] disabled:cursor-not-allowed disabled:opacity-30">
+        <button type="button" onClick={onDecrease} disabled={quantity === 0} aria-label={decreaseLabel} className="p-2 text-[#B8860B] disabled:cursor-not-allowed disabled:opacity-30">
           <Minus className="h-3.5 w-3.5" aria-hidden="true" />
         </button>
         <span className="min-w-8 text-center text-xs font-black" aria-live="polite">{quantity}</span>
-        <button type="button" onClick={onIncrease} aria-label={`הגדלת כמות ${title}`} className="p-2 text-[#B8860B]">
+        <button type="button" onClick={onIncrease} aria-label={increaseLabel} className="p-2 text-[#B8860B]">
           <Plus className="h-3.5 w-3.5" aria-hidden="true" />
         </button>
       </div>
     </div>
   );
-}
-
-function productCategoryLabel(category: string, lang: 'he' | 'en') {
-  if (lang === 'he') return category;
-  const labels: Record<string, string> = {
-    [SHOP_PRODUCT_CATEGORIES.CENTERPIECES]: 'Table centerpieces',
-    [SHOP_PRODUCT_CATEGORIES.CHUPPAH]: 'Chuppah styling',
-    [SHOP_PRODUCT_CATEGORIES.ENTRANCE]: 'Entrance styling',
-    [SHOP_PRODUCT_CATEGORIES.SWEET_BAR]: 'Sweet bar & accessories'
-  };
-  return labels[category] ?? category;
 }
 
 export function HomePage() {
@@ -161,12 +189,15 @@ export function HomePage() {
         }
       : { title: pkg.title, subtitle: pkg.subtitle, benefits: pkg.benefits };
 
+  const productText = (product: ShopProduct) => localizedProductText(product.id, product, lang);
+
   const addProduct = (product: ShopProduct) => {
+    const text = productText(product);
     addItem({
       id: product.id,
-      title: product.title,
-      subtitle: product.subtitle,
-      category: productCategoryLabel(product.category, lang),
+      title: text.title,
+      subtitle: text.subtitle,
+      category: localizedProductCategory(product.category, lang),
       price: product.price,
       image: product.image,
       svgType: product.svgType
@@ -204,7 +235,7 @@ export function HomePage() {
             playsInline
             preload="metadata"
             onError={() => setVideoFailed(true)}
-            aria-label="עיצוב אירועים יוקרתי"
+            aria-label={copy.heroVideoAlt}
           />
         )}
         {videoFailed && (
@@ -232,10 +263,10 @@ export function HomePage() {
             <p className="mt-6 max-w-2xl text-base leading-relaxed text-white/82 sm:text-xl">{copy.heroBody}</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <a href="#products" className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#C69A71] px-7 py-3.5 text-sm font-extrabold text-white shadow-[0_18px_45px_rgba(184,134,11,0.3)] transition hover:-translate-y-1">
-                הרכבת חבילה אישית <Arrow className="h-4 w-4" aria-hidden="true" />
+                {copy.buildPersonal} <Arrow className="h-4 w-4" aria-hidden="true" />
               </a>
               <a href="#packages" className="inline-flex items-center gap-2 rounded-full border border-white/35 bg-white/10 px-7 py-3.5 text-sm font-extrabold text-white backdrop-blur transition hover:bg-white hover:text-[#2C2C2C]">
-                צפייה בחבילות <Play className="h-4 w-4" aria-hidden="true" />
+                {copy.viewPackages} <Play className="h-4 w-4" aria-hidden="true" />
               </a>
             </div>
           </div>
@@ -245,7 +276,7 @@ export function HomePage() {
       <nav aria-label={copy.shopNav} className="sticky top-[73px] z-40 border-y border-[#E8C5B8]/60 bg-[#FDFBF7]/92 shadow-sm backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl gap-2 overflow-x-auto px-4 py-3">
           {productCategories.map((category, index) => (
-            <a key={category} href={`#product-category-${index}`} className="shrink-0 rounded-full border border-[#E8C5B8] bg-white px-4 py-2 text-xs font-bold text-[#7A5A46] transition hover:border-[#B8860B] hover:text-[#B8860B]">{productCategoryLabel(category, lang)}</a>
+            <a key={category} href={`#product-category-${index}`} className="shrink-0 rounded-full border border-[#E8C5B8] bg-white px-4 py-2 text-xs font-bold text-[#7A5A46] transition hover:border-[#B8860B] hover:text-[#B8860B]">{localizedProductCategory(category, lang)}</a>
           ))}
           <a href="#packages" className="shrink-0 rounded-full border border-[#E8C5B8] bg-white px-4 py-2 text-xs font-bold text-[#7A5A46] transition hover:border-[#B8860B] hover:text-[#B8860B]">{copy.packages}</a>
         </div>
@@ -255,9 +286,9 @@ export function HomePage() {
         <div className="mx-auto max-w-6xl px-4">
           <QuoteNotice />
           <div className="mb-12 mt-10 text-center">
-            <p className="text-[11px] font-bold uppercase tracking-[0.35em] text-[#B8860B]">Curated details</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.35em] text-[#B8860B]">{copy.productsKicker}</p>
             <h2 className="font-display mt-3 text-4xl font-black text-[#2C2C2C] sm:text-6xl">{copy.products}</h2>
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-[#6C625A]">בחרו פריטים קטנים, שנו כמויות וצרו שילוב שמרגיש בדיוק שלכם.</p>
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-[#6C625A]">{copy.productsBody}</p>
           </div>
 
           <div className="space-y-16">
@@ -267,40 +298,45 @@ export function HomePage() {
               return (
                 <section key={category} id={`product-category-${categoryIndex}`} className="scroll-mt-36">
                   <div className="mb-6 flex items-center gap-4">
-                    <h3 className="font-display text-2xl font-black text-[#2C2C2C] sm:text-3xl">{productCategoryLabel(category, lang)}</h3>
+                    <h3 className="font-display text-2xl font-black text-[#2C2C2C] sm:text-3xl">{localizedProductCategory(category, lang)}</h3>
                     <span className="h-px flex-1 bg-gradient-to-l from-transparent via-[#E8C5B8] to-transparent" aria-hidden="true" />
                   </div>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
-                    {categoryProducts.map((product) => (
-                      <article key={product.id} className="group flex flex-col overflow-hidden rounded-[1.75rem] border border-[#E8C5B8]/70 bg-white transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_22px_55px_rgba(184,134,11,0.13)]">
-                        <div className="relative aspect-[4/5] overflow-hidden bg-[#F4E3E3]">
-                          {product.image ? (
-                            <img src={product.image} alt={product.title} loading="lazy" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
-                          ) : (
-                            <div className="flex h-full items-center justify-center p-4">{renderPackageSVG(product.svgType)}</div>
-                          )}
-                          <button type="button" onClick={() => addProduct(product)} aria-label={`${copy.add}: ${product.title}`} className="absolute bottom-3 end-3 flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#B8860B] shadow-xl transition hover:scale-105 hover:bg-[#B8860B] hover:text-white">
-                            {addedId === product.id ? <Check className="h-4 w-4" aria-hidden="true" /> : <ShoppingBag className="h-4 w-4" aria-hidden="true" />}
-                          </button>
-                        </div>
-                        <div className="flex flex-1 flex-col p-4">
-                          <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#B8860B]">{productCategoryLabel(product.category, lang)}</p>
-                          <h4 className="mt-2 text-sm font-extrabold leading-snug text-[#2C2C2C] sm:text-base">{product.title}</h4>
-                          <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-[#7A7069] sm:text-xs">{product.subtitle}</p>
-                          <QuantityStepper
-                            title={product.title}
-                            quantity={quantityById.get(product.id) ?? 0}
-                            label={copy.quantity}
-                            onIncrease={() => addProduct(product)}
-                            onDecrease={() => updateQuantity(product.id, (quantityById.get(product.id) ?? 0) - 1)}
-                          />
-                          <div className="mt-auto flex items-center justify-between gap-2 pt-4">
-                            <strong className="text-base font-black text-[#B8860B]">{money(product.price)}</strong>
-                            <button type="button" onClick={() => addProduct(product)} className="text-[10px] font-extrabold text-[#7A5A46] underline-offset-4 hover:underline">{addedId === product.id ? copy.added : copy.add}</button>
+                    {categoryProducts.map((product) => {
+                      const text = productText(product);
+                      return (
+                        <article key={product.id} className="group flex flex-col overflow-hidden rounded-[1.75rem] border border-[#E8C5B8]/70 bg-white transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_22px_55px_rgba(184,134,11,0.13)]">
+                          <div className="relative aspect-[4/5] overflow-hidden bg-[#F4E3E3]">
+                            {product.image ? (
+                              <img src={product.image} alt={text.title} loading="lazy" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+                            ) : (
+                              <div className="flex h-full items-center justify-center p-4">{renderPackageSVG(product.svgType)}</div>
+                            )}
+                            <button type="button" onClick={() => addProduct(product)} aria-label={`${copy.add}: ${text.title}`} className="absolute bottom-3 end-3 flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#B8860B] shadow-xl transition hover:scale-105 hover:bg-[#B8860B] hover:text-white">
+                              {addedId === product.id ? <Check className="h-4 w-4" aria-hidden="true" /> : <ShoppingBag className="h-4 w-4" aria-hidden="true" />}
+                            </button>
                           </div>
-                        </div>
-                      </article>
-                    ))}
+                          <div className="flex flex-1 flex-col p-4">
+                            <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#B8860B]">{localizedProductCategory(product.category, lang)}</p>
+                            <h4 className="mt-2 text-sm font-extrabold leading-snug text-[#2C2C2C] sm:text-base">{text.title}</h4>
+                            <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-[#7A7069] sm:text-xs">{text.subtitle}</p>
+                            <QuantityStepper
+                              title={text.title}
+                              quantity={quantityById.get(product.id) ?? 0}
+                              label={copy.quantity}
+                              decreaseLabel={copy.decrease(text.title)}
+                              increaseLabel={copy.increase(text.title)}
+                              onIncrease={() => addProduct(product)}
+                              onDecrease={() => updateQuantity(product.id, (quantityById.get(product.id) ?? 0) - 1)}
+                            />
+                            <div className="mt-auto flex items-center justify-between gap-2 pt-4">
+                              <strong className="text-base font-black text-[#B8860B]">{money(product.price, lang)}</strong>
+                              <button type="button" onClick={() => addProduct(product)} className="text-[10px] font-extrabold text-[#7A5A46] underline-offset-4 hover:underline">{addedId === product.id ? copy.added : copy.add}</button>
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })}
                   </div>
                 </section>
               );
@@ -312,7 +348,7 @@ export function HomePage() {
       <section id="packages" className="scroll-mt-36 bg-[#FDFBF7] py-16 sm:py-24">
         <div className="mx-auto max-w-6xl px-4">
           <div className="mb-12 text-center">
-            <p className="text-[11px] font-bold uppercase tracking-[0.35em] text-[#B8860B]">Curated collections</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.35em] text-[#B8860B]">{copy.packagesKicker}</p>
             <h2 className="font-display mt-3 text-4xl font-black text-[#2C2C2C] sm:text-6xl">{copy.packages}</h2>
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-[#6C625A]">{copy.mediaHint}</p>
           </div>
@@ -327,7 +363,8 @@ export function HomePage() {
                   <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                     {categoryPackages.map((pkg) => {
                       const text = packageText(pkg);
-                      const details = Object.values(pkg.details).flatMap((items) => items ?? []).slice(0, 5);
+                      const detailsSource = lang === 'en' && PACKAGE_EN[pkg.id] ? PACKAGE_EN[pkg.id].details : pkg.details;
+                      const details = Object.values(detailsSource).flatMap((detailItems) => detailItems ?? []).slice(0, 5);
                       return (
                         <article key={pkg.id} className="flex flex-col overflow-hidden rounded-[2.25rem] border border-[#E8C5B8]/70 bg-white shadow-[0_18px_55px_rgba(44,44,44,0.07)] transition hover:-translate-y-1.5 hover:shadow-[0_28px_70px_rgba(184,134,11,0.14)]">
                           <PackageMediaCarousel title={text.title} mediaUrl={pkg.image} art={renderPackageSVG(pkg.svgType)} />
@@ -345,11 +382,13 @@ export function HomePage() {
                               title={text.title}
                               quantity={quantityById.get(pkg.id) ?? 0}
                               label={copy.quantity}
+                              decreaseLabel={copy.decrease(text.title)}
+                              increaseLabel={copy.increase(text.title)}
                               onIncrease={() => addPackage(pkg)}
                               onDecrease={() => updateQuantity(pkg.id, (quantityById.get(pkg.id) ?? 0) - 1)}
                             />
                             <div className="mt-auto flex items-end justify-between gap-3 pt-6">
-                              <div><span className="block text-[10px] font-bold text-[#9B8A7D]">{copy.from}</span><strong className="font-display text-2xl font-black text-[#B8860B]">{money(pkg.price)}</strong></div>
+                              <div><span className="block text-[10px] font-bold text-[#9B8A7D]">{copy.from}</span><strong className="font-display text-2xl font-black text-[#B8860B]">{money(pkg.price, lang)}</strong></div>
                               <button type="button" onClick={() => addPackage(pkg)} aria-label={`${copy.add}: ${text.title}`} className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#B8860B] to-[#D4AF37] px-5 py-3 text-xs font-extrabold text-white shadow-lg transition hover:-translate-y-0.5">
                                 {addedId === pkg.id ? <Check className="h-4 w-4" aria-hidden="true" /> : <ShoppingBag className="h-4 w-4" aria-hidden="true" />}
                                 {addedId === pkg.id ? copy.added : copy.add}
@@ -367,16 +406,15 @@ export function HomePage() {
         </div>
       </section>
 
-
       <section className="bg-[#2C2C2C] py-16 text-white sm:py-24" aria-labelledby="event-video-title">
         <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 lg:grid-cols-[0.8fr_1.2fr]">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.35em] text-[#E8C5B8]">Floral stories</p>
-            <h2 id="event-video-title" className="font-display mt-3 text-4xl font-black sm:text-5xl">כך נראה אירוע שפורח לחיים</h2>
-            <p className="mt-4 text-sm leading-relaxed text-white/70">הצצה לעיצוב אירוע אלגנטי עם סידורי פרחים, תאורה רכה ואווירה מרגשת.</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.35em] text-[#E8C5B8]">{copy.floralKicker}</p>
+            <h2 id="event-video-title" className="font-display mt-3 text-4xl font-black sm:text-5xl">{copy.floralTitle}</h2>
+            <p className="mt-4 text-sm leading-relaxed text-white/70">{copy.floralBody}</p>
           </div>
           <div className="overflow-hidden rounded-[2.25rem] border border-white/10 bg-black shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
-            <video src={heroVideo} controls playsInline preload="metadata" aria-label="סרטון עיצוב אירוע עם סידורי פרחים" className="aspect-video w-full object-cover" />
+            <video src={heroVideo} controls playsInline preload="metadata" aria-label={copy.floralVideoAlt} className="aspect-video w-full object-cover" />
           </div>
         </div>
       </section>
@@ -385,7 +423,7 @@ export function HomePage() {
         <div className="mx-auto max-w-6xl px-4">
           <div className="rounded-[2.5rem] border border-[#E8C5B8]/70 bg-white p-5 shadow-[0_30px_80px_rgba(184,134,11,0.08)] sm:p-8">
             <div className="max-w-3xl">
-              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.3em] text-[#B8860B]"><Palette className="h-4 w-4" aria-hidden="true" /> Personal color brief</p>
+              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.3em] text-[#B8860B]"><Palette className="h-4 w-4" aria-hidden="true" /> {copy.designDetailsKicker}</p>
               <h2 className="font-display mt-3 text-3xl font-black text-[#2C2C2C] sm:text-5xl">{copy.designDetailsTitle}</h2>
               <p className="mt-3 text-sm leading-relaxed text-[#6C625A]">{copy.designDetailsBody}</p>
             </div>
@@ -412,7 +450,7 @@ export function HomePage() {
                 <div>
                   <Heart className="h-6 w-6 text-[#E8C5B8]" aria-hidden="true" />
                   <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white/55">{copy.estimate}</p>
-                  <strong className="font-display mt-1 block text-3xl font-black text-[#E8C5B8]">{money(subtotal)}</strong>
+                  <strong className="font-display mt-1 block text-3xl font-black text-[#E8C5B8]">{money(subtotal, lang)}</strong>
                 </div>
                 <Link to="/cart" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-xs font-extrabold text-[#2C2C2C] transition hover:-translate-y-0.5 lg:mt-5 lg:w-full">{copy.reviewCart}<Arrow className="h-4 w-4" aria-hidden="true" /></Link>
               </aside>
@@ -427,17 +465,20 @@ export function HomePage() {
         <div className="mx-auto max-w-6xl px-4">
           <div className="flex flex-wrap items-end justify-between gap-5">
             <div>
-              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.3em] text-[#B8860B]"><Instagram className="h-4 w-4" aria-hidden="true" /> Live inspiration</p>
-              <h2 id="instagram-title" className="font-display mt-3 text-4xl font-black text-[#2C2C2C]">מהאינסטגרם שלנו</h2>
+              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.3em] text-[#B8860B]"><Instagram className="h-4 w-4" aria-hidden="true" /> {copy.instagramKicker}</p>
+              <h2 id="instagram-title" className="font-display mt-3 text-4xl font-black text-[#2C2C2C]">{copy.instagramTitle}</h2>
             </div>
             <a href="https://www.instagram.com/ld_event_design?igsh=MWpsN2c2OWhyY2FsaQ==" target="_blank" rel="noopener noreferrer" className="rounded-full border border-[#B8860B] px-5 py-2.5 text-xs font-extrabold text-[#7A5A46] transition hover:bg-[#B8860B] hover:text-white">@ld_event_design</a>
           </div>
           <div className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
-            {products.slice(0, 6).map((product) => (
-              <a key={product.id} href="https://www.instagram.com/ld_event_design?igsh=MWpsN2c2OWhyY2FsaQ==" target="_blank" rel="noopener noreferrer" aria-label={`פתיחת אינסטגרם — ${product.title}`} className="group aspect-square overflow-hidden rounded-3xl bg-white shadow-sm">
-                {product.image ? <img src={product.image} alt={product.title} loading="lazy" className="h-full w-full object-cover transition duration-700 group-hover:scale-110" /> : <div className="flex h-full items-center justify-center p-3 transition duration-500 group-hover:scale-105">{renderPackageSVG(product.svgType)}</div>}
-              </a>
-            ))}
+            {products.slice(0, 6).map((product) => {
+              const text = productText(product);
+              return (
+                <a key={product.id} href="https://www.instagram.com/ld_event_design?igsh=MWpsN2c2OWhyY2FsaQ==" target="_blank" rel="noopener noreferrer" aria-label={copy.openInstagram(text.title)} className="group aspect-square overflow-hidden rounded-3xl bg-white shadow-sm">
+                  {product.image ? <img src={product.image} alt={text.title} loading="lazy" className="h-full w-full object-cover transition duration-700 group-hover:scale-110" /> : <div className="flex h-full items-center justify-center p-3 transition duration-500 group-hover:scale-105">{renderPackageSVG(product.svgType)}</div>}
+                </a>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -445,8 +486,8 @@ export function HomePage() {
       <section className="bg-white py-16">
         <div className="mx-auto max-w-5xl px-4 text-center">
           <MessageCircle className="mx-auto h-8 w-8 text-[#B8860B]" aria-hidden="true" />
-          <h2 className="font-display mt-4 text-3xl font-black text-[#2C2C2C]">בואו נדבר על האירוע שלכם</h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-[#6C625A]">אנחנו כאן לכל שאלה, רעיון או חלום עיצובי — גם לפני שבחרתם חבילה.</p>
+          <h2 className="font-display mt-4 text-3xl font-black text-[#2C2C2C]">{copy.contactTitle}</h2>
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-[#6C625A]">{copy.contactBody}</p>
           <a href="https://wa.me/972545740423" target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#2C2C2C] px-7 py-3.5 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-[#B8860B]">WhatsApp</a>
         </div>
       </section>
@@ -456,7 +497,7 @@ export function HomePage() {
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="text-xs font-bold text-[#6C625A]">{copy.cart}: {cartCount}</p>
-              <p className="font-display text-xl font-black text-[#B8860B]">{money(subtotal)}</p>
+              <p className="font-display text-xl font-black text-[#B8860B]">{money(subtotal, lang)}</p>
             </div>
             <Link to="/cart" className="inline-flex shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-[#B8860B] to-[#D4AF37] px-5 py-3 text-xs font-extrabold text-white shadow-lg">{copy.viewCart}<Arrow className="h-4 w-4" aria-hidden="true" /></Link>
           </div>
@@ -468,5 +509,3 @@ export function HomePage() {
     </>
   );
 }
-
-
