@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/storefront-ordering-flow
+      - agent/fix-full-english-i18n-rtl
   workflow_dispatch:
 
 permissions:
