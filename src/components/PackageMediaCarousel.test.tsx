@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { I18nProvider } from '../i18n/i18n';
 import { inferPackageMediaUrls, PackageMediaCarousel } from './PackageMediaCarousel';
 import type { PackageOverride } from '../lib/packages';
 
@@ -21,6 +22,14 @@ const override = (input: Partial<PackageOverride> & { package_id: string }): Pac
   sort_order: null,
   ...input,
   package_id: input.package_id
+});
+
+function renderCarousel(carousel: React.ReactElement) {
+  return render(<I18nProvider>{carousel}</I18nProvider>);
+}
+
+beforeEach(() => {
+  window.localStorage.removeItem('ld-lang');
 });
 
 describe('inferPackageMediaUrls', () => {
@@ -77,13 +86,13 @@ describe('inferPackageMediaUrls', () => {
 
 describe('PackageMediaCarousel', () => {
   it('renders only artwork when no uploaded media exists', () => {
-    render(<PackageMediaCarousel title="חבילה" art={<span>ART</span>} />);
+    renderCarousel(<PackageMediaCarousel title="חבילה" art={<span>ART</span>} />);
     expect(screen.getByRole('img', { name: 'המחשת עיצוב חבילה' })).toHaveTextContent('ART');
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 
   it('renders an image plus artwork and wraps in both navigation directions', () => {
-    render(<PackageMediaCarousel title="חבילה" mediaUrl="https://example.com/photo.JPG?x=1" art={<span>ART</span>} />);
+    renderCarousel(<PackageMediaCarousel title="חבילה" mediaUrl="https://example.com/photo.JPG?x=1" art={<span>ART</span>} />);
     expect(screen.getByRole('img', { name: 'חבילה' })).toHaveAttribute('src', 'https://example.com/photo.JPG?x=1');
     const previous = screen.getByRole('button', { name: 'תמונה קודמת של חבילה' });
     const next = screen.getByRole('button', { name: 'תמונה הבאה של חבילה' });
@@ -104,7 +113,7 @@ describe('PackageMediaCarousel', () => {
   });
 
   it('shows four uploaded package images plus the artwork fallback', () => {
-    render(
+    renderCarousel(
       <PackageMediaCarousel
         title="ארבע תמונות"
         mediaUrls={[
@@ -126,7 +135,7 @@ describe('PackageMediaCarousel', () => {
   });
 
   it('deduplicates explicit media and limits uploaded media to four', () => {
-    render(
+    renderCarousel(
       <PackageMediaCarousel
         title="מוגבל"
         mediaUrl="https://example.com/1.jpg"
@@ -150,7 +159,7 @@ describe('PackageMediaCarousel', () => {
     'https://example.com/movie.WEBM?token=x',
     'https://example.com/movie.mov'
   ])('recognizes video media %s and can switch to artwork', (mediaUrl) => {
-    render(<PackageMediaCarousel title="וידאו" mediaUrl={mediaUrl} art={<span>ART</span>} />);
+    renderCarousel(<PackageMediaCarousel title="וידאו" mediaUrl={mediaUrl} art={<span>ART</span>} />);
     const video = screen.getByLabelText('סרטון וידאו 1');
     expect(video.tagName).toBe('VIDEO');
     expect(screen.getByText('סרטון')).toBeInTheDocument();
