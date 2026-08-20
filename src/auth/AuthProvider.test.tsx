@@ -63,12 +63,12 @@ function Probe() {
       <span data-testid="role">{role}</span>
       <span data-testid="email">{user?.email ?? 'none'}</span>
       <span data-testid="configured">{String(configured)}</span>
-      <button onClick={() => void signUp('a@b.com', 'pw')}>signup</button>
+      <button onClick={() => void signUp('a@b.com', 'StrongPassword12')}>signup</button>
       <button onClick={() => void signIn('a@b.com', 'pw')}>signin</button>
       <button onClick={() => void signInWithGoogle('/admin')}>google</button>
       <button onClick={() => void signInWithGoogle('//evil.example')}>unsafe-google</button>
       <button onClick={() => void resetPassword('a@b.com')}>reset</button>
-      <button onClick={() => void updatePassword('new-password')}>update</button>
+      <button onClick={() => void updatePassword('NewPassword12')}>update</button>
       <button onClick={() => void signOut()}>signout</button>
     </div>
   );
@@ -252,6 +252,28 @@ describe('AuthProvider — configured', () => {
     }));
   });
 
+  it('blocks weak passwords before they reach Supabase', async () => {
+    const results: string[] = [];
+    function WeakPasswordProbe() {
+      const { signUp, updatePassword } = useAuth();
+      return (
+        <div>
+          <button onClick={async () => results.push((await signUp('a@b.com', 'short')).error ?? '')}>weak-signup</button>
+          <button onClick={async () => results.push((await updatePassword('short')).error ?? '')}>weak-update</button>
+        </div>
+      );
+    }
+    render(<AuthProvider><WeakPasswordProbe /></AuthProvider>);
+    await act(async () => screen.getByText('weak-signup').click());
+    await act(async () => screen.getByText('weak-update').click());
+    expect(results).toEqual([
+      'Password must contain at least 12 characters',
+      'Password must contain at least 12 characters'
+    ]);
+    expect(mock.signUp).not.toHaveBeenCalled();
+    expect(mock.updateUser).not.toHaveBeenCalled();
+  });
+
   it('forwards signUp, signIn, signOut, reset and update actions to Supabase', async () => {
     window.sessionStorage.setItem('ld-event-design-auth-return', '/admin');
     renderAuth();
@@ -261,17 +283,21 @@ describe('AuthProvider — configured', () => {
     await act(async () => screen.getByText('reset').click());
     await act(async () => screen.getByText('update').click());
     await act(async () => screen.getByText('signout').click());
-    expect(mock.signUp).toHaveBeenCalledWith({ email: 'a@b.com', password: 'pw' });
+    expect(mock.signUp).toHaveBeenCalledWith({
+      email: 'a@b.com',
+      password: 'StrongPassword12',
+      options: { emailRedirectTo: `${window.location.origin}/login` }
+    });
     expect(mock.signIn).toHaveBeenCalledWith({ email: 'a@b.com', password: 'pw' });
     expect(mock.resetPassword).toHaveBeenCalledWith('a@b.com', {
       redirectTo: `${window.location.origin}/reset-password`
     });
-    expect(mock.updateUser).toHaveBeenCalledWith({ password: 'new-password' });
+    expect(mock.updateUser).toHaveBeenCalledWith({ password: 'NewPassword12' });
     expect(mock.signOut).toHaveBeenCalled();
     expect(window.sessionStorage.getItem('ld-event-design-auth-return')).toBeNull();
   });
 
-  it('surfaces provider error messages', async () => {
+  it('surfaces provider error messages for strong-password operations', async () => {
     mock.signUp.mockResolvedValueOnce({ error: { message: 'taken' } });
     mock.googleOAuth.mockResolvedValueOnce({ error: { message: 'google disabled' } });
     mock.resetPassword.mockResolvedValueOnce({ error: { message: 'rate limited' } });
@@ -282,10 +308,10 @@ describe('AuthProvider — configured', () => {
       const { signUp, signInWithGoogle, resetPassword, updatePassword } = useAuth();
       return (
         <div>
-          <button onClick={async () => results.push((await signUp('a@b.com', 'pw')).error ?? '')}>catch-signup</button>
+          <button onClick={async () => results.push((await signUp('a@b.com', 'StrongPassword12')).error ?? '')}>catch-signup</button>
           <button onClick={async () => results.push((await signInWithGoogle()).error ?? '')}>catch-google</button>
           <button onClick={async () => results.push((await resetPassword('a@b.com')).error ?? '')}>catch-reset</button>
-          <button onClick={async () => results.push((await updatePassword('password')).error ?? '')}>catch-update</button>
+          <button onClick={async () => results.push((await updatePassword('AnotherPassword12')).error ?? '')}>catch-update</button>
         </div>
       );
     }
