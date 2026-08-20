@@ -24,6 +24,14 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run audit:prod
+      - name: Generate security-fixed lockfile
+        run: npm audit fix --package-lock-only
+      - name: Upload security-fixed lockfile
+        uses: actions/upload-artifact@v7
+        with:
+          name: security-fixed-package-lock
+          path: package-lock.json
+          retention-days: 1
       - name: Audit all dependencies
         run: npm audit --audit-level=high
       - run: npm run type-check
