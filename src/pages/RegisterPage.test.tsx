@@ -27,6 +27,8 @@ function renderReg() {
   );
 }
 
+const STRONG_PASSWORD = 'StrongPass123!';
+
 const fill = (email: string, pw: string) => {
   fireEvent.change(screen.getByLabelText('אימייל'), { target: { value: email } });
   fireEvent.change(screen.getByLabelText('סיסמה'), { target: { value: pw } });
@@ -50,47 +52,47 @@ describe('RegisterPage', () => {
   it('blocks submit and shows a notice when not configured', () => {
     a.configured = false;
     renderReg();
-    fill('a@b.com', '123456');
+    fill('a@b.com', STRONG_PASSWORD);
     expect(a.signUp).not.toHaveBeenCalled();
   });
 
   it('rejects an invalid email', async () => {
     renderReg();
     fireEvent.change(screen.getByLabelText('אימייל'), { target: { value: 'not-an-email' } });
-    fireEvent.change(screen.getByLabelText('סיסמה'), { target: { value: '123456' } });
-    // submit ישיר עוקף ולידציית type=email הילידית של jsdom כדי לבדוק את הלוגיקה שלנו
+    fireEvent.change(screen.getByLabelText('סיסמה'), { target: { value: STRONG_PASSWORD } });
     fireEvent.submit(screen.getByLabelText('אימייל').closest('form')!);
     await waitFor(() => expect(screen.getByText('כתובת אימייל אינה תקינה')).toBeInTheDocument());
     expect(a.signUp).not.toHaveBeenCalled();
   });
 
-  it('rejects a short password', async () => {
+  it('rejects a password shorter than 12 characters', async () => {
     renderReg();
     fireEvent.change(screen.getByLabelText('אימייל'), { target: { value: 'a@b.com' } });
-    fireEvent.change(screen.getByLabelText('סיסמה'), { target: { value: '123' } });
+    fireEvent.change(screen.getByLabelText('סיסמה'), { target: { value: '12345678901' } });
     fireEvent.submit(screen.getByLabelText('אימייל').closest('form')!);
-    await waitFor(() => expect(screen.getByText('הסיסמה חייבת לכלול לפחות 6 תווים')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('הסיסמה חייבת לכלול לפחות 12 תווים')).toBeInTheDocument());
+    expect(a.signUp).not.toHaveBeenCalled();
   });
 
   it('signs up then logs in and navigates to the current package builder', async () => {
     renderReg();
-    fill('a@b.com', '123456');
+    fill('a@b.com', STRONG_PASSWORD);
     await waitFor(() => expect(screen.getByText('PACKAGE BUILDER')).toBeInTheDocument());
-    expect(a.signUp).toHaveBeenCalledWith('a@b.com', '123456');
-    expect(a.signIn).toHaveBeenCalledWith('a@b.com', '123456');
+    expect(a.signUp).toHaveBeenCalledWith('a@b.com', STRONG_PASSWORD);
+    expect(a.signIn).toHaveBeenCalledWith('a@b.com', STRONG_PASSWORD);
   });
 
   it('shows the signUp error', async () => {
     a.signUp.mockResolvedValueOnce({ error: 'User already registered' });
     renderReg();
-    fill('a@b.com', '123456');
+    fill('a@b.com', STRONG_PASSWORD);
     await waitFor(() => expect(screen.getByText('User already registered')).toBeInTheDocument());
   });
 
   it('shows the success message when sign-in after sign-up fails (email confirmation)', async () => {
     a.signIn.mockResolvedValueOnce({ error: 'Email not confirmed' });
     renderReg();
-    fill('a@b.com', '123456');
+    fill('a@b.com', STRONG_PASSWORD);
     await waitFor(() => expect(screen.getByText(/ההרשמה הצליחה/)).toBeInTheDocument());
   });
 });
