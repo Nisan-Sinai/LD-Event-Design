@@ -4,22 +4,37 @@ updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "tuesday"
-      time: "06:00"
+      interval: "daily"
+      time: "05:30"
       timezone: "Asia/Jerusalem"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 10
     rebase-strategy: "auto"
     commit-message:
       prefix: "chore(deps)"
     groups:
-      production-minor-patch:
+      security-production:
+        applies-to: "security-updates"
         dependency-type: "production"
+        patterns:
+          - "*"
+      security-development:
+        applies-to: "security-updates"
+        dependency-type: "development"
+        patterns:
+          - "*"
+      production-minor-patch:
+        applies-to: "version-updates"
+        dependency-type: "production"
+        patterns:
+          - "*"
         update-types:
           - "minor"
           - "patch"
       development-minor-patch:
+        applies-to: "version-updates"
         dependency-type: "development"
+        patterns:
+          - "*"
         update-types:
           - "minor"
           - "patch"
@@ -27,16 +42,16 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "tuesday"
-      time: "06:30"
+      interval: "daily"
+      time: "06:00"
       timezone: "Asia/Jerusalem"
-    open-pull-requests-limit: 2
+    open-pull-requests-limit: 5
     rebase-strategy: "auto"
     commit-message:
       prefix: "chore(actions)"
     groups:
       github-actions-minor-patch:
+        applies-to: "version-updates"
         patterns:
           - "*"
         update-types:
