@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router';
 import { UserPlus, Mail, Lock, AlertCircle, Check } from 'lucide-react';
 import { useI18n } from '../i18n/i18n';
 import { useAuth } from '../auth/AuthProvider';
+import { isStrongEnoughPassword, MIN_PASSWORD_LENGTH, passwordLengthMessage } from '../auth/passwordPolicy';
 import { GoogleButton, OrDivider } from '../components/GoogleButton';
 
 export function RegisterPage() {
@@ -27,8 +28,8 @@ export function RegisterPage() {
       setError(t('auth.invalidEmail'));
       return;
     }
-    if (password.length < 6) {
-      setError(t('auth.shortPassword'));
+    if (!isStrongEnoughPassword(password)) {
+      setError(passwordLengthMessage(t('auth.shortPassword')));
       return;
     }
     setBusy(true);
@@ -86,9 +87,9 @@ export function RegisterPage() {
               <label htmlFor="reg-password" className="block text-xs font-bold text-gray-700 mb-1.5">{t('auth.password')}</label>
               <div className="relative">
                 <span className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400"><Lock className="w-4 h-4" aria-hidden="true" /></span>
-                <input id="reg-password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls} dir="ltr" />
+                <input id="reg-password" type="password" required minLength={MIN_PASSWORD_LENGTH} value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls} dir="ltr" autoComplete="new-password" />
               </div>
-              <p className="text-[10px] text-gray-400 mt-1">{t('auth.passwordHint')}</p>
+              <p className="text-[10px] text-gray-400 mt-1">{passwordLengthMessage(t('auth.passwordHint'))}</p>
             </div>
 
             {error && (
