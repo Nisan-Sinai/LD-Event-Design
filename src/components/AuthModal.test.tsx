@@ -24,6 +24,8 @@ function renderModal(props: Partial<{ open: boolean; onClose: () => void; onSucc
   return { onClose, onSuccess };
 }
 
+const STRONG_PASSWORD = 'StrongPass123!';
+
 const fill = (email: string, pw: string) => {
   fireEvent.change(screen.getByLabelText('אימייל'), { target: { value: email } });
   fireEvent.change(screen.getByLabelText('סיסמה'), { target: { value: pw } });
@@ -49,6 +51,7 @@ describe('AuthModal', () => {
     fireEvent.click(screen.getByRole('button', { name: /המשך עם Google/ }));
     expect(a.google).not.toHaveBeenCalled();
   });
+
   it('renders nothing when closed', () => {
     renderModal({ open: false });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -63,29 +66,29 @@ describe('AuthModal', () => {
   it('blocks submit when not configured', () => {
     a.configured = false;
     renderModal();
-    fill('a@b.com', '123456');
+    fill('a@b.com', STRONG_PASSWORD);
     fireEvent.click(screen.getByRole('button', { name: 'הרשמה' }));
     expect(a.signUp).not.toHaveBeenCalled();
   });
 
-  it('validates email and password', async () => {
+  it('validates email and the 12-character registration policy', async () => {
     renderModal();
     const form = screen.getByLabelText('אימייל').closest('form')!;
-    fill('bad', '123456');
+    fill('bad', STRONG_PASSWORD);
     fireEvent.submit(form);
     await waitFor(() => expect(screen.getByText('כתובת אימייל אינה תקינה')).toBeInTheDocument());
-    fill('a@b.com', '12');
+    fill('a@b.com', '12345678901');
     fireEvent.submit(form);
-    await waitFor(() => expect(screen.getByText('הסיסמה חייבת לכלול לפחות 6 תווים')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('הסיסמה חייבת לכלול לפחות 12 תווים')).toBeInTheDocument());
   });
 
   it('registers (signUp + signIn) and calls onSuccess', async () => {
     const { onSuccess } = renderModal();
-    fill('a@b.com', '123456');
+    fill('a@b.com', STRONG_PASSWORD);
     fireEvent.click(screen.getByRole('button', { name: 'הרשמה' }));
     await waitFor(() => expect(onSuccess).toHaveBeenCalled());
-    expect(a.signUp).toHaveBeenCalled();
-    expect(a.signIn).toHaveBeenCalled();
+    expect(a.signUp).toHaveBeenCalledWith('a@b.com', STRONG_PASSWORD);
+    expect(a.signIn).toHaveBeenCalledWith('a@b.com', STRONG_PASSWORD);
   });
 
   it('switches back to the register tab', () => {
@@ -96,14 +99,14 @@ describe('AuthModal', () => {
     expect(screen.getByRole('tab', { name: /הרשמה מהירה/ })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('login tab only signs in', async () => {
+  it('login tab only signs in and still accepts existing shorter passwords', async () => {
     const { onSuccess } = renderModal();
     fireEvent.click(screen.getByRole('tab', { name: /התחברות/ }));
     fill('a@b.com', '123456');
     fireEvent.click(screen.getByRole('button', { name: 'התחברות' }));
     await waitFor(() => expect(onSuccess).toHaveBeenCalled());
     expect(a.signUp).not.toHaveBeenCalled();
-    expect(a.signIn).toHaveBeenCalled();
+    expect(a.signIn).toHaveBeenCalledWith('a@b.com', '123456');
   });
 
   it('shows an auth error and does not call onSuccess', async () => {
@@ -118,7 +121,6 @@ describe('AuthModal', () => {
 
   it('closes on Escape, backdrop click, and the X button', () => {
     const { onClose } = renderModal();
-    // מקש שאינו Escape אינו סוגר (ענף השמירה במאזין)
     fireEvent.keyDown(window, { key: 'a' });
     expect(onClose).not.toHaveBeenCalled();
     fireEvent.keyDown(window, { key: 'Escape' });
