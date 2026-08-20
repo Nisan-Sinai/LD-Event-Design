@@ -24,6 +24,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run audit:prod
+      - name: Audit all dependencies
+        run: npm audit --audit-level=high
       - run: npm run type-check
       - name: Unit tests with coverage
         shell: bash
