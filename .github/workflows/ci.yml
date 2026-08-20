@@ -13,38 +13,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  repair_lock:
-    name: Repair dependency lockfile
-    if: github.event_name == 'pull_request' && github.head_ref == 'security/audit-hardening-2026-08-20' && github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci
-      - name: Repair audited lockfile
-        run: npm audit fix --package-lock-only
-      - name: Verify all dependencies are clean
-        run: npm audit
-      - name: Commit repaired lockfile
-        shell: bash
-        run: |
-          if git diff --quiet -- package-lock.json; then
-            echo "package-lock.json already clean"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package-lock.json
-          git commit -m "security: bump vulnerable transitive dependencies"
-          git push origin HEAD:${{ github.head_ref }}
-
   unit:
     name: Type-check · Unit tests · Build
     runs-on: ubuntu-latest
