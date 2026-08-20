@@ -2,7 +2,8 @@
 // Triggered by public.notify_new_order() after INSERT into public.orders.
 // Sends a styled summary document to the manager and, when supplied, to the customer.
 
-import nodemailer from 'npm:nodemailer@6.9.16';
+import nodemailer from 'npm:nodemailer@9.0.5';
+import { createClient } from 'npm:@supabase/supabase-js@2.112.3';
 
 interface UpgradeLine {
   description: string;
@@ -62,11 +63,19 @@ const GOOGLE_SA_EMAIL = Deno.env.get('GOOGLE_SA_EMAIL') ?? '';
 const GOOGLE_SA_PRIVATE_KEY = (Deno.env.get('GOOGLE_SA_PRIVATE_KEY') ?? '').replace(/\\n/g, '\n');
 const GOOGLE_CALENDAR_ID = Deno.env.get('GOOGLE_CALENDAR_ID') ?? '';
 
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  auth: { persistSession: false, autoRefreshToken: false }
+});
+
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 465,
   secure: true,
-  auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD }
+  auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD },
+  disableFileAccess: true,
+  disableUrlAccess: true
 });
 
 const POLICY = [
@@ -88,6 +97,10 @@ function escapeHtml(value: unknown): string {
     "'": '&#39;',
     '"': '&quot;'
   })[character] ?? character);
+}
+
+function safeSubject(value: unknown): string {
+  return String(value ?? '').replace(/[\r\n]+/g, ' ').trim().slice(0, 180);
 }
 
 function parseMetadata(order: OrderRecord): QuoteMetadata {
@@ -113,7 +126,7 @@ async function sendEmail(
   html: string,
   attachments: Array<{ filename: string; content: string; contentType: string }> = []
 ) {
-  await transporter.sendMail({ from: FROM, to, subject, html, attachments });
+  await transporter.sendMail({ from: FROM, to, subject: safeSubject(subject), html, attachments });
 }
 
 function detailRow(label: string, value: string, emphasis = false): string {
@@ -195,6 +208,7 @@ function orderRows(order: OrderRecord, metadata: QuoteMetadata, quoteOnly: boole
       ${detailRow(quoteOnly ? 'סה״כ הבחירה — לא לתשלום כרגע' : 'סה״כ לתשלום', escapeHtml(ils(order.total_price)), true)}
     </table>`;
 }
+
 function policySection(): string {
   return `
     <div style="margin-top:24px;padding:18px;border-radius:18px;background:#FAF6F0;border:1px solid #E8C5B8">
@@ -297,7 +311,7 @@ async function getGoogleAccessToken(): Promise<string> {
     })
   });
   const data = await response.json();
-  if (!data.access_token) throw new Error(`Google token error: ${JSON.stringify(data)}`);
+  if (!data.access_token) throw new Error('Google token request failed');
   return data.access_token as string;
 }
 
@@ -321,7 +335,7 @@ async function createCalendarEvent(order: OrderRecord, quoteOnly: boolean): Prom
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        summary: `${quoteOnly ? 'פניית הצעת מחיר' : 'אירוע'}: ${order.groom_name}${order.package_title ? ` — ${order.package_title}` : ''}`,
+        summary: `${quoteOnly ? 'פניית הצעת מחיר' : 'אירוע'}: ${safeSubject(order.groom_name)}${order.package_title ? ` — ${safeSubject(order.package_title)}` : ''}`,
         description,
         location: order.event_location ?? undefined,
         start: { date: start },
@@ -329,18 +343,61 @@ async function createCalendarEvent(order: OrderRecord, quoteOnly: boolean): Prom
       })
     }
   );
-  if (!response.ok) throw new Error(`Google Calendar insert failed: ${await response.text()}`);
+  if (!response.ok) throw new Error(`Google Calendar insert failed with ${response.status}`);
+}
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store'
+    }
+  });
+}
+
+function isUuid(value: unknown): value is string {
+  return typeof value === 'string'
+    && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+async function authenticateDispatch(payload: unknown): Promise<OrderRecord | null> {
+  if (!payload || typeof payload !== 'object') return null;
+  const body = payload as Record<string, unknown>;
+  if (!isUuid(body.token) || !isUuid(body.record_id)) return null;
+
+  const { data: consumed, error: consumeError } = await admin.rpc('consume_webhook_dispatch', {
+    p_token: body.token,
+    p_kind: 'order',
+    p_record_id: body.record_id
+  });
+  if (consumeError || consumed !== true) return null;
+
+  const { data, error } = await admin
+    .from('orders')
+    .select('*')
+    .eq('id', body.record_id)
+    .single();
+  if (error || !data) return null;
+  return data as OrderRecord;
 }
 
 Deno.serve(async (request) => {
+  if (request.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
+
+  const contentLength = Number(request.headers.get('content-length') ?? '0');
+  if (Number.isFinite(contentLength) && contentLength > 256 * 1024) {
+    return json({ error: 'payload_too_large' }, 413);
+  }
+
   try {
-    if (!GMAIL_USER || !GMAIL_APP_PASSWORD || !OWNER_EMAIL) {
-      throw new Error('Email secrets are not configured');
+    if (!GMAIL_USER || !GMAIL_APP_PASSWORD || !OWNER_EMAIL || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error('Required server secrets are not configured');
     }
 
     const payload = await request.json();
-    const order = payload?.record as OrderRecord | undefined;
-    if (!order?.id) return new Response('no record', { status: 400 });
+    const order = await authenticateDispatch(payload);
+    if (!order) return json({ error: 'unauthorized_dispatch' }, 401);
 
     const metadata = parseMetadata(order);
     const quoteOnly = isQuoteRequest(order, metadata);
@@ -354,8 +411,8 @@ Deno.serve(async (request) => {
     await sendEmail(
       OWNER_EMAIL,
       quoteOnly
-        ? `בחירת הזמנה חדשה: ${order.groom_name} — ${ils(order.total_price)}`
-        : `הזמנה חדשה: ${order.groom_name} & ${order.bride_name} — ${ils(order.total_price)}`,
+        ? `בחירת הזמנה חדשה: ${safeSubject(order.groom_name)} — ${ils(order.total_price)}`
+        : `הזמנה חדשה: ${safeSubject(order.groom_name)} & ${safeSubject(order.bride_name)} — ${ils(order.total_price)}`,
       wrap(
         quoteOnly ? 'התקבלה בחירת הזמנה חדשה ✨' : 'התקבלה הזמנה חדשה 🎉',
         `${orderRows(order, metadata, quoteOnly)}${policySection()}`,
@@ -381,24 +438,19 @@ Deno.serve(async (request) => {
           attachment
         );
       } catch (mailError) {
-        console.error('customer confirmation email failed:', mailError);
+        console.error('customer confirmation email failed:', mailError instanceof Error ? mailError.message : String(mailError));
       }
     }
 
     try {
       await createCalendarEvent(order, quoteOnly);
     } catch (calendarError) {
-      console.error('Google Calendar sync failed:', calendarError);
+      console.error('Google Calendar sync failed:', calendarError instanceof Error ? calendarError.message : String(calendarError));
     }
 
-    return new Response(JSON.stringify({ ok: true, quoteOnly }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return json({ ok: true, quoteOnly });
   } catch (error) {
     console.error('send-order-emails failed:', error instanceof Error ? error.message : String(error));
-    return new Response(JSON.stringify({ error: 'notification_failed' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return json({ error: 'notification_failed' }, 500);
   }
 });
