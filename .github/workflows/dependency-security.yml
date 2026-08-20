@@ -6,18 +6,17 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 concurrency:
   group: dependency-security-watch
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
-  audit-and-repair:
-    name: Audit dependencies and prepare safe repair
+  audit:
+    name: Recurring npm security audit
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
 
     steps:
       - uses: actions/checkout@v7
@@ -32,98 +31,5 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
-      - name: Detect vulnerabilities
-        id: audit
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if npm audit --audit-level=low; then
-            echo "needs_repair=false" >> "$GITHUB_OUTPUT"
-            echo "Dependency audit is clean."
-          else
-            echo "needs_repair=true" >> "$GITHUB_OUTPUT"
-            echo "Vulnerabilities detected; attempting a safe lockfile-only repair."
-          fi
-
-      - name: Apply safe lockfile repair
-        if: steps.audit.outputs.needs_repair == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          npm audit fix --package-lock-only
-
-      - name: Verify repair is complete
-        if: steps.audit.outputs.needs_repair == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          npm ci
-          npm audit --audit-level=low
-
-      - name: Enforce lockfile-only scope
-        if: steps.audit.outputs.needs_repair == 'true'
-        id: scope
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          mapfile -t changed_files < <(git diff --name-only)
-
-          if [[ "${#changed_files[@]}" -eq 0 ]]; then
-            echo "No safe automated change was produced."
-            exit 1
-          fi
-
-          if [[ "${#changed_files[@]}" -ne 1 || "${changed_files[0]}" != "package-lock.json" ]]; then
-            printf 'Refusing automatic repair because files outside package-lock.json changed:\n%s\n' "${changed_files[*]}"
-            exit 1
-          fi
-
-          echo "safe_change=true" >> "$GITHUB_OUTPUT"
-
-      - name: Avoid duplicate repair pull requests
-        if: steps.scope.outputs.safe_change == 'true'
-        id: duplicate
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-
-          existing=$(gh pr list \
-            --repo "$GITHUB_REPOSITORY" \
-            --state open \
-            --json headRefName \
-            --jq '[.[] | select(.headRefName | startswith("security/npm-audit-auto-"))] | length')
-
-          if [[ "$existing" -gt 0 ]]; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "An automated dependency-security PR is already open."
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Open audited repair pull request
-        if: steps.scope.outputs.safe_change == 'true' && steps.duplicate.outputs.exists == 'false'
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-
-          branch="security/npm-audit-auto-${GITHUB_RUN_ID}"
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -b "$branch"
-          git add -- package-lock.json
-          git commit -m "fix(deps): repair audited npm vulnerabilities"
-          git push origin "$branch"
-
-          gh pr create \
-            --repo "$GITHUB_REPOSITORY" \
-            --base main \
-            --head "$branch" \
-            --title "fix(deps): repair audited npm vulnerabilities" \
-            --body "Automated safe dependency-security repair. Only package-lock.json changed. npm audit is clean after the repair. Merge is gated by CI, Playwright, and Vercel."
+      - name: Audit all dependencies
+        run: npm audit --audit-level=low
