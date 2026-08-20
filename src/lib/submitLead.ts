@@ -29,16 +29,8 @@ export async function submitLead(input: WebsiteLeadInput): Promise<{ id: string 
 
   if (error) throw error;
 
-  const lead = {
-    id: data.id as string,
-    fullName: input.fullName.trim(),
-    phone: input.phone.trim(),
-    email: input.email.trim(),
-    estimatedEventDate: input.estimatedEventDate
-  };
-
-  const { error: notifyError } = await supabase.functions.invoke('send-lead-email', { body: { lead } });
-  if (notifyError) throw notifyError;
-
+  // Email delivery is intentionally not callable by the browser. The database
+  // INSERT trigger issues a short-lived one-time dispatch token and invokes the
+  // internal Edge Function with that token.
   return { id: data.id as string };
 }
