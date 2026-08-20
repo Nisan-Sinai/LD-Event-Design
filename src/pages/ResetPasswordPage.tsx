@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AlertCircle, CheckCircle2, KeyRound, Lock } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../auth/AuthProvider';
+import { isStrongEnoughPassword, MIN_PASSWORD_LENGTH, passwordLengthMessage } from '../auth/passwordPolicy';
 import { useI18n } from '../i18n/i18n';
 
 export function ResetPasswordPage() {
@@ -18,8 +19,8 @@ export function ResetPasswordPage() {
     event.preventDefault();
     setError(null);
 
-    if (password.length < 8) {
-      setError(t('resetPassword.tooShort'));
+    if (!isStrongEnoughPassword(password)) {
+      setError(passwordLengthMessage(t('resetPassword.tooShort')));
       return;
     }
     if (password !== confirmPassword) {
@@ -116,7 +117,7 @@ export function ResetPasswordPage() {
             </label>
             <div className="relative">
               <Lock className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
-              <input id="new-password" type="password" minLength={8} required value={password} onChange={(event) => setPassword(event.target.value)} className={inputClass} dir="ltr" autoComplete="new-password" />
+              <input id="new-password" type="password" minLength={MIN_PASSWORD_LENGTH} required value={password} onChange={(event) => setPassword(event.target.value)} className={inputClass} dir="ltr" autoComplete="new-password" />
             </div>
           </div>
 
@@ -126,7 +127,7 @@ export function ResetPasswordPage() {
             </label>
             <div className="relative">
               <Lock className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
-              <input id="confirm-password" type="password" minLength={8} required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className={inputClass} dir="ltr" autoComplete="new-password" />
+              <input id="confirm-password" type="password" minLength={MIN_PASSWORD_LENGTH} required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className={inputClass} dir="ltr" autoComplete="new-password" />
             </div>
           </div>
 

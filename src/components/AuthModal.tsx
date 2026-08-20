@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { LogIn, UserPlus, Mail, Lock, AlertCircle, X } from 'lucide-react';
 import { useI18n } from '../i18n/i18n';
 import { useAuth } from '../auth/AuthProvider';
+import { isStrongEnoughPassword, MIN_PASSWORD_LENGTH, passwordLengthMessage } from '../auth/passwordPolicy';
 import { GoogleButton, OrDivider } from './GoogleButton';
 
 /**
@@ -39,8 +40,8 @@ export function AuthModal({ open, onClose, onSuccess }: { open: boolean; onClose
       setError(t('auth.invalidEmail'));
       return;
     }
-    if (password.length < 6) {
-      setError(t('auth.shortPassword'));
+    if (tab === 'register' && !isStrongEnoughPassword(password)) {
+      setError(passwordLengthMessage(t('auth.shortPassword')));
       return;
     }
     setBusy(true);
@@ -77,7 +78,6 @@ export function AuthModal({ open, onClose, onSuccess }: { open: boolean; onClose
         onClick={(e) => e.stopPropagation()}
         dir={dir}
       >
-        {/* ידית גרירה (מובייל) */}
         <div className="sm:hidden mx-auto mb-4 h-1.5 w-12 rounded-full bg-gray-200" aria-hidden="true" />
         <div className="flex items-start justify-between gap-3 mb-1">
           <h2 id="auth-modal-title" className="font-display text-xl font-bold text-[#8C6D3F]">
@@ -89,10 +89,7 @@ export function AuthModal({ open, onClose, onSuccess }: { open: boolean; onClose
         </div>
         <p className="text-xs text-gray-500 leading-relaxed mb-5">{t('auth.gateSub')}</p>
 
-        {/* התחברות עם Google */}
         <GoogleButton onError={setError} />
-
-        {/* מפריד "או" */}
         <OrDivider />
 
         <div className="flex bg-[#FAF7F2] border border-[#EAE3D2] rounded-2xl p-1 mb-5" role="tablist">
@@ -111,16 +108,16 @@ export function AuthModal({ open, onClose, onSuccess }: { open: boolean; onClose
             <label htmlFor="am-email" className="block text-xs font-bold text-gray-700 mb-1.5">{t('auth.email')}</label>
             <div className="relative">
               <span className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400"><Mail className="w-4 h-4" aria-hidden="true" /></span>
-              <input id="am-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} dir="ltr" />
+              <input id="am-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} dir="ltr" autoComplete="email" />
             </div>
           </div>
           <div>
             <label htmlFor="am-password" className="block text-xs font-bold text-gray-700 mb-1.5">{t('auth.password')}</label>
             <div className="relative">
               <span className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400"><Lock className="w-4 h-4" aria-hidden="true" /></span>
-              <input id="am-password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls} dir="ltr" />
+              <input id="am-password" type="password" required minLength={tab === 'register' ? MIN_PASSWORD_LENGTH : 6} value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls} dir="ltr" autoComplete={tab === 'register' ? 'new-password' : 'current-password'} />
             </div>
-            {tab === 'register' && <p className="text-[10px] text-gray-400 mt-1">{t('auth.passwordHint')}</p>}
+            {tab === 'register' && <p className="text-[10px] text-gray-400 mt-1">{passwordLengthMessage(t('auth.passwordHint'))}</p>}
           </div>
 
           {error && (

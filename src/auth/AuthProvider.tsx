@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { isStrongEnoughPassword, MIN_PASSWORD_LENGTH } from './passwordPolicy';
 
 const AUTH_RETURN_KEY = 'ld-event-design-auth-return';
 
@@ -36,6 +37,10 @@ function safeReturnPath(value: string | undefined): string {
 function safeAppUrl(path: string): string {
   const safePath = path.startsWith('/') && !path.startsWith('//') ? path : '/';
   return new URL(safePath, window.location.origin).toString();
+}
+
+function weakPasswordError(): AuthResult {
+  return { error: `Password must contain at least ${MIN_PASSWORD_LENGTH} characters` };
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -100,7 +105,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = useCallback(async (email: string, password: string): Promise<AuthResult> => {
     if (!isSupabaseConfigured) return { error: 'NOT_CONFIGURED' };
-    const { error } = await supabase.auth.signUp({ email, password });
+    if (!isStrongEnoughPassword(password)) return weakPasswordError();
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: safeAppUrl('/login') }
+    });
     return { error: error?.message ?? null };
   }, []);
 
@@ -138,6 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updatePassword = useCallback(async (password: string): Promise<AuthResult> => {
     if (!isSupabaseConfigured) return { error: 'NOT_CONFIGURED' };
+    if (!isStrongEnoughPassword(password)) return weakPasswordError();
     const { error } = await supabase.auth.updateUser({ password });
     return { error: error?.message ?? null };
   }, []);

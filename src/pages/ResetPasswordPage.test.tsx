@@ -16,6 +16,8 @@ vi.mock('../auth/AuthProvider', () => ({
   useAuth: () => auth
 }));
 
+const STRONG_PASSWORD = 'StrongPass123!';
+
 function renderPage() {
   return render(
     <I18nProvider>
@@ -59,19 +61,19 @@ describe('ResetPasswordPage', () => {
     expect(screen.getByRole('link', { name: 'חזרה להתחברות' })).toHaveAttribute('href', '/login');
   });
 
-  it('requires at least eight characters', () => {
+  it('requires at least twelve characters', () => {
     renderPage();
     fireEvent.change(screen.getByLabelText('סיסמה חדשה'), { target: { value: 'short' } });
     fireEvent.change(screen.getByLabelText('אימות סיסמה חדשה'), { target: { value: 'short' } });
     fireEvent.submit(screen.getByLabelText('סיסמה חדשה').closest('form')!);
-    expect(screen.getByRole('alert')).toHaveTextContent(/לפחות 8/);
+    expect(screen.getByRole('alert')).toHaveTextContent(/לפחות 12/);
     expect(auth.updatePassword).not.toHaveBeenCalled();
   });
 
   it('rejects mismatching passwords', () => {
     renderPage();
-    fireEvent.change(screen.getByLabelText('סיסמה חדשה'), { target: { value: 'password-1' } });
-    fireEvent.change(screen.getByLabelText('אימות סיסמה חדשה'), { target: { value: 'password-2' } });
+    fireEvent.change(screen.getByLabelText('סיסמה חדשה'), { target: { value: 'StrongPass123!' } });
+    fireEvent.change(screen.getByLabelText('אימות סיסמה חדשה'), { target: { value: 'StrongPass124!' } });
     fireEvent.submit(screen.getByLabelText('סיסמה חדשה').closest('form')!);
     expect(screen.getByRole('alert')).toHaveTextContent(/אינן זהות/);
     expect(auth.updatePassword).not.toHaveBeenCalled();
@@ -80,19 +82,19 @@ describe('ResetPasswordPage', () => {
   it('shows an update error returned by Supabase', async () => {
     auth.updatePassword.mockResolvedValueOnce({ error: 'weak password' });
     renderPage();
-    fireEvent.change(screen.getByLabelText('סיסמה חדשה'), { target: { value: 'password-1' } });
-    fireEvent.change(screen.getByLabelText('אימות סיסמה חדשה'), { target: { value: 'password-1' } });
+    fireEvent.change(screen.getByLabelText('סיסמה חדשה'), { target: { value: STRONG_PASSWORD } });
+    fireEvent.change(screen.getByLabelText('אימות סיסמה חדשה'), { target: { value: STRONG_PASSWORD } });
     fireEvent.submit(screen.getByLabelText('סיסמה חדשה').closest('form')!);
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('weak password'));
   });
 
   it('updates an admin password and opens management', async () => {
     renderPage();
-    fireEvent.change(screen.getByLabelText('סיסמה חדשה'), { target: { value: 'password-1' } });
-    fireEvent.change(screen.getByLabelText('אימות סיסמה חדשה'), { target: { value: 'password-1' } });
+    fireEvent.change(screen.getByLabelText('סיסמה חדשה'), { target: { value: STRONG_PASSWORD } });
+    fireEvent.change(screen.getByLabelText('אימות סיסמה חדשה'), { target: { value: STRONG_PASSWORD } });
     fireEvent.submit(screen.getByLabelText('סיסמה חדשה').closest('form')!);
     await waitFor(() => expect(screen.getByText('הסיסמה עודכנה בהצלחה')).toBeInTheDocument());
-    expect(auth.updatePassword).toHaveBeenCalledWith('password-1');
+    expect(auth.updatePassword).toHaveBeenCalledWith(STRONG_PASSWORD);
     fireEvent.click(screen.getByRole('button', { name: 'כניסה לניהול' }));
     expect(screen.getByText('ADMIN PAGE')).toBeInTheDocument();
   });
@@ -100,8 +102,8 @@ describe('ResetPasswordPage', () => {
   it('returns a customer to the account page after success', async () => {
     auth.role = 'customer';
     renderPage();
-    fireEvent.change(screen.getByLabelText('סיסמה חדשה'), { target: { value: 'password-1' } });
-    fireEvent.change(screen.getByLabelText('אימות סיסמה חדשה'), { target: { value: 'password-1' } });
+    fireEvent.change(screen.getByLabelText('סיסמה חדשה'), { target: { value: STRONG_PASSWORD } });
+    fireEvent.change(screen.getByLabelText('אימות סיסמה חדשה'), { target: { value: STRONG_PASSWORD } });
     fireEvent.submit(screen.getByLabelText('סיסמה חדשה').closest('form')!);
     await waitFor(() => expect(screen.getByRole('button', { name: 'כניסה לאזור האישי' })).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: 'כניסה לאזור האישי' }));
