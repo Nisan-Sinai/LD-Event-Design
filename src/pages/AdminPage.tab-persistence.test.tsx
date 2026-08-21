@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { I18nProvider } from '../i18n/i18n';
 import { AdminPage } from './AdminPage';
@@ -52,5 +52,29 @@ describe('AdminPage tab persistence', () => {
 
     expect(screen.getByRole('button', { name: 'ניהול הזמנות' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: 'תמונות, מוצרים וחבילות' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('syncs from browser history and safely handles a missing window global', () => {
+    renderAdmin();
+    const browserWindow = window;
+    const categories = screen.getByRole('button', { name: 'ניהול קטגוריות' });
+
+    browserWindow.history.replaceState({}, '', '/admin?tab=orders');
+    act(() => {
+      browserWindow.dispatchEvent(new browserWindow.PopStateEvent('popstate'));
+    });
+    expect(screen.getByRole('button', { name: 'ניהול הזמנות' })).toHaveAttribute('aria-pressed', 'true');
+
+    vi.stubGlobal('window', undefined);
+    act(() => {
+      browserWindow.dispatchEvent(new browserWindow.PopStateEvent('popstate'));
+    });
+    expect(screen.getByRole('button', { name: 'תמונות, מוצרים וחבילות' })).toHaveAttribute('aria-pressed', 'true');
+
+    act(() => {
+      categories.click();
+    });
+
+    vi.stubGlobal('window', browserWindow);
   });
 });
