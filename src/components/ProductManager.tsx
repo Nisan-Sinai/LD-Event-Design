@@ -200,6 +200,25 @@ export function ProductManager() {
   const inputClass = 'w-full rounded-xl border border-[#DDD2C1] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#B29259] focus:ring-2 focus:ring-[#B29259]/20';
   const labelClass = 'mb-1.5 block text-[11px] font-bold text-gray-600';
 
+  const productsInCategory = (category: string, excludingId?: string) =>
+    products.filter((product) => product.category === category && product.id !== excludingId);
+
+  const productPosition = (product: ManagedProduct) => {
+    const categoryProducts = productsInCategory(product.category);
+    return Math.max(1, categoryProducts.findIndex((entry) => entry.id === product.id) + 1);
+  };
+
+  const sortOrderForPosition = (category: string, desiredPosition: number, excludingId?: string) => {
+    const others = productsInCategory(category, excludingId).slice().sort((a, b) => a.sortOrder - b.sortOrder);
+    const position = Math.min(Math.max(1, Math.round(desiredPosition)), others.length + 1);
+    if (others.length === 0) return 1;
+    if (position === 1) return others[0].sortOrder - 1;
+    if (position === others.length + 1) return others[others.length - 1].sortOrder + 1;
+    const previous = others[position - 2].sortOrder;
+    const next = others[position - 1].sortOrder;
+    return previous === next ? previous + 0.0001 : previous + (next - previous) / 2;
+  };
+
   const toDraft = (product: ManagedProduct): ProductDraft => ({
     title: product.title,
     subtitle: product.subtitle,
@@ -209,7 +228,7 @@ export function ProductManager() {
     image3: product.image3,
     image4: product.image4,
     category: product.category,
-    position: String(product.sortOrder)
+    position: String(productPosition(product))
   });
 
   const draftFor = (product: ManagedProduct) => drafts[product.id] ?? toDraft(product);
@@ -219,9 +238,6 @@ export function ProductManager() {
       [product.id]: { ...draftFor(product), [field]: value }
     }));
   };
-
-  const productsInCategory = (category: string, excludingId?: string) =>
-    products.filter((product) => product.category === category && product.id !== excludingId);
 
   const positionOptions = (category: string, excludingId?: string) => {
     const count = productsInCategory(category, excludingId).length + 1;
@@ -263,7 +279,7 @@ export function ProductManager() {
     pricing_tiers: null,
     hidden,
     is_custom: product.custom,
-    sort_order: Math.max(1, Number(draft.position) || 1)
+    sort_order: sortOrderForPosition(draft.category || product.category, Number(draft.position) || 1, product.id)
   });
 
   const persistImage = async (product: ManagedProduct, imageUrl: string, slot: ImageSlot) => {
@@ -332,6 +348,7 @@ export function ProductManager() {
 
     const id = `product-custom-${crypto.randomUUID().slice(0, 8)}`;
     const fallbackPosition = productsInCategory(newDraft.category).length + 1;
+    const desiredPosition = Number(newDraft.position) || fallbackPosition;
     void run('__new_product__', () => saveOverride({
       package_id: id,
       price: Math.max(0, Number(newDraft.price) || 0),
@@ -348,7 +365,7 @@ export function ProductManager() {
       pricing_tiers: null,
       hidden: false,
       is_custom: true,
-      sort_order: Math.max(1, Number(newDraft.position) || fallbackPosition)
+      sort_order: sortOrderForPosition(newDraft.category, desiredPosition)
     }, { includeImage: true }));
     setNewDraft(EMPTY_DRAFT);
     setShowAdd(false);
