@@ -77,11 +77,16 @@ describe('PackageManager', () => {
     expect(p.saveOverride.mock.calls[0][0]).toMatchObject({ package_id: 'classic-s', hidden: true });
   });
 
-  it('shows a reset action for an overridden package and clears it', async () => {
-    p.overrides = { 'classic-s': ov({ package_id: 'classic-s', price: 1000 }) };
+  it('deletes a base package with a persistent tombstone', async () => {
     renderPM();
-    fireEvent.click(within(rowFor(CLASSIC_S)).getByRole('button', { name: 'איפוס לברירת מחדל' }));
-    await waitFor(() => expect(p.removeOverride).toHaveBeenCalledWith('classic-s'));
+    fireEvent.click(within(rowFor(CLASSIC_S)).getByRole('button', { name: 'מחיקת חבילה' }));
+    await waitFor(() => expect(p.saveOverride).toHaveBeenCalled());
+    expect(p.saveOverride.mock.calls[0][0]).toMatchObject({
+      package_id: 'classic-s',
+      hidden: true,
+      svg_type: '__deleted__'
+    });
+    expect(p.removeOverride).not.toHaveBeenCalled();
   });
 
   it('creates a new custom package (all fields)', async () => {
@@ -100,6 +105,23 @@ describe('PackageManager', () => {
       subtitle: 'תת מיוחדת', benefits: 'הטבה מיוחדת', description: 'תיאור מיוחד'
     });
     expect(p.saveOverride.mock.calls[0][1]).toEqual({ includeImage: true });
+  });
+
+  it('places a manually added package next to its category in admin', () => {
+    p.overrides = {
+      'custom-wedding': ov({
+        package_id: 'custom-wedding',
+        is_custom: true,
+        title: 'חבילת חתונה חדשה',
+        category: 'חתונה',
+        price: 500,
+        sort_order: Date.now()
+      })
+    };
+    renderPM();
+    const weddingRow = rowFor('חבילת חתונה חדשה');
+    expect(weddingRow).toBeInTheDocument();
+    expect(within(weddingRow).getByText('חתונה')).toBeInTheDocument();
   });
 
   it('cancels the add-package form', () => {
