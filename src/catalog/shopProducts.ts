@@ -204,6 +204,18 @@ export const SHOP_PRODUCTS: ShopProduct[] = [
   }
 ];
 
+export function getDefaultShopProductPosition(productId: string): number {
+  const target = SHOP_PRODUCTS.find((product) => product.id === productId);
+  if (!target) return Number.MAX_SAFE_INTEGER;
+
+  let position = 0;
+  for (const product of SHOP_PRODUCTS) {
+    if (product.category === target.category) position += 1;
+    if (product.id === productId) return position;
+  }
+  return Number.MAX_SAFE_INTEGER;
+}
+
 function parseAliases(value: string | null): string[] {
   if (!value) return [];
   try {
@@ -368,16 +380,29 @@ function firstOverrideImage(override: PackageOverride): string | undefined {
   return override.image_url ?? override.image_url_2 ?? override.image_url_3 ?? override.image_url_4 ?? undefined;
 }
 
+interface OrderedShopProduct {
+  product: ShopProduct;
+  categoryOrder: number;
+  sortOrder: number;
+  explicitOrder: boolean;
+  fallbackOrder: number;
+}
+
 export function buildShopProducts(overrides: OverrideMap): ShopProduct[] {
   syncShopProductCategories(overrides);
-  const activeCategories = new Set(buildShopProductCategories(overrides));
+  const categories = buildShopProductCategories(overrides);
+  const categoryOrder = new Map(categories.map((category, index) => [category, index]));
+  const activeCategories = new Set(categories);
+  const ordered: OrderedShopProduct[] = [];
 
-  const base = SHOP_PRODUCTS
-    .filter((product) => !overrides[product.id]?.hidden)
-    .map((product) => {
-      const override = overrides[product.id];
-      const category = resolveShopProductCategory(override?.category ?? product.category, overrides);
-      return {
+  SHOP_PRODUCTS.forEach((product, index) => {
+    const override = overrides[product.id];
+    if (override?.hidden) return;
+    const category = resolveShopProductCategory(override?.category ?? product.category, overrides);
+    if (!activeCategories.has(category)) return;
+
+    ordered.push({
+      product: {
         ...product,
         title: override?.title ?? product.title,
         subtitle: override?.subtitle ?? product.subtitle,
@@ -385,18 +410,37 @@ export function buildShopProducts(overrides: OverrideMap): ShopProduct[] {
         image: firstOverrideImage(override ?? ({} as PackageOverride)) ?? product.image,
         category,
         svgType: override?.svg_type ?? product.svgType
-      };
-    })
-    .filter((product) => activeCategories.has(product.category));
+      },
+      categoryOrder: categoryOrder.get(category) ?? Number.MAX_SAFE_INTEGER,
+      sortOrder: override?.sort_order ?? getDefaultShopProductPosition(product.id),
+      explicitOrder: override?.sort_order != null,
+      fallbackOrder: index
+    });
+  });
 
-  const custom = Object.values(overrides)
+  Object.values(overrides)
     .filter((override) => override.is_custom && override.package_id.startsWith('product-') && !override.hidden)
-    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-    .map(productFromOverride)
-    .map((product) => ({ ...product, category: resolveShopProductCategory(product.category, overrides) }))
-    .filter((product) => activeCategories.has(product.category));
+    .forEach((override, index) => {
+      const product = productFromOverride(override);
+      const category = resolveShopProductCategory(product.category, overrides);
+      if (!activeCategories.has(category)) return;
+      ordered.push({
+        product: { ...product, category },
+        categoryOrder: categoryOrder.get(category) ?? Number.MAX_SAFE_INTEGER,
+        sortOrder: override.sort_order ?? Number.MAX_SAFE_INTEGER,
+        explicitOrder: override.sort_order != null,
+        fallbackOrder: SHOP_PRODUCTS.length + index
+      });
+    });
 
-  return [...base, ...custom];
+  ordered.sort((a, b) =>
+    a.categoryOrder - b.categoryOrder ||
+    a.sortOrder - b.sortOrder ||
+    Number(b.explicitOrder) - Number(a.explicitOrder) ||
+    a.fallbackOrder - b.fallbackOrder
+  );
+
+  return ordered.map((entry) => entry.product);
 }
 
 export function productFromOverride(override: PackageOverride): ShopProduct {
