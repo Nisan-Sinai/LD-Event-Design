@@ -10,6 +10,19 @@ import { deleteOrder, fetchOrders, type OrderRow } from '../lib/orders';
 
 type AdminTab = 'catalog' | 'orders' | 'categories';
 
+function readAdminTabFromUrl(): AdminTab {
+  if (typeof window === 'undefined') return 'catalog';
+  const value = new URLSearchParams(window.location.search).get('tab');
+  return value === 'orders' || value === 'categories' || value === 'catalog' ? value : 'catalog';
+}
+
+function writeAdminTabToUrl(tab: AdminTab) {
+  if (typeof window === 'undefined') return;
+  const url = new URL(window.location.href);
+  url.searchParams.set('tab', tab);
+  window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+}
+
 const DELETE_COPY = {
   he: {
     action: 'מחיקת הזמנה',
@@ -39,13 +52,19 @@ export function AdminPage() {
     : { catalog: 'Products & packages', orders: 'Orders', categories: 'Categories' };
   const categoryAccessibleLabel = lang === 'he' ? 'ניהול קטגוריות' : 'Category management';
   const { configured, user } = useAuth();
-  const [tab, setTab] = useState<AdminTab>('catalog');
+  const [tab, setTab] = useState<AdminTab>(readAdminTabFromUrl);
   const [orders, setOrders] = useState<OrderRow[] | null>(null);
   const [blocked, setBlocked] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<OrderRow | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState('');
+
+  useEffect(() => {
+    const syncTabFromHistory = () => setTab(readAdminTabFromUrl());
+    window.addEventListener('popstate', syncTabFromHistory);
+    return () => window.removeEventListener('popstate', syncTabFromHistory);
+  }, []);
 
   useEffect(() => {
     if (!configured) {
@@ -60,6 +79,11 @@ export function AdminPage() {
         setOrders([]);
       });
   }, [configured]);
+
+  const selectTab = (nextTab: AdminTab) => {
+    setTab(nextTab);
+    writeAdminTabToUrl(nextTab);
+  };
 
   const openDelete = (order: OrderRow) => {
     setDeleteError('');
@@ -84,7 +108,7 @@ export function AdminPage() {
   const tabBtn = (key: AdminTab, label: string, accessibleLabel: string, Icon: typeof ClipboardList) => (
     <button
       type="button"
-      onClick={() => setTab(key)}
+      onClick={() => selectTab(key)}
       aria-label={accessibleLabel}
       aria-pressed={tab === key}
       className={`flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-full border px-1 py-2 text-[10px] font-extrabold leading-none transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B29259]/50 focus-visible:ring-offset-2 sm:min-h-12 sm:flex-row sm:gap-1.5 sm:px-4 sm:text-xs ${
