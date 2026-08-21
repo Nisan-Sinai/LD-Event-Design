@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import { ProductCategoryManagerPortal } from '../components/ProductCategoryManagerPortal';
+import { normalizeProductCategoryOverrides, syncShopProductCategories } from '../catalog/shopProducts';
 import {
   fetchPackageOverrides,
   savePackageOverride,
@@ -30,7 +32,7 @@ const PackagesContext = createContext<PackagesValue>({
 });
 
 export function PackagesProvider({ children }: { children: React.ReactNode }) {
-  const [overrides, setOverrides] = useState<OverrideMap>({});
+  const [rawOverrides, setRawOverrides] = useState<OverrideMap>({});
   const [loading, setLoading] = useState(true);
   const refreshGeneration = useRef(0);
 
@@ -40,7 +42,7 @@ export function PackagesProvider({ children }: { children: React.ReactNode }) {
       const next = await fetchPackageOverrides();
       // Several image slots can be saved almost simultaneously on mobile. An older GET may finish
       // after a newer GET and must never replace the newer gallery state with a stale snapshot.
-      if (generation === refreshGeneration.current) setOverrides(next);
+      if (generation === refreshGeneration.current) setRawOverrides(next);
     } catch {
       /* אין גישה / Supabase לא מוגדר — נשארים עם ברירות המחדל */
     } finally {
@@ -71,9 +73,13 @@ export function PackagesProvider({ children }: { children: React.ReactNode }) {
     await refresh();
   }, [refresh]);
 
+  syncShopProductCategories(rawOverrides);
+  const overrides = normalizeProductCategoryOverrides(rawOverrides);
+
   return (
     <PackagesContext.Provider value={{ overrides, loading, refresh, saveOverride, saveImage, removeOverride }}>
       {children}
+      <ProductCategoryManagerPortal />
     </PackagesContext.Provider>
   );
 }
