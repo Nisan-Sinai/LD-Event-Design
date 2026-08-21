@@ -153,6 +153,22 @@ function QuantityStepper({ title, quantity, label, decreaseLabel, increaseLabel,
   );
 }
 
+function CartAddRipple() {
+  return (
+    <svg
+      data-cart-add-animation
+      viewBox="0 0 100 100"
+      aria-hidden="true"
+      className="pointer-events-none absolute left-1/2 top-1/2 h-[170%] w-[170%] -translate-x-1/2 -translate-y-1/2 overflow-visible motion-reduce:hidden"
+    >
+      <circle cx="50" cy="50" r="18" fill="none" stroke="#D4AF37" strokeWidth="5">
+        <animate attributeName="r" from="18" to="48" dur="0.55s" fill="freeze" />
+        <animate attributeName="opacity" from="0.95" to="0" dur="0.55s" fill="freeze" />
+      </circle>
+    </svg>
+  );
+}
+
 export function HomePage() {
   const { lang } = useI18n();
   const copy = COPY[lang];
@@ -168,6 +184,7 @@ export function HomePage() {
     setCustomRequest
   } = useCart();
   const [addedId, setAddedId] = useState('');
+  const [feedbackToken, setFeedbackToken] = useState(0);
   const [videoFailed, setVideoFailed] = useState(false);
   const Arrow = lang === 'he' ? ArrowLeft : ArrowRight;
 
@@ -191,6 +208,11 @@ export function HomePage() {
 
   const productText = (product: ShopProduct) => localizedProductText(product.id, product, lang);
 
+  const triggerAddAnimation = (id: string) => {
+    setAddedId(id);
+    setFeedbackToken((current) => current + 1);
+  };
+
   const addProduct = (product: ShopProduct) => {
     const text = productText(product);
     addItem({
@@ -202,7 +224,6 @@ export function HomePage() {
       image: product.image,
       svgType: product.svgType
     });
-    setAddedId(product.id);
   };
 
   const addPackage = (pkg: Package) => {
@@ -216,7 +237,6 @@ export function HomePage() {
       image: pkg.image,
       svgType: pkg.svgType
     });
-    setAddedId(pkg.id);
   };
 
   const cartCount = `${itemCount} ${itemCount === 1 ? copy.item : copy.items}`;
@@ -328,7 +348,18 @@ export function HomePage() {
                             />
                             <div className="mt-auto flex items-center justify-between gap-2 pt-4">
                               <strong className="text-base font-black text-[#B8860B]">{money(product.price, lang)}</strong>
-                              <button type="button" onClick={() => addProduct(product)} aria-label={`${copy.add}: ${text.title}`} className="text-[10px] font-extrabold text-[#7A5A46] underline-offset-4 hover:underline">{addedId === product.id ? copy.added : copy.add}</button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  addProduct(product);
+                                  triggerAddAnimation(product.id);
+                                }}
+                                aria-label={`${copy.add}: ${text.title}`}
+                                className="relative inline-flex items-center justify-center overflow-visible rounded-full px-2 py-1 text-[10px] font-extrabold text-[#7A5A46] underline-offset-4 transition duration-200 hover:underline active:scale-90"
+                              >
+                                {addedId === product.id && <CartAddRipple key={feedbackToken} />}
+                                {copy.add}
+                              </button>
                             </div>
                           </div>
                         </article>
@@ -386,9 +417,18 @@ export function HomePage() {
                             />
                             <div className="mt-auto flex items-end justify-between gap-3 pt-6">
                               <div><span className="block text-[10px] font-bold text-[#9B8A7D]">{copy.from}</span><strong className="font-display text-2xl font-black text-[#B8860B]">{money(pkg.price, lang)}</strong></div>
-                              <button type="button" onClick={() => addPackage(pkg)} aria-label={`${copy.add}: ${text.title}`} className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#B8860B] to-[#D4AF37] px-5 py-3 text-xs font-extrabold text-white shadow-lg transition hover:-translate-y-0.5">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  addPackage(pkg);
+                                  triggerAddAnimation(pkg.id);
+                                }}
+                                aria-label={`${copy.add}: ${text.title}`}
+                                className="relative inline-flex items-center gap-2 overflow-visible rounded-full bg-gradient-to-r from-[#B8860B] to-[#D4AF37] px-5 py-3 text-xs font-extrabold text-white shadow-lg transition duration-200 hover:-translate-y-0.5 active:scale-95"
+                              >
+                                {addedId === pkg.id && <CartAddRipple key={feedbackToken} />}
                                 {addedId === pkg.id ? <Check className="h-4 w-4" aria-hidden="true" /> : <ShoppingBag className="h-4 w-4" aria-hidden="true" />}
-                                {addedId === pkg.id ? copy.added : copy.add}
+                                {copy.add}
                               </button>
                             </div>
                           </div>
