@@ -346,3 +346,48 @@ textarea:focus-visible,
 #admin-packages span.bg-emerald-50.text-emerald-600 {
   display: none !important;
 }
+
+/* הוספה לסל — הטקסט בלבד קטן מעט ונשאר תמיד בשורה אחת. */
+button[aria-label^="הוספה לסל:"],
+button[aria-label^="Add to cart:"] {
+  font-size: 9.5px !important;
+  white-space: nowrap;
+}
+
+/* משוב הוספה לסל — הילה עדינה במקום טבעת עבה. */
+[data-cart-add-animation] {
+  width: 132% !important;
+  height: 132% !important;
+  opacity: 0;
+  filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.28));
+  animation: ldCartAddHalo 0.68s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+[data-cart-add-animation] circle {
+  stroke: #D7B96F !important;
+  stroke-width: 1.8 !important;
+}
+
+button[aria-label^="הוספה לסל:"]:active,
+button[aria-label^="Add to cart:"]:active {
+  transform: scale(0.98) !important;
+}
+
+@keyframes ldCartAddHalo {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.76);
+  }
+  24% {
+    opacity: 0.72;
+    transform: translate(-50%, -50%) scale(0.86);
+  }
+  58% {
+    opacity: 0.42;
+    transform: translate(-50%, -50%) scale(0.98);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+}
