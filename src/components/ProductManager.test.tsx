@@ -85,16 +85,17 @@ describe('ProductManager', () => {
     expect(screen.getAllByRole('button', { name: 'שמור פרטי מוצר' })).toHaveLength(SHOP_PRODUCTS.length);
     expect(screen.getByDisplayValue(firstProduct.title)).toBeInTheDocument();
     expect(screen.getAllByDisplayValue(String(firstProduct.price)).length).toBeGreaterThan(0);
+    expect(screen.queryByText('נערך')).not.toBeInTheDocument();
   });
 
   it('changes product text, category and price without touching image persistence', async () => {
     renderManager();
     const card = productCard();
     const inputs = within(card).getAllByRole('textbox');
-    const select = within(card).getByRole('combobox');
+    const category = within(card).getByLabelText(`קטגוריה — ${firstProduct.title}`);
     const price = within(card).getByRole('spinbutton');
 
-    fireEvent.change(select, { target: { value: SHOP_PRODUCT_CATEGORIES.ENTRANCE } });
+    fireEvent.change(category, { target: { value: SHOP_PRODUCT_CATEGORIES.ENTRANCE } });
     fireEvent.change(inputs[0], { target: { value: 'מוצר חדש' } });
     fireEvent.change(inputs[1], { target: { value: 'תיאור חדש' } });
     fireEvent.change(price, { target: { value: '777' } });
@@ -110,6 +111,15 @@ describe('ProductManager', () => {
       is_custom: false
     });
     expect(state.saveImage).not.toHaveBeenCalled();
+  });
+
+  it('changes the product position inside its category', async () => {
+    renderManager();
+    const card = productCard();
+    fireEvent.change(within(card).getByLabelText(`מיקום בקטגוריה — ${firstProduct.title}`), { target: { value: '2' } });
+    fireEvent.click(within(card).getByRole('button', { name: 'שמור פרטי מוצר' }));
+    await waitFor(() => expect(state.saveOverride).toHaveBeenCalled());
+    expect(state.saveOverride.mock.calls[0][0]).toMatchObject({ package_id: firstProduct.id, sort_order: 2 });
   });
 
   it('previews an uploaded product image and saves it only after explicit confirmation', async () => {
@@ -177,22 +187,26 @@ describe('ProductManager', () => {
     expect(state.saveOverride.mock.calls[0][0]).toMatchObject({ hidden: false });
   });
 
-  it('restores a changed base product to its default values', async () => {
-    state.overrides = {
-      [firstProduct.id]: override({ package_id: firstProduct.id, price: 999 })
-    };
+  it('deletes a base product using a persistent tombstone', async () => {
     renderManager();
-    fireEvent.click(within(productCard()).getByRole('button', { name: 'שחזור ברירת מחדל' }));
-    await waitFor(() => expect(state.removeOverride).toHaveBeenCalledWith(firstProduct.id));
+    fireEvent.click(within(productCard()).getByRole('button', { name: 'מחיקת מוצר' }));
+    await waitFor(() => expect(state.saveOverride).toHaveBeenCalled());
+    expect(state.saveOverride.mock.calls[0][0]).toMatchObject({
+      package_id: firstProduct.id,
+      hidden: true,
+      svg_type: '__deleted__'
+    });
+    expect(state.removeOverride).not.toHaveBeenCalled();
   });
 
-  it('creates a new product with an uploaded image', async () => {
+  it('creates a new product with an uploaded image and selected position', async () => {
     vi.spyOn(crypto, 'randomUUID').mockReturnValue('12345678-1234-4123-8123-123456789012');
     renderManager();
     fireEvent.click(screen.getByRole('button', { name: 'הוספת מוצר' }));
 
     const form = screen.getByText('מוצר חדש').closest('.rounded-2xl') as HTMLElement;
-    fireEvent.change(within(form).getByRole('combobox'), { target: { value: SHOP_PRODUCT_CATEGORIES.CENTERPIECES } });
+    fireEvent.change(within(form).getByLabelText('קטגוריה — מוצר חדש'), { target: { value: SHOP_PRODUCT_CATEGORIES.CENTERPIECES } });
+    fireEvent.change(within(form).getByLabelText('מיקום בקטגוריה — מוצר חדש'), { target: { value: '1' } });
     const textboxes = within(form).getAllByRole('textbox');
     fireEvent.change(textboxes[0], { target: { value: 'מוצר בהתאמה אישית' } });
     fireEvent.change(textboxes[1], { target: { value: 'תיאור מוצר' } });
@@ -209,7 +223,8 @@ describe('ProductManager', () => {
       subtitle: 'תיאור מוצר',
       price: 450,
       image_url: 'https://cdn.example/product.webp',
-      is_custom: true
+      is_custom: true,
+      sort_order: 1
     });
     expect(state.saveOverride.mock.calls[0][1]).toEqual({ includeImage: true });
   });
@@ -232,7 +247,8 @@ describe('ProductManager', () => {
         title: 'מוצר מותאם',
         price: 500,
         category: SHOP_PRODUCT_CATEGORIES.CHUPPAH,
-        is_custom: true
+        is_custom: true,
+        sort_order: 1
       })
     };
     renderManager();
