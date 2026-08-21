@@ -44,7 +44,7 @@ describe('shopProducts', () => {
       })
     });
 
-    expect(products[0]).toMatchObject({
+    expect(products.find((product) => product.id === first.id)).toMatchObject({
       id: first.id,
       title: 'מוצר מעודכן',
       subtitle: 'תיאור מעודכן',
@@ -67,6 +67,20 @@ describe('shopProducts', () => {
       [first.id]: override({ package_id: first.id, hidden: true })
     });
     expect(products.some((product) => product.id === first.id)).toBe(false);
+  });
+
+  it('moves a product to the selected position inside its category', () => {
+    const centerpieces = SHOP_PRODUCTS.filter((product) => product.category === SHOP_PRODUCT_CATEGORIES.CENTERPIECES);
+    const moved = centerpieces[2];
+    const products = buildShopProducts({
+      [moved.id]: override({
+        package_id: moved.id,
+        category: SHOP_PRODUCT_CATEGORIES.CENTERPIECES,
+        sort_order: 1
+      })
+    });
+    const orderedCenterpieces = products.filter((product) => product.category === SHOP_PRODUCT_CATEGORIES.CENTERPIECES);
+    expect(orderedCenterpieces[0].id).toBe(moved.id);
   });
 
   it('adds visible custom products in sort order and ignores custom packages', () => {
