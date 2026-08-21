@@ -8,7 +8,7 @@ import {
   type ShopProductCategoryRecord
 } from '../catalog/shopProducts';
 import { useI18n } from '../i18n/i18n';
-import { usePackages } from '../packages/PackagesProvider';
+import type { OverrideMap, PackageOverride } from '../lib/packages';
 
 const COPY = {
   he: {
@@ -45,14 +45,18 @@ const COPY = {
   }
 } as const;
 
+interface CategoryManagerProps {
+  overrides: OverrideMap;
+  saveOverride: (override: PackageOverride) => Promise<void>;
+}
+
 function normalizeName(value: string): string {
   return value.trim().replace(/\s+/g, ' ');
 }
 
-function CategoryManager() {
+function CategoryManager({ overrides, saveOverride }: CategoryManagerProps) {
   const { lang } = useI18n();
   const copy = COPY[lang];
-  const { overrides, saveOverride } = usePackages();
   const records = useMemo(() => getShopProductCategoryRecords(overrides, true), [overrides]);
   const activeRecords = records.filter((record) => !record.hidden);
   const deletedRecords = records.filter((record) => record.hidden);
@@ -63,9 +67,10 @@ function CategoryManager() {
   const [savedId, setSavedId] = useState<string | null>(null);
 
   const nameExists = (name: string, exceptId?: string) => {
-    const normalized = normalizeName(name).toLocaleLowerCase(lang === 'he' ? 'he-IL' : 'en-US');
+    const locale = lang === 'he' ? 'he-IL' : 'en-US';
+    const normalized = normalizeName(name).toLocaleLowerCase(locale);
     return activeRecords.some((record) =>
-      record.id !== exceptId && normalizeName(record.name).toLocaleLowerCase(lang === 'he' ? 'he-IL' : 'en-US') === normalized
+      record.id !== exceptId && normalizeName(record.name).toLocaleLowerCase(locale) === normalized
     );
   };
 
@@ -222,6 +227,7 @@ function CategoryManager() {
               <button
                 key={record.id}
                 type="button"
+                data-category-restore
                 onClick={() => restoreCategory(record)}
                 disabled={busyId === record.id}
                 className="inline-flex items-center gap-1.5 rounded-full border border-[#EAE3D2] bg-white px-3 py-2 text-xs font-bold text-gray-600 disabled:opacity-50"
@@ -237,7 +243,9 @@ function CategoryManager() {
   );
 }
 
-export function ProductCategoryManagerPortal() {
+interface ProductCategoryManagerPortalProps extends CategoryManagerProps {}
+
+export function ProductCategoryManagerPortal({ overrides, saveOverride }: ProductCategoryManagerPortalProps) {
   const [target, setTarget] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -254,8 +262,8 @@ export function ProductCategoryManagerPortal() {
 
   return createPortal(
     <>
-      <style>{'#admin-products button:has(.lucide-rotate-ccw){display:none!important} #admin-products [data-category-restore] .lucide-rotate-ccw{display:inline-block!important}'}</style>
-      <CategoryManager />
+      <style>{'#admin-products button:has(.lucide-rotate-ccw):not([data-category-restore]){display:none!important}'}</style>
+      <CategoryManager overrides={overrides} saveOverride={saveOverride} />
     </>,
     target
   );
