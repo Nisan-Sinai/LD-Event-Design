@@ -85,9 +85,10 @@ describe('ProductManager exhaustive branches', () => {
     const card = cardFor('שם חלופי');
     expect(within(card).getByDisplayValue('תיאור חלופי')).toBeInTheDocument();
     expect(within(card).getByDisplayValue('0')).toBeInTheDocument();
-    expect(within(card).getByRole('combobox')).toHaveValue(SHOP_PRODUCT_CATEGORIES.ENTRANCE);
+    expect(within(card).getByLabelText('קטגוריה — שם חלופי')).toHaveValue(SHOP_PRODUCT_CATEGORIES.ENTRANCE);
+    expect(within(card).getByLabelText('מיקום בקטגוריה — שם חלופי')).toBeInTheDocument();
     expect(card.querySelectorAll('img')).toHaveLength(4);
-    expect(within(card).getByText('נערך')).toBeInTheDocument();
+    expect(within(card).queryByText('נערך')).not.toBeInTheDocument();
   });
 
   it('hydrates custom products with every fallback and sorts them by sort order', () => {
@@ -185,7 +186,7 @@ describe('ProductManager exhaustive branches', () => {
     renderManager();
     fireEvent.click(screen.getByRole('button', { name: 'הוספת מוצר' }));
     const form = activeNewProductForm();
-    fireEvent.change(within(form).getByRole('combobox'), { target: { value: SHOP_PRODUCT_CATEGORIES.CENTERPIECES } });
+    fireEvent.change(within(form).getByLabelText('קטגוריה — מוצר חדש'), { target: { value: SHOP_PRODUCT_CATEGORIES.CENTERPIECES } });
     const textboxes = within(form).getAllByRole('textbox');
     fireEvent.change(textboxes[0], { target: { value: '  ארבע תמונות  ' } });
     fireEvent.change(within(form).getByRole('spinbutton'), { target: { value: '-9' } });
@@ -210,8 +211,7 @@ describe('ProductManager exhaustive branches', () => {
     await waitFor(() => expect(screen.queryByRole('button', { name: 'יצירת מוצר' })).not.toBeInTheDocument());
   });
 
-  it('uses the custom product sort order on edits and falls back to Date.now when missing', async () => {
-    const now = vi.spyOn(Date, 'now').mockReturnValue(777);
+  it('keeps a custom product at its current visual position when editing', async () => {
     state.overrides = {
       'product-custom-one': ov({
         package_id: 'product-custom-one', is_custom: true, sort_order: null,
@@ -223,7 +223,6 @@ describe('ProductManager exhaustive branches', () => {
     fireEvent.change(within(card).getByRole('spinbutton'), { target: { value: '11' } });
     fireEvent.click(within(card).getByRole('button', { name: 'שמור פרטי מוצר' }));
     await waitFor(() => expect(state.saveOverride).toHaveBeenCalled());
-    expect(state.saveOverride.mock.calls[0][0]).toMatchObject({ is_custom: true, sort_order: 777 });
-    now.mockRestore();
+    expect(state.saveOverride.mock.calls[0][0]).toMatchObject({ is_custom: true, sort_order: 7 });
   });
 });
