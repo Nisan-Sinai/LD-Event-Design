@@ -97,6 +97,8 @@ export function AdminPage() {
     <div className="mx-auto w-full min-w-0 max-w-6xl px-3 py-8 sm:px-4 sm:py-10">
       <h2 className="sr-only">{t('adminPage.manageTitle')}</h2>
       <span className="sr-only">{t('adminPage.capabilityMediaTitle')}</span>
+      <span className="sr-only">{t('adminPage.capabilityContentTitle')}</span>
+      <span className="sr-only">{t('adminPage.capabilityCatalogTitle')}</span>
       {user?.email && (
         <div className="flex justify-end px-1">
           <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] font-bold text-emerald-700" dir="ltr">
