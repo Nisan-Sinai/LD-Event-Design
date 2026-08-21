@@ -34,7 +34,9 @@ const DELETE_COPY = {
 export function AdminPage() {
   const { t, lang } = useI18n();
   const deleteCopy = DELETE_COPY[lang];
-  const categoryTabLabel = lang === 'he' ? 'ניהול קטגוריות' : 'Category management';
+  const navLabels = lang === 'he'
+    ? { catalog: 'מוצרים וחבילות', orders: 'הזמנות', categories: 'קטגוריות' }
+    : { catalog: 'Products & packages', orders: 'Orders', categories: 'Categories' };
   const { configured, user } = useAuth();
   const [tab, setTab] = useState<AdminTab>('catalog');
   const [orders, setOrders] = useState<OrderRow[] | null>(null);
@@ -83,14 +85,14 @@ export function AdminPage() {
       type="button"
       onClick={() => setTab(key)}
       aria-pressed={tab === key}
-      className={`flex min-h-12 min-w-0 items-center justify-center gap-1 rounded-full border px-1.5 py-2.5 text-[9px] font-extrabold leading-tight transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B29259]/50 focus-visible:ring-offset-2 sm:px-3 sm:text-[11px] ${
+      className={`flex min-h-11 min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full border px-2 py-2.5 text-[11px] font-extrabold leading-none transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B29259]/50 focus-visible:ring-offset-2 sm:min-h-12 sm:px-4 sm:text-xs ${
         tab === key
           ? 'border-[#B29259] bg-gradient-to-r from-[#A9854F] via-[#B29259] to-[#C7A769] text-white shadow-[0_8px_22px_rgba(178,146,89,0.24)]'
           : 'border-[#E0D4C3] bg-[#FFFDF9] text-[#5F554D] shadow-sm hover:border-[#B29259]/70 hover:bg-[#FAF7F2] hover:text-[#8C6D3F]'
       }`}
     >
       <Icon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" aria-hidden="true" />
-      <span className="min-w-0 text-center leading-tight">{label}</span>
+      <span className="min-w-0 text-center">{label}</span>
     </button>
   );
 
@@ -108,10 +110,10 @@ export function AdminPage() {
         </div>
       )}
 
-      <div className="mx-auto my-6 grid w-full max-w-2xl grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] !grid-cols-3 gap-1.5 sm:gap-2" role="group" aria-label={t('adminPage.adminArea')}>
-        {tabBtn('catalog', t('adminPage.tabCatalogFull'), PackageIcon)}
-        {tabBtn('orders', t('adminPage.tabOrders'), ClipboardList)}
-        {tabBtn('categories', categoryTabLabel, FolderPlus)}
+      <div className="mx-auto my-6 grid w-full max-w-lg grid-cols-3 gap-2" role="group" aria-label={t('adminPage.adminArea')}>
+        {tabBtn('catalog', navLabels.catalog, PackageIcon)}
+        {tabBtn('orders', navLabels.orders, ClipboardList)}
+        {tabBtn('categories', navLabels.categories, FolderPlus)}
       </div>
 
       {tab === 'catalog' && (
