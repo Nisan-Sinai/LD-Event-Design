@@ -45,7 +45,7 @@ const COPY = {
     packages: 'חבילות עיצוב',
     packagesKicker: 'קולקציות נבחרות',
     add: 'הוספה לסל',
-    added: 'נוסף לסל',
+    added: 'הוספה לסל',
     from: 'החל מ־',
     details: 'מה כלול?',
     cart: 'עגלת קניות',
@@ -89,7 +89,7 @@ const COPY = {
     packages: 'Design packages',
     packagesKicker: 'Curated collections',
     add: 'Add to cart',
-    added: 'Added to cart',
+    added: 'Add to cart',
     from: 'From',
     details: 'What is included?',
     cart: 'Shopping cart',
@@ -312,9 +312,6 @@ export function HomePage() {
                             ) : (
                               <div className="flex h-full items-center justify-center p-4">{renderPackageSVG(product.svgType)}</div>
                             )}
-                            <button type="button" onClick={() => addProduct(product)} aria-label={`${copy.add}: ${text.title}`} className="absolute bottom-3 end-3 flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#B8860B] shadow-xl transition hover:scale-105 hover:bg-[#B8860B] hover:text-white">
-                              {addedId === product.id ? <Check className="h-4 w-4" aria-hidden="true" /> : <ShoppingBag className="h-4 w-4" aria-hidden="true" />}
-                            </button>
                           </div>
                           <div className="flex flex-1 flex-col p-4">
                             <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#B8860B]">{localizedProductCategory(product.category, lang)}</p>
@@ -331,7 +328,7 @@ export function HomePage() {
                             />
                             <div className="mt-auto flex items-center justify-between gap-2 pt-4">
                               <strong className="text-base font-black text-[#B8860B]">{money(product.price, lang)}</strong>
-                              <button type="button" onClick={() => addProduct(product)} className="text-[10px] font-extrabold text-[#7A5A46] underline-offset-4 hover:underline">{addedId === product.id ? copy.added : copy.add}</button>
+                              <button type="button" onClick={() => addProduct(product)} aria-label={`${copy.add}: ${text.title}`} className="text-[10px] font-extrabold text-[#7A5A46] underline-offset-4 hover:underline">{addedId === product.id ? copy.added : copy.add}</button>
                             </div>
                           </div>
                         </article>
