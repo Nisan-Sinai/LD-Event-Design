@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { AlertCircle, Eye, EyeOff, ImagePlus, Plus, RotateCcw, Save, ShoppingBag, Trash2, X } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, ImagePlus, Plus, Save, ShoppingBag, Trash2, X } from 'lucide-react';
 import {
+  getDefaultShopProductPosition,
   SHOP_PRODUCTS,
   SHOP_PRODUCT_CATEGORIES,
   type ShopProduct,
@@ -13,6 +14,8 @@ import { usePackages } from '../packages/PackagesProvider';
 
 type ImageSlot = 1 | 2 | 3 | 4;
 
+const DELETED_MARKER = '__deleted__';
+
 interface ProductDraft {
   title: string;
   subtitle: string;
@@ -22,6 +25,7 @@ interface ProductDraft {
   image3: string;
   image4: string;
   category: ShopProductCategory | '';
+  position: string;
 }
 
 interface ManagedProduct extends ShopProduct {
@@ -31,6 +35,8 @@ interface ManagedProduct extends ShopProduct {
   hidden: boolean;
   custom: boolean;
   hasOverride: boolean;
+  sortOrder: number;
+  explicitOrder: boolean;
 }
 
 const EMPTY_DRAFT: ProductDraft = {
@@ -41,16 +47,18 @@ const EMPTY_DRAFT: ProductDraft = {
   image2: '',
   image3: '',
   image4: '',
-  category: ''
+  category: '',
+  position: ''
 };
 
 const COPY = {
   he: {
     title: 'מוצרים קטנים בחנות',
-    subtitle: 'כאן לירון יכולה להעלות עד 4 תמונות, לשנות מחיר וטקסט, להסתיר מוצר או להוסיף מוצר חדש.',
+    subtitle: 'אפשר להעלות עד 4 תמונות, לשנות מחיר וטקסט, לבחור קטגוריה ומיקום, להסתיר או למחוק כל מוצר.',
     add: 'הוספת מוצר',
     newProduct: 'מוצר חדש',
     category: 'קטגוריה',
+    position: 'מיקום בקטגוריה',
     name: 'שם המוצר',
     description: 'תיאור קצר',
     price: 'מחיר',
@@ -68,22 +76,21 @@ const COPY = {
     undoImage: '↩️ חזור בלי לשמור',
     hide: 'הסתרה מהחנות',
     show: 'הצגה בחנות',
-    reset: 'שחזור ברירת מחדל',
     delete: 'מחיקת מוצר',
     required: 'יש למלא קטגוריה, שם ומחיר.',
     error: 'השמירה נכשלה. נסו שוב.',
     custom: 'מוצר חדש',
     hidden: 'מוסתר',
-    edited: 'נערך',
     noImage: 'ללא תמונה',
     imageHint: 'אפשר להעלות עד 4 תמונות. בחירת תמונה מציגה תצוגה מקדימה; לחצו ✅ שמור כדי לפרסם אותה.'
   },
   en: {
     title: 'Small shop products',
-    subtitle: 'Upload up to 4 product images, change prices and text, hide products or create new products.',
+    subtitle: 'Upload up to 4 images, edit price and text, choose category and position, hide or delete any product.',
     add: 'Add product',
     newProduct: 'New product',
     category: 'Category',
+    position: 'Position in category',
     name: 'Product name',
     description: 'Short description',
     price: 'Price',
@@ -101,30 +108,15 @@ const COPY = {
     undoImage: '↩️ Revert without saving',
     hide: 'Hide from shop',
     show: 'Show in shop',
-    reset: 'Restore default',
     delete: 'Delete product',
     required: 'Category, name and price are required.',
     error: 'Saving failed. Please try again.',
     custom: 'New product',
     hidden: 'Hidden',
-    edited: 'Edited',
     noImage: 'No image',
     imageHint: 'Selecting an image only previews it. Press ✅ Save below that image to publish it.'
   }
 } as const;
-
-function toDraft(product: ManagedProduct): ProductDraft {
-  return {
-    title: product.title,
-    subtitle: product.subtitle,
-    price: String(product.price),
-    image: product.image ?? '',
-    image2: product.image2,
-    image3: product.image3,
-    image4: product.image4,
-    category: product.category
-  };
-}
 
 function savedImageFor(product: ManagedProduct, slot: ImageSlot): string {
   if (slot === 1) return product.image ?? '';
@@ -148,28 +140,38 @@ export function ProductManager() {
 
   if (!isSupabaseConfigured) return null;
 
-  const baseProducts: ManagedProduct[] = SHOP_PRODUCTS.map((product) => {
-    const override = overrides[product.id];
-    return {
-      ...product,
-      title: override?.title ?? product.title,
-      subtitle: override?.subtitle ?? product.subtitle,
-      price: override?.price ?? product.price,
-      image: override?.image_url ?? product.image,
-      image2: override?.image_url_2 ?? '',
-      image3: override?.image_url_3 ?? '',
-      image4: override?.image_url_4 ?? '',
-      category: (override?.category ?? product.category) as ShopProductCategory,
-      svgType: override?.svg_type ?? product.svgType,
-      hidden: override?.hidden ?? false,
-      custom: false,
-      hasOverride: !!override
-    };
-  });
+  const categoryValues = Object.values(SHOP_PRODUCT_CATEGORIES);
+  const categoryIndex = (category: string) => {
+    const index = categoryValues.indexOf(category);
+    return index === -1 ? Number.MAX_SAFE_INTEGER : index;
+  };
+
+  const baseProducts: ManagedProduct[] = SHOP_PRODUCTS
+    .filter((product) => overrides[product.id]?.svg_type !== DELETED_MARKER)
+    .map((product) => {
+      const override = overrides[product.id];
+      const sortOrder = override?.sort_order ?? getDefaultShopProductPosition(product.id);
+      return {
+        ...product,
+        title: override?.title ?? product.title,
+        subtitle: override?.subtitle ?? product.subtitle,
+        price: override?.price ?? product.price,
+        image: override?.image_url ?? product.image,
+        image2: override?.image_url_2 ?? '',
+        image3: override?.image_url_3 ?? '',
+        image4: override?.image_url_4 ?? '',
+        category: (override?.category ?? product.category) as ShopProductCategory,
+        svgType: override?.svg_type ?? product.svgType,
+        hidden: override?.hidden ?? false,
+        custom: false,
+        hasOverride: !!override,
+        sortOrder,
+        explicitOrder: override?.sort_order != null
+      };
+    });
 
   const customProducts: ManagedProduct[] = Object.values(overrides)
-    .filter((override) => override.is_custom && override.package_id.startsWith('product-'))
-    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    .filter((override) => override.is_custom && override.package_id.startsWith('product-') && override.svg_type !== DELETED_MARKER)
     .map((override) => ({
       id: override.package_id,
       category: (override.category ?? SHOP_PRODUCT_CATEGORIES.CENTERPIECES) as ShopProductCategory,
@@ -183,12 +185,32 @@ export function ProductManager() {
       svgType: override.svg_type ?? 'default',
       hidden: override.hidden,
       custom: true,
-      hasOverride: true
+      hasOverride: true,
+      sortOrder: override.sort_order ?? Number.MAX_SAFE_INTEGER,
+      explicitOrder: override.sort_order != null
     }));
 
-  const products = [...baseProducts, ...customProducts];
+  const products = [...baseProducts, ...customProducts].sort((a, b) =>
+    categoryIndex(a.category) - categoryIndex(b.category) ||
+    a.sortOrder - b.sortOrder ||
+    Number(b.explicitOrder) - Number(a.explicitOrder) ||
+    a.title.localeCompare(b.title, lang === 'he' ? 'he' : 'en')
+  );
+
   const inputClass = 'w-full rounded-xl border border-[#DDD2C1] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#B29259] focus:ring-2 focus:ring-[#B29259]/20';
   const labelClass = 'mb-1.5 block text-[11px] font-bold text-gray-600';
+
+  const toDraft = (product: ManagedProduct): ProductDraft => ({
+    title: product.title,
+    subtitle: product.subtitle,
+    price: String(product.price),
+    image: product.image ?? '',
+    image2: product.image2,
+    image3: product.image3,
+    image4: product.image4,
+    category: product.category,
+    position: String(product.sortOrder)
+  });
 
   const draftFor = (product: ManagedProduct) => drafts[product.id] ?? toDraft(product);
   const setField = (product: ManagedProduct, field: keyof ProductDraft, value: string) => {
@@ -196,6 +218,14 @@ export function ProductManager() {
       ...current,
       [product.id]: { ...draftFor(product), [field]: value }
     }));
+  };
+
+  const productsInCategory = (category: string, excludingId?: string) =>
+    products.filter((product) => product.category === category && product.id !== excludingId);
+
+  const positionOptions = (category: string, excludingId?: string) => {
+    const count = productsInCategory(category, excludingId).length + 1;
+    return Array.from({ length: Math.max(1, count) }, (_, index) => index + 1);
   };
 
   const run = async (id: string, action: () => Promise<void>) => {
@@ -233,7 +263,7 @@ export function ProductManager() {
     pricing_tiers: null,
     hidden,
     is_custom: product.custom,
-    sort_order: product.custom ? overrides[product.id]?.sort_order ?? Date.now() : null
+    sort_order: Math.max(1, Number(draft.position) || 1)
   });
 
   const persistImage = async (product: ManagedProduct, imageUrl: string, slot: ImageSlot) => {
@@ -266,6 +296,15 @@ export function ProductManager() {
     void run(product.id, () => saveOverride(toOverride(product, draftFor(product), !product.hidden)));
   };
 
+  const deleteProduct = (product: ManagedProduct) => {
+    if (product.custom) {
+      void run(product.id, () => removeOverride(product.id));
+      return;
+    }
+    const deleted = { ...toOverride(product, draftFor(product), true), svg_type: DELETED_MARKER };
+    void run(product.id, () => saveOverride(deleted));
+  };
+
   const uploadImage = async (
     uploadKey: string,
     file: File | undefined,
@@ -292,6 +331,7 @@ export function ProductManager() {
     }
 
     const id = `product-custom-${crypto.randomUUID().slice(0, 8)}`;
+    const fallbackPosition = productsInCategory(newDraft.category).length + 1;
     void run('__new_product__', () => saveOverride({
       package_id: id,
       price: Math.max(0, Number(newDraft.price) || 0),
@@ -308,7 +348,7 @@ export function ProductManager() {
       pricing_tiers: null,
       hidden: false,
       is_custom: true,
-      sort_order: Date.now()
+      sort_order: Math.max(1, Number(newDraft.position) || fallbackPosition)
     }, { includeImage: true }));
     setNewDraft(EMPTY_DRAFT);
     setShowAdd(false);
@@ -348,12 +388,7 @@ export function ProductManager() {
           {displayUrl ? (
             <>
               <img src={displayUrl} alt="" className="h-full w-full object-cover" />
-              <button
-                type="button"
-                onClick={() => setDisplayUrl('')}
-                aria-label={slot === 1 ? copy.removeImage : `${copy.removeImage} ${slot}`}
-                className="absolute end-1.5 top-1.5 rounded-full bg-white/95 p-1.5 text-gray-500 shadow hover:text-red-600"
-              >
+              <button type="button" onClick={() => setDisplayUrl('')} aria-label={slot === 1 ? copy.removeImage : `${copy.removeImage} ${slot}`} className="absolute end-1.5 top-1.5 rounded-full bg-white/95 p-1.5 text-gray-500 shadow hover:text-red-600">
                 <X className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
             </>
@@ -367,47 +402,24 @@ export function ProductManager() {
         <label className="mt-2 flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#B29259] px-2 py-2 text-[10px] font-bold text-[#8C6D3F] hover:bg-white">
           <ImagePlus className="h-3.5 w-3.5" aria-hidden="true" />
           {uploadingId === uploadKey ? copy.uploading : `${copy.upload} ${slot}`}
-          <input
-            type="file"
-            accept="image/*,.heic,.heif"
-            className="sr-only"
-            aria-label={`${copy.upload} ${slot}`}
-            disabled={uploadingId === uploadKey || imageBusy}
-            onChange={(event) => {
-              void uploadImage(uploadKey, event.target.files?.[0], setDisplayUrl, product);
-              event.target.value = '';
-            }}
-          />
+          <input type="file" accept="image/*,.heic,.heif" className="sr-only" aria-label={`${copy.upload} ${slot}`} disabled={uploadingId === uploadKey || imageBusy} onChange={(event) => {
+            void uploadImage(uploadKey, event.target.files?.[0], setDisplayUrl, product);
+            event.target.value = '';
+          }} />
         </label>
 
-        {product && (
-          changed ? (
-            <div className="mt-2 grid grid-cols-1 gap-1.5">
-              <button
-                type="button"
-                onClick={() => void persistImage(product, displayUrl, slot)}
-                disabled={imageBusy || uploadingId === uploadKey}
-                aria-label={`${copy.saveImage} ${slot}`}
-                className="rounded-lg bg-emerald-600 px-2 py-2 text-[10px] font-extrabold text-white disabled:opacity-50"
-              >
-                {imageBusy ? copy.saving : copy.saveImage}
-              </button>
-              <button
-                type="button"
-                onClick={undoImage}
-                disabled={imageBusy || uploadingId === uploadKey}
-                aria-label={`${copy.undoImage} ${slot}`}
-                className="rounded-lg border border-gray-200 bg-white px-2 py-2 text-[10px] font-bold text-gray-600 disabled:opacity-50"
-              >
-                {copy.undoImage}
-              </button>
-            </div>
-          ) : (
-            <div className="mt-2 text-center text-[10px] font-extrabold text-emerald-700">
-              {savedId === uploadKey ? copy.saved : copy.imageSaved}
-            </div>
-          )
-        )}
+        {product && (changed ? (
+          <div className="mt-2 grid grid-cols-1 gap-1.5">
+            <button type="button" onClick={() => void persistImage(product, displayUrl, slot)} disabled={imageBusy || uploadingId === uploadKey} aria-label={`${copy.saveImage} ${slot}`} className="rounded-lg bg-emerald-600 px-2 py-2 text-[10px] font-extrabold text-white disabled:opacity-50">
+              {imageBusy ? copy.saving : copy.saveImage}
+            </button>
+            <button type="button" onClick={undoImage} disabled={imageBusy || uploadingId === uploadKey} aria-label={`${copy.undoImage} ${slot}`} className="rounded-lg border border-gray-200 bg-white px-2 py-2 text-[10px] font-bold text-gray-600 disabled:opacity-50">
+              {copy.undoImage}
+            </button>
+          </div>
+        ) : (
+          <div className="mt-2 text-center text-[10px] font-extrabold text-emerald-700">{savedId === uploadKey ? copy.saved : copy.imageSaved}</div>
+        ))}
       </div>
     );
   };
@@ -432,8 +444,23 @@ export function ProductManager() {
         <div className="mt-6 rounded-2xl border border-[#D8C29A] bg-[#FAF7F2] p-4 sm:p-5">
           <h4 className="font-bold text-[#8C6D3F]">{copy.newProduct}</h4>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <label><span className={labelClass}>{copy.category}</span><select value={newDraft.category} onChange={(event) => setNewDraft({ ...newDraft, category: event.target.value as ShopProductCategory })} className={inputClass}><option value="">—</option>{Object.values(SHOP_PRODUCT_CATEGORIES).map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
-            <label className="lg:col-span-2"><span className={labelClass}>{copy.name}</span><input value={newDraft.title} onChange={(event) => setNewDraft({ ...newDraft, title: event.target.value })} className={inputClass} /></label>
+            <label>
+              <span className={labelClass}>{copy.category}</span>
+              <select aria-label={`${copy.category} — ${copy.newProduct}`} value={newDraft.category} onChange={(event) => {
+                const category = event.target.value as ShopProductCategory;
+                setNewDraft({ ...newDraft, category, position: category ? String(productsInCategory(category).length + 1) : '' });
+              }} className={inputClass}>
+                <option value="">—</option>
+                {categoryValues.map((category) => <option key={category} value={category}>{category}</option>)}
+              </select>
+            </label>
+            <label>
+              <span className={labelClass}>{copy.position}</span>
+              <select aria-label={`${copy.position} — ${copy.newProduct}`} value={newDraft.position} disabled={!newDraft.category} onChange={(event) => setNewDraft({ ...newDraft, position: event.target.value })} className={inputClass}>
+                {newDraft.category ? positionOptions(newDraft.category).map((position) => <option key={position} value={position}>{position}</option>) : <option value="">—</option>}
+              </select>
+            </label>
+            <label><span className={labelClass}>{copy.name}</span><input value={newDraft.title} onChange={(event) => setNewDraft({ ...newDraft, title: event.target.value })} className={inputClass} /></label>
             <label><span className={labelClass}>{copy.price}</span><input type="number" min="0" value={newDraft.price} onChange={(event) => setNewDraft({ ...newDraft, price: event.target.value })} className={inputClass} /></label>
             <label className="sm:col-span-2 lg:col-span-4"><span className={labelClass}>{copy.description}</span><input value={newDraft.subtitle} onChange={(event) => setNewDraft({ ...newDraft, subtitle: event.target.value })} className={inputClass} /></label>
             <div className="grid grid-cols-2 gap-3 sm:col-span-2 lg:col-span-4 lg:grid-cols-4">
@@ -455,6 +482,8 @@ export function ProductManager() {
         {products.map((product) => {
           const draft = draftFor(product);
           const busy = busyId === product.id || Boolean(uploadingId?.startsWith(`${product.id}:`));
+          const availablePositions = positionOptions(draft.category || product.category, product.id);
+          const selectedPosition = Math.min(Math.max(1, Number(draft.position) || 1), availablePositions.length);
           return (
             <article key={product.id} className={`rounded-2xl border p-4 ${product.hidden ? 'border-gray-200 bg-gray-50 opacity-75' : 'border-[#EAE3D2] bg-white'}`}>
               <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -462,7 +491,6 @@ export function ProductManager() {
                 <div className="flex gap-1.5">
                   {product.custom && <span className="rounded-full bg-[#FAF7F2] px-2 py-1 text-[10px] font-bold text-[#8C6D3F]">{copy.custom}</span>}
                   {product.hidden && <span className="rounded-full bg-red-50 px-2 py-1 text-[10px] font-bold text-red-600">{copy.hidden}</span>}
-                  {!product.hidden && product.hasOverride && <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700">{copy.edited}</span>}
                 </div>
               </div>
 
@@ -474,7 +502,24 @@ export function ProductManager() {
                   {imageControl(`${product.id}:4`, draft.image4, (image4) => setField(product, 'image4', image4), 4, product)}
                 </div>
                 <div className="grid gap-3">
-                  <label><span className={labelClass}>{copy.category}</span><select value={draft.category} onChange={(event) => setField(product, 'category', event.target.value)} className={inputClass}>{Object.values(SHOP_PRODUCT_CATEGORIES).map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
+                  <label>
+                    <span className={labelClass}>{copy.category}</span>
+                    <select aria-label={`${copy.category} — ${product.title}`} value={draft.category} onChange={(event) => {
+                      const category = event.target.value;
+                      setDrafts((current) => ({
+                        ...current,
+                        [product.id]: { ...draftFor(product), category, position: String(productsInCategory(category, product.id).length + 1) }
+                      }));
+                    }} className={inputClass}>
+                      {categoryValues.map((category) => <option key={category} value={category}>{category}</option>)}
+                    </select>
+                  </label>
+                  <label>
+                    <span className={labelClass}>{copy.position}</span>
+                    <select aria-label={`${copy.position} — ${product.title}`} value={String(selectedPosition)} onChange={(event) => setField(product, 'position', event.target.value)} className={inputClass}>
+                      {availablePositions.map((position) => <option key={position} value={position}>{position}</option>)}
+                    </select>
+                  </label>
                   <label><span className={labelClass}>{copy.name}</span><input value={draft.title} onChange={(event) => setField(product, 'title', event.target.value)} className={inputClass} /></label>
                   <label><span className={labelClass}>{copy.description}</span><input value={draft.subtitle} onChange={(event) => setField(product, 'subtitle', event.target.value)} className={inputClass} /></label>
                   <label><span className={labelClass}>{copy.price}</span><input type="number" min="0" value={draft.price} onChange={(event) => setField(product, 'price', event.target.value)} className={inputClass} /></label>
@@ -492,11 +537,9 @@ export function ProductManager() {
                   {product.hidden ? <Eye className="h-3.5 w-3.5" aria-hidden="true" /> : <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />}
                   {product.hidden ? copy.show : copy.hide}
                 </button>
-                {product.custom ? (
-                  <button type="button" onClick={() => void run(product.id, () => removeOverride(product.id))} disabled={busy} className="inline-flex items-center gap-1.5 px-2 py-2 text-xs font-bold text-red-600 disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" aria-hidden="true" />{copy.delete}</button>
-                ) : product.hasOverride ? (
-                  <button type="button" onClick={() => void run(product.id, () => removeOverride(product.id))} disabled={busy} className="inline-flex items-center gap-1.5 px-2 py-2 text-xs font-bold text-gray-500 disabled:opacity-50"><RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />{copy.reset}</button>
-                ) : null}
+                <button type="button" onClick={() => deleteProduct(product)} disabled={busy} className="inline-flex items-center gap-1.5 px-2 py-2 text-xs font-bold text-red-600 disabled:opacity-50">
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />{copy.delete}
+                </button>
                 {errorId === product.id && <span role="alert" className="inline-flex items-center gap-1 text-xs font-bold text-red-600"><AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />{copy.error}</span>}
               </div>
             </article>
