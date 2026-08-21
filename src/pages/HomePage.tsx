@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router';
 import {
   ArrowLeft,
   ArrowRight,
@@ -489,7 +488,7 @@ export function HomePage() {
                   <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white/55">{copy.estimate}</p>
                   <strong className="font-display mt-1 block text-3xl font-black text-[#E8C5B8]">{money(subtotal, lang)}</strong>
                 </div>
-                <Link to="/cart" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-xs font-extrabold text-[#2C2C2C] transition hover:-translate-y-0.5 lg:mt-5 lg:w-full">{copy.reviewCart}<Arrow className="h-4 w-4" aria-hidden="true" /></Link>
+                <a href="/cart" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-xs font-extrabold text-[#2C2C2C] transition hover:-translate-y-0.5 lg:mt-5 lg:w-full">{copy.reviewCart}<Arrow className="h-4 w-4" aria-hidden="true" /></a>
               </aside>
             </div>
           </div>
@@ -536,7 +535,7 @@ export function HomePage() {
               <p className="text-xs font-bold text-[#6C625A]">{copy.cart}: {cartCount}</p>
               <p className="font-display text-xl font-black text-[#B8860B]">{money(subtotal, lang)}</p>
             </div>
-            <Link to="/cart" className="inline-flex shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-[#B8860B] to-[#D4AF37] px-5 py-3 text-xs font-extrabold text-white shadow-lg">{copy.viewCart}<Arrow className="h-4 w-4" aria-hidden="true" /></Link>
+            <a href="/cart" className="inline-flex shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-[#B8860B] to-[#D4AF37] px-5 py-3 text-xs font-extrabold text-white shadow-lg">{copy.viewCart}<Arrow className="h-4 w-4" aria-hidden="true" /></a>
           </div>
         </div>
       )}
