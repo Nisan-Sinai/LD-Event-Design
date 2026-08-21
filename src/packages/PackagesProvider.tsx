@@ -79,7 +79,7 @@ export function PackagesProvider({ children }: { children: React.ReactNode }) {
   return (
     <PackagesContext.Provider value={{ overrides, loading, refresh, saveOverride, saveImage, removeOverride }}>
       {children}
-      <ProductCategoryManagerPortal />
+      <ProductCategoryManagerPortal overrides={overrides} saveOverride={saveOverride} />
     </PackagesContext.Provider>
   );
 }
