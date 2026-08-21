@@ -340,3 +340,9 @@ textarea:focus-visible,
     transition: none !important;
   }
 }
+
+/* תג "נערך" הוא מידע פנימי מיותר בממשק הניהול. */
+#admin-products span.bg-emerald-50.text-emerald-700,
+#admin-packages span.bg-emerald-50.text-emerald-600 {
+  display: none !important;
+}

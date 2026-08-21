@@ -20,8 +20,9 @@ export function LoginPage() {
   const from = useMemo(() => {
     const stateFrom = (location.state as { from?: string } | null)?.from;
     const queryFrom = new URLSearchParams(location.search).get('from');
-    const storedFrom = window.sessionStorage.getItem(AUTH_RETURN_KEY);
-    return safeReturnPath(stateFrom ?? queryFrom ?? storedFrom);
+    // כניסת מנהלת ישירה תמיד חוזרת לניהול. אין שימוש ביעד ישן מ-sessionStorage,
+    // כדי שניסיון OAuth קודם לא יוכל להחזיר בטעות לעמוד הבית.
+    return safeReturnPath(stateFrom ?? queryFrom ?? '/admin');
   }, [location.search, location.state]);
 
   const [email, setEmail] = useState('');
@@ -38,7 +39,7 @@ export function LoginPage() {
   useEffect(() => {
     if (!user || role !== 'admin') return;
     window.sessionStorage.removeItem(AUTH_RETURN_KEY);
-    navigate(from, { replace: true });
+    navigate(from === '/admin' ? '/admin' : from, { replace: true });
   }, [from, navigate, role, user]);
 
   const submit = async (event: React.FormEvent) => {
@@ -57,7 +58,7 @@ export function LoginPage() {
       return;
     }
     window.sessionStorage.removeItem(AUTH_RETURN_KEY);
-    navigate(from, { replace: true });
+    navigate(from === '/admin' ? '/admin' : from, { replace: true });
   };
 
   const submitReset = async (event: React.FormEvent) => {

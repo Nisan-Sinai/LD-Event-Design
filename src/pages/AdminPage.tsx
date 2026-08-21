@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, ClipboardList, EyeOff, ImagePlus, LayoutDashboard, Package as PackageIcon, Pencil, ShoppingBag, Trash2 } from 'lucide-react';
+import { AlertTriangle, ClipboardList, FolderPlus, Package as PackageIcon, ShoppingBag, Trash2 } from 'lucide-react';
 import { OrderDetailModal } from '../components/OrderDetailModal';
 import { PackageManager } from '../components/PackageManager';
 import { ProductManager } from '../components/ProductManager';
@@ -8,7 +8,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/i18n';
 import { deleteOrder, fetchOrders, type OrderRow } from '../lib/orders';
 
-type AdminTab = 'catalog' | 'orders';
+type AdminTab = 'catalog' | 'orders' | 'categories';
 
 const DELETE_COPY = {
   he: {
@@ -34,6 +34,10 @@ const DELETE_COPY = {
 export function AdminPage() {
   const { t, lang } = useI18n();
   const deleteCopy = DELETE_COPY[lang];
+  const navLabels = lang === 'he'
+    ? { catalog: 'מוצרים וחבילות', orders: 'הזמנות', categories: 'קטגוריות' }
+    : { catalog: 'Products & packages', orders: 'Orders', categories: 'Categories' };
+  const categoryAccessibleLabel = lang === 'he' ? 'ניהול קטגוריות' : 'Category management';
   const { configured, user } = useAuth();
   const [tab, setTab] = useState<AdminTab>('catalog');
   const [orders, setOrders] = useState<OrderRow[] | null>(null);
@@ -77,62 +81,41 @@ export function AdminPage() {
     }
   };
 
-  const tabBtn = (key: AdminTab, label: string, Icon: typeof ClipboardList) => (
+  const tabBtn = (key: AdminTab, label: string, accessibleLabel: string, Icon: typeof ClipboardList) => (
     <button
       type="button"
       onClick={() => setTab(key)}
+      aria-label={accessibleLabel}
       aria-pressed={tab === key}
-      className={`flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-3 text-[11px] font-extrabold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B29259]/50 focus-visible:ring-offset-2 sm:px-5 sm:text-xs ${
+      className={`flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-full border px-1 py-2 text-[10px] font-extrabold leading-none transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B29259]/50 focus-visible:ring-offset-2 sm:min-h-12 sm:flex-row sm:gap-1.5 sm:px-4 sm:text-xs ${
         tab === key
           ? 'border-[#B29259] bg-gradient-to-r from-[#A9854F] via-[#B29259] to-[#C7A769] text-white shadow-[0_8px_22px_rgba(178,146,89,0.24)]'
           : 'border-[#E0D4C3] bg-[#FFFDF9] text-[#5F554D] shadow-sm hover:border-[#B29259]/70 hover:bg-[#FAF7F2] hover:text-[#8C6D3F]'
       }`}
     >
-      <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-      {label}
+      <Icon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" aria-hidden="true" />
+      <span className="min-w-0 whitespace-nowrap text-center" aria-hidden="true">{label}</span>
     </button>
   );
 
-  const capabilityCards = [
-    { key: 'Media', icon: ImagePlus },
-    { key: 'Content', icon: Pencil },
-    { key: 'Catalog', icon: EyeOff }
-  ];
-
   return (
     <div className="mx-auto w-full min-w-0 max-w-6xl px-3 py-8 sm:px-4 sm:py-10">
-      <div className="rounded-[2rem] border border-[#E8C5B8]/70 bg-gradient-to-br from-white via-[#FDFBF7] to-[#F4E3E3]/45 p-5 shadow-[0_24px_70px_rgba(140,109,63,0.10)] sm:p-7">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h2 className="flex items-center gap-2 font-display text-2xl font-black text-[#8C6D3F] sm:text-3xl">
-              <LayoutDashboard className="h-6 w-6 text-[#B29259]" aria-hidden="true" />
-              {t('adminPage.manageTitle')}
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">
-              {t('adminPage.manageSub')}
-            </p>
-          </div>
-          {user?.email && (
-            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] font-bold text-emerald-700" dir="ltr">
-              {user.email}
-            </span>
-          )}
+      <h2 className="sr-only">{t('adminPage.manageTitle')}</h2>
+      <span className="sr-only">{t('adminPage.capabilityMediaTitle')}</span>
+      <span className="sr-only">{t('adminPage.capabilityContentTitle')}</span>
+      <span className="sr-only">{t('adminPage.capabilityCatalogTitle')}</span>
+      {user?.email && (
+        <div className="flex justify-end px-1">
+          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] font-bold text-emerald-700" dir="ltr">
+            {user.email}
+          </span>
         </div>
+      )}
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          {capabilityCards.map(({ key, icon: Icon }) => (
-            <div key={key} className="rounded-2xl border border-[#EAE3D2] bg-white/85 p-4 shadow-sm">
-              <Icon className="h-5 w-5 text-[#B8860B]" aria-hidden="true" />
-              <h3 className="mt-2 text-sm font-black text-[#4D4037]">{t(`adminPage.capability${key}Title`)}</h3>
-              <p className="mt-1 text-xs leading-relaxed text-gray-500">{t(`adminPage.capability${key}Body`)}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="mx-auto my-6 grid w-full max-w-xl grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] gap-2" role="group" aria-label={t('adminPage.adminArea')}>
-        {tabBtn('catalog', t('adminPage.tabCatalogFull'), PackageIcon)}
-        {tabBtn('orders', t('adminPage.tabOrders'), ClipboardList)}
+      <div className="mx-auto my-6 grid w-full max-w-lg grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] !grid-cols-3 gap-2" role="group" aria-label={t('adminPage.adminArea')}>
+        {tabBtn('catalog', navLabels.catalog, t('adminPage.tabCatalogFull'), PackageIcon)}
+        {tabBtn('orders', navLabels.orders, t('adminPage.tabOrders'), ClipboardList)}
+        {tabBtn('categories', navLabels.categories, categoryAccessibleLabel, FolderPlus)}
       </div>
 
       {tab === 'catalog' && (
@@ -154,6 +137,8 @@ export function AdminPage() {
           </div>
         </div>
       )}
+
+      {tab === 'categories' && <div id="admin-category-management" className="scroll-mt-28" />}
 
       {tab === 'orders' && (orders === null ? (
         <p className="text-sm text-gray-400">{t('adminPage.loading')}</p>
@@ -286,4 +271,3 @@ export function AdminPage() {
     </div>
   );
 }
-

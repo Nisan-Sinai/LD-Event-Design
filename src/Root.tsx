@@ -28,6 +28,18 @@ function Page({ children }: { children: ReactNode }) {
   );
 }
 
+// כניסת מנהלת נטענת כעמוד נקי וישיר, בלי מעטפת התוכן השיווקי של האתר.
+// כך לחיצה על "כניסת מנהלת" מציגה מיד את טופס ההתחברות ולא תוכן/וידאו מהעמוד הראשי.
+function LoginPageShell() {
+  return (
+    <div className="min-h-screen bg-[#FDFBF7]">
+      <Suspense fallback={<Spinner />}>
+        <LoginPage />
+      </Suspense>
+    </div>
+  );
+}
+
 function ScrollToLocation() {
   const location = useLocation();
 
@@ -103,7 +115,7 @@ export function Root() {
               <Route path="/" element={<Page><HomePage /></Page>} />
               <Route path="/cart" element={<Page><CartPage /></Page>} />
               <Route path="/checkout" element={<Page><CheckoutPage /></Page>} />
-              <Route path="/login" element={<Page><LoginPage /></Page>} />
+              <Route path="/login" element={<LoginPageShell />} />
               <Route path="/register" element={<Page><RegisterPage /></Page>} />
               <Route path="/reset-password" element={<Page><ResetPasswordPage /></Page>} />
               {/* קישור ישן: שולחים תמיד לבונה החבילה הפעיל. */}
