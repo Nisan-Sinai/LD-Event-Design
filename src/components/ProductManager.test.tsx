@@ -119,7 +119,7 @@ describe('ProductManager', () => {
     fireEvent.change(within(card).getByLabelText(`מיקום בקטגוריה — ${firstProduct.title}`), { target: { value: '2' } });
     fireEvent.click(within(card).getByRole('button', { name: 'שמור פרטי מוצר' }));
     await waitFor(() => expect(state.saveOverride).toHaveBeenCalled());
-    expect(state.saveOverride.mock.calls[0][0]).toMatchObject({ package_id: firstProduct.id, sort_order: 2 });
+    expect(state.saveOverride.mock.calls[0][0]).toMatchObject({ package_id: firstProduct.id, sort_order: 2.5 });
   });
 
   it('previews an uploaded product image and saves it only after explicit confirmation', async () => {
@@ -224,7 +224,7 @@ describe('ProductManager', () => {
       price: 450,
       image_url: 'https://cdn.example/product.webp',
       is_custom: true,
-      sort_order: 1
+      sort_order: 0
     });
     expect(state.saveOverride.mock.calls[0][1]).toEqual({ includeImage: true });
   });
