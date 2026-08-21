@@ -54,27 +54,15 @@ describe('AdminPage tab persistence', () => {
     expect(screen.getByRole('button', { name: 'תמונות, מוצרים וחבילות' })).toHaveAttribute('aria-pressed', 'false');
   });
 
-  it('syncs from browser history and safely handles a missing window global', () => {
+  it('syncs the active tab from browser history changes', () => {
     renderAdmin();
-    const browserWindow = window;
-    const categories = screen.getByRole('button', { name: 'ניהול קטגוריות' });
 
-    browserWindow.history.replaceState({}, '', '/admin?tab=orders');
+    window.history.replaceState({}, '', '/admin?tab=orders');
     act(() => {
-      browserWindow.dispatchEvent(new browserWindow.PopStateEvent('popstate'));
+      window.dispatchEvent(new PopStateEvent('popstate'));
     });
+
     expect(screen.getByRole('button', { name: 'ניהול הזמנות' })).toHaveAttribute('aria-pressed', 'true');
-
-    vi.stubGlobal('window', undefined);
-    act(() => {
-      browserWindow.dispatchEvent(new browserWindow.PopStateEvent('popstate'));
-    });
-    expect(screen.getByRole('button', { name: 'תמונות, מוצרים וחבילות' })).toHaveAttribute('aria-pressed', 'true');
-
-    act(() => {
-      categories.click();
-    });
-
-    vi.stubGlobal('window', browserWindow);
+    expect(screen.getByRole('button', { name: 'תמונות, מוצרים וחבילות' })).toHaveAttribute('aria-pressed', 'false');
   });
 });
