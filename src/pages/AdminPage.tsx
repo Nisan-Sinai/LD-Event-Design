@@ -37,6 +37,7 @@ export function AdminPage() {
   const navLabels = lang === 'he'
     ? { catalog: 'מוצרים וחבילות', orders: 'הזמנות', categories: 'קטגוריות' }
     : { catalog: 'Products & packages', orders: 'Orders', categories: 'Categories' };
+  const categoryAccessibleLabel = lang === 'he' ? 'ניהול קטגוריות' : 'Category management';
   const { configured, user } = useAuth();
   const [tab, setTab] = useState<AdminTab>('catalog');
   const [orders, setOrders] = useState<OrderRow[] | null>(null);
@@ -80,10 +81,11 @@ export function AdminPage() {
     }
   };
 
-  const tabBtn = (key: AdminTab, label: string, Icon: typeof ClipboardList) => (
+  const tabBtn = (key: AdminTab, label: string, accessibleLabel: string, Icon: typeof ClipboardList) => (
     <button
       type="button"
       onClick={() => setTab(key)}
+      aria-label={accessibleLabel}
       aria-pressed={tab === key}
       className={`flex min-h-11 min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full border px-2 py-2.5 text-[11px] font-extrabold leading-none transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B29259]/50 focus-visible:ring-offset-2 sm:min-h-12 sm:px-4 sm:text-xs ${
         tab === key
@@ -92,7 +94,7 @@ export function AdminPage() {
       }`}
     >
       <Icon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" aria-hidden="true" />
-      <span className="min-w-0 text-center">{label}</span>
+      <span className="min-w-0 text-center" aria-hidden="true">{label}</span>
     </button>
   );
 
@@ -111,9 +113,9 @@ export function AdminPage() {
       )}
 
       <div className="mx-auto my-6 grid w-full max-w-lg grid-cols-3 gap-2" role="group" aria-label={t('adminPage.adminArea')}>
-        {tabBtn('catalog', navLabels.catalog, PackageIcon)}
-        {tabBtn('orders', navLabels.orders, ClipboardList)}
-        {tabBtn('categories', navLabels.categories, FolderPlus)}
+        {tabBtn('catalog', navLabels.catalog, t('adminPage.tabCatalogFull'), PackageIcon)}
+        {tabBtn('orders', navLabels.orders, t('adminPage.tabOrders'), ClipboardList)}
+        {tabBtn('categories', navLabels.categories, categoryAccessibleLabel, FolderPlus)}
       </div>
 
       {tab === 'catalog' && (
