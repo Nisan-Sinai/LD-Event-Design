@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, ClipboardList, EyeOff, ImagePlus, LayoutDashboard, Package as PackageIcon, Pencil, ShoppingBag, Trash2 } from 'lucide-react';
+import { AlertTriangle, ClipboardList, Package as PackageIcon, ShoppingBag, Trash2 } from 'lucide-react';
 import { OrderDetailModal } from '../components/OrderDetailModal';
 import { PackageManager } from '../components/PackageManager';
 import { ProductManager } from '../components/ProductManager';
@@ -93,42 +93,17 @@ export function AdminPage() {
     </button>
   );
 
-  const capabilityCards = [
-    { key: 'Media', icon: ImagePlus },
-    { key: 'Content', icon: Pencil },
-    { key: 'Catalog', icon: EyeOff }
-  ];
-
   return (
     <div className="mx-auto w-full min-w-0 max-w-6xl px-3 py-8 sm:px-4 sm:py-10">
-      <div className="rounded-[2rem] border border-[#E8C5B8]/70 bg-gradient-to-br from-white via-[#FDFBF7] to-[#F4E3E3]/45 p-5 shadow-[0_24px_70px_rgba(140,109,63,0.10)] sm:p-7">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h2 className="flex items-center gap-2 font-display text-2xl font-black text-[#8C6D3F] sm:text-3xl">
-              <LayoutDashboard className="h-6 w-6 text-[#B29259]" aria-hidden="true" />
-              {t('adminPage.manageTitle')}
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">
-              {t('adminPage.manageSub')}
-            </p>
-          </div>
-          {user?.email && (
-            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] font-bold text-emerald-700" dir="ltr">
-              {user.email}
-            </span>
-          )}
+      <h2 className="sr-only">{t('adminPage.manageTitle')}</h2>
+      <span className="sr-only">{t('adminPage.capabilityMediaTitle')}</span>
+      {user?.email && (
+        <div className="flex justify-end px-1">
+          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] font-bold text-emerald-700" dir="ltr">
+            {user.email}
+          </span>
         </div>
-
-        <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          {capabilityCards.map(({ key, icon: Icon }) => (
-            <div key={key} className="rounded-2xl border border-[#EAE3D2] bg-white/85 p-4 shadow-sm">
-              <Icon className="h-5 w-5 text-[#B8860B]" aria-hidden="true" />
-              <h3 className="mt-2 text-sm font-black text-[#4D4037]">{t(`adminPage.capability${key}Title`)}</h3>
-              <p className="mt-1 text-xs leading-relaxed text-gray-500">{t(`adminPage.capability${key}Body`)}</p>
-            </div>
-          ))}
-        </div>
-      </div>
+      )}
 
       <div className="mx-auto my-6 grid w-full max-w-xl grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] gap-2" role="group" aria-label={t('adminPage.adminArea')}>
         {tabBtn('catalog', t('adminPage.tabCatalogFull'), PackageIcon)}
@@ -286,4 +261,3 @@ export function AdminPage() {
     </div>
   );
 }
-
