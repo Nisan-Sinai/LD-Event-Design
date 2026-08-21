@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Save, RotateCcw, Eye, EyeOff, AlertCircle, Package as PackageIcon, Plus, Trash2, ImagePlus, X } from 'lucide-react';
+import { Save, Eye, EyeOff, AlertCircle, Package as PackageIcon, Plus, Trash2, ImagePlus, X } from 'lucide-react';
 import { useI18n } from '../i18n/i18n';
 import { usePackages } from '../packages/PackagesProvider';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { categoryLabel } from '../i18n/content';
 import { PACKAGES, CATEGORIES } from '../App';
 import { uploadPackageImage, type PackageOverride } from '../lib/packages';
+
+const DELETED_MARKER = '__deleted__';
 
 interface Draft {
   title: string;
@@ -28,6 +30,7 @@ interface Item {
   hasOverride: boolean;
   pricingTiers: Record<number, number> | null;
   svgType: string | null;
+  sortOrder: number;
 }
 
 type ImageSlot = 1 | 2 | 3 | 4;
@@ -48,10 +51,6 @@ const EMPTY_NEW: Draft = {
 const strOrNull = (v: string) => (v.trim() === '' ? null : v.trim());
 const numOrNull = (v: string) => (v.trim() === '' ? null : Math.max(0, Number(v) || 0));
 
-/**
- * ניהול קטלוג מלא בידי המנהל — עריכת כל השדות, ארבע תמונות, הסתרה,
- * הוספת חבילות חדשות ומחיקה. נשמר ב-Supabase (כתיבה למנהל בלבד ב-RLS).
- */
 export function PackageManager() {
   const { t, lang } = useI18n();
   const { overrides, saveOverride, saveImage, removeOverride } = usePackages();
@@ -69,33 +68,46 @@ export function PackageManager() {
   const imageSavedLabel = lang === 'he' ? '✅ שמור' : '✅ Saved';
   const imageSaveLabel = lang === 'he' ? '✅ שמור' : '✅ Save';
   const imageUndoLabel = lang === 'he' ? '↩️ חזור בלי לשמור' : '↩️ Revert without saving';
+  const categoryValues = Object.values(CATEGORIES);
+  const categoryIndex = (category: string) => {
+    const index = categoryValues.indexOf(category as (typeof categoryValues)[number]);
+    return index === -1 ? Number.MAX_SAFE_INTEGER : index;
+  };
 
-  const baseItems: Item[] = PACKAGES.map((p) => {
-    const o = overrides[p.id];
-    return {
-      id: p.id,
-      isCustom: false,
-      current: {
-        title: o?.title ?? p.title,
-        subtitle: o?.subtitle ?? p.subtitle,
-        description: o?.description ?? p.description,
-        benefits: o?.benefits ?? p.benefits,
-        price: String(o?.price ?? p.price),
-        image_url: o?.image_url ?? '',
-        image_url_2: o?.image_url_2 ?? '',
-        image_url_3: o?.image_url_3 ?? '',
-        image_url_4: o?.image_url_4 ?? '',
-        category: p.category
-      },
-      hidden: o?.hidden ?? false,
-      hasOverride: !!o,
-      pricingTiers: o?.pricing_tiers ?? p.pricingTiers ?? null,
-      svgType: p.svgType
-    };
-  });
+  const baseItems: Item[] = PACKAGES
+    .filter((p) => overrides[p.id]?.svg_type !== DELETED_MARKER)
+    .map((p, index) => {
+      const o = overrides[p.id];
+      return {
+        id: p.id,
+        isCustom: false,
+        current: {
+          title: o?.title ?? p.title,
+          subtitle: o?.subtitle ?? p.subtitle,
+          description: o?.description ?? p.description,
+          benefits: o?.benefits ?? p.benefits,
+          price: String(o?.price ?? p.price),
+          image_url: o?.image_url ?? '',
+          image_url_2: o?.image_url_2 ?? '',
+          image_url_3: o?.image_url_3 ?? '',
+          image_url_4: o?.image_url_4 ?? '',
+          category: p.category
+        },
+        hidden: o?.hidden ?? false,
+        hasOverride: !!o,
+        pricingTiers: o?.pricing_tiers ?? p.pricingTiers ?? null,
+        svgType: o?.svg_type ?? p.svgType,
+        sortOrder: index
+      };
+    });
 
   const customItems: Item[] = Object.values(overrides)
-    .filter((o) => o.is_custom && !o.package_id.startsWith('product-'))
+    .filter((o) =>
+      o.is_custom &&
+      !o.package_id.startsWith('product-') &&
+      !o.package_id.startsWith('catalog-category:') &&
+      o.svg_type !== DELETED_MARKER
+    )
     .map((o) => ({
       id: o.package_id,
       isCustom: true,
@@ -114,10 +126,15 @@ export function PackageManager() {
       hidden: o.hidden,
       hasOverride: true,
       pricingTiers: o.pricing_tiers ?? null,
-      svgType: o.svg_type ?? null
+      svgType: o.svg_type ?? null,
+      sortOrder: o.sort_order ?? Number.MAX_SAFE_INTEGER
     }));
 
-  const items = [...baseItems, ...customItems];
+  const items = [...baseItems, ...customItems].sort((a, b) =>
+    categoryIndex(a.current.category) - categoryIndex(b.current.category) ||
+    a.sortOrder - b.sortOrder ||
+    a.current.title.localeCompare(b.current.title, lang === 'he' ? 'he' : 'en')
+  );
 
   const draftFor = (item: Item): Draft => drafts[item.id] ?? item.current;
   const setField = (item: Item, field: keyof Draft, value: string) =>
@@ -145,7 +162,7 @@ export function PackageManager() {
     pricing_tiers: item.pricingTiers,
     hidden,
     is_custom: item.isCustom,
-    sort_order: null
+    sort_order: item.isCustom ? item.sortOrder : null
   });
 
   const run = async (id: string, action: () => Promise<void>) => {
@@ -169,7 +186,15 @@ export function PackageManager() {
 
   const save = (item: Item) => run(item.id, () => saveOverride(buildOverride(item, draftFor(item), item.hidden)));
   const toggleHidden = (item: Item) => run(item.id, () => saveOverride(buildOverride(item, draftFor(item), !item.hidden)));
-  const removeItem = (item: Item) => run(item.id, () => removeOverride(item.id));
+
+  const deleteItem = (item: Item) => {
+    if (item.isCustom) {
+      void run(item.id, () => removeOverride(item.id));
+      return;
+    }
+    const deleted = { ...buildOverride(item, draftFor(item), true), svg_type: DELETED_MARKER };
+    void run(item.id, () => saveOverride(deleted));
+  };
 
   const persistImage = async (item: Item, imageUrl: string, slot: ImageSlot) => {
     const key = `${item.id}:${slot}`;
@@ -278,12 +303,7 @@ export function PackageManager() {
           {displayUrl ? (
             <>
               <img src={displayUrl} alt="" className="h-full w-full object-cover" />
-              <button
-                type="button"
-                onClick={() => setDisplayUrl('')}
-                aria-label={slot === 1 ? t('packageManager.removeImage') : `${t('packageManager.removeImage')} ${slot}`}
-                className="absolute end-1.5 top-1.5 rounded-full border border-gray-200 bg-white/95 p-1 text-gray-400 shadow-sm hover:text-red-500"
-              >
+              <button type="button" onClick={() => setDisplayUrl('')} aria-label={slot === 1 ? t('packageManager.removeImage') : `${t('packageManager.removeImage')} ${slot}`} className="absolute end-1.5 top-1.5 rounded-full border border-gray-200 bg-white/95 p-1 text-gray-400 shadow-sm hover:text-red-500">
                 <X className="h-3 w-3" aria-hidden="true" />
               </button>
             </>
@@ -294,47 +314,24 @@ export function PackageManager() {
         <label className="mt-2 flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-dashed border-[#B29259]/50 px-2 py-2 text-[10px] font-bold text-[#8C6D3F] transition-colors hover:border-[#B29259] hover:bg-white">
           <ImagePlus className="h-3.5 w-3.5" aria-hidden="true" />
           {uploadingId === uploadKey ? t('packageManager.uploading') : `${t('packageManager.uploadImage')} ${slot}`}
-          <input
-            type="file"
-            accept="image/*,.heic,.heif"
-            className="sr-only"
-            aria-label={`${t('packageManager.uploadImage')} ${slot}`}
-            disabled={uploadingId === uploadKey || imageBusy}
-            onChange={(e) => {
-              void pickImage(uploadKey, e.target.files?.[0], setDisplayUrl, item);
-              e.target.value = '';
-            }}
-          />
+          <input type="file" accept="image/*,.heic,.heif" className="sr-only" aria-label={`${t('packageManager.uploadImage')} ${slot}`} disabled={uploadingId === uploadKey || imageBusy} onChange={(e) => {
+            void pickImage(uploadKey, e.target.files?.[0], setDisplayUrl, item);
+            e.target.value = '';
+          }} />
         </label>
 
-        {item && (
-          changed ? (
-            <div className="mt-2 grid grid-cols-1 gap-1.5">
-              <button
-                type="button"
-                onClick={() => void persistImage(item, displayUrl, slot)}
-                disabled={imageBusy || uploadingId === uploadKey}
-                aria-label={`${imageSaveLabel} ${slot}`}
-                className="rounded-lg bg-emerald-600 px-2 py-2 text-[10px] font-extrabold text-white disabled:opacity-50"
-              >
-                {imageBusy ? t('packageManager.saving') : imageSaveLabel}
-              </button>
-              <button
-                type="button"
-                onClick={undoImage}
-                disabled={imageBusy || uploadingId === uploadKey}
-                aria-label={`${imageUndoLabel} ${slot}`}
-                className="rounded-lg border border-gray-200 bg-white px-2 py-2 text-[10px] font-bold text-gray-600 disabled:opacity-50"
-              >
-                {imageUndoLabel}
-              </button>
-            </div>
-          ) : (
-            <div className="mt-2 text-center text-[10px] font-extrabold text-emerald-700">
-              {savedId === uploadKey ? t('packageManager.saved') : imageSavedLabel}
-            </div>
-          )
-        )}
+        {item && (changed ? (
+          <div className="mt-2 grid grid-cols-1 gap-1.5">
+            <button type="button" onClick={() => void persistImage(item, displayUrl, slot)} disabled={imageBusy || uploadingId === uploadKey} aria-label={`${imageSaveLabel} ${slot}`} className="rounded-lg bg-emerald-600 px-2 py-2 text-[10px] font-extrabold text-white disabled:opacity-50">
+              {imageBusy ? t('packageManager.saving') : imageSaveLabel}
+            </button>
+            <button type="button" onClick={undoImage} disabled={imageBusy || uploadingId === uploadKey} aria-label={`${imageUndoLabel} ${slot}`} className="rounded-lg border border-gray-200 bg-white px-2 py-2 text-[10px] font-bold text-gray-600 disabled:opacity-50">
+              {imageUndoLabel}
+            </button>
+          </div>
+        ) : (
+          <div className="mt-2 text-center text-[10px] font-extrabold text-emerald-700">{savedId === uploadKey ? t('packageManager.saved') : imageSavedLabel}</div>
+        ))}
       </div>
     );
   };
@@ -349,11 +346,7 @@ export function PackageManager() {
             <p className="text-xs text-gray-500">{t('packageManager.subtitle')}</p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowAdd((v) => !v)}
-          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[#8C6D3F] px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[#705630]"
-        >
+        <button type="button" onClick={() => setShowAdd((v) => !v)} className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[#8C6D3F] px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[#705630]">
           <Plus className="h-3.5 w-3.5" aria-hidden="true" />
           {t('packageManager.addPackage')}
         </button>
@@ -367,9 +360,7 @@ export function PackageManager() {
               <label className={labelCls}>{t('packageManager.category')}</label>
               <select aria-label={`${t('packageManager.category')} — ${t('packageManager.newPackage')}`} value={newDraft.category} onChange={(e) => setNewDraft({ ...newDraft, category: e.target.value })} className={inputCls}>
                 <option value="">—</option>
-                {Object.values(CATEGORIES).map((c) => (
-                  <option key={c} value={c}>{categoryLabel(c, lang)}</option>
-                ))}
+                {categoryValues.map((c) => <option key={c} value={c}>{categoryLabel(c, lang)}</option>)}
               </select>
             </div>
             <div className="sm:col-span-3">
@@ -402,18 +393,10 @@ export function PackageManager() {
           <p className="text-[10px] text-gray-400">{t('packageManager.requiredNote')}</p>
           <div className="flex items-center gap-2">
             <button type="button" onClick={() => void createPackage()} disabled={busyId === '__new__'} className="flex items-center gap-1.5 rounded-lg bg-[#B29259] px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[#8C6D3F] disabled:opacity-50">
-              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-              {t('packageManager.create')}
+              <Plus className="h-3.5 w-3.5" aria-hidden="true" />{t('packageManager.create')}
             </button>
-            <button type="button" onClick={() => { setShowAdd(false); setNewDraft(EMPTY_NEW); }} className="rounded-lg px-3 py-1.5 text-xs font-bold text-gray-500 hover:text-gray-700">
-              {t('packageManager.cancel')}
-            </button>
-            {errorId === '__new__' && (
-              <span className="flex items-center gap-1 text-[11px] font-bold text-red-500">
-                <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
-                {t('packageManager.requiredNote')}
-              </span>
-            )}
+            <button type="button" onClick={() => { setShowAdd(false); setNewDraft(EMPTY_NEW); }} className="rounded-lg px-3 py-1.5 text-xs font-bold text-gray-500 hover:text-gray-700">{t('packageManager.cancel')}</button>
+            {errorId === '__new__' && <span className="flex items-center gap-1 text-[11px] font-bold text-red-500"><AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />{t('packageManager.requiredNote')}</span>}
           </div>
         </div>
       )}
@@ -430,31 +413,15 @@ export function PackageManager() {
                 <div className="flex items-center gap-1.5">
                   {item.isCustom && <span className="rounded-full bg-[#FAF7F2] px-2 py-0.5 text-[10px] font-bold text-[#8C6D3F]">{t('packageManager.customBadge')}</span>}
                   {item.hidden && <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-500">{t('packageManager.hiddenBadge')}</span>}
-                  {!item.hidden && !item.isCustom && item.hasOverride && <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600">{t('packageManager.editedBadge')}</span>}
                 </div>
               </div>
 
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-6">
-                <div className="sm:col-span-3">
-                  <label className={labelCls}>{t('packageManager.titleField')}</label>
-                  <input type="text" value={d.title} aria-label={aria(t('packageManager.titleField'))} onChange={(e) => setField(item, 'title', e.target.value)} className={inputCls} />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className={labelCls}>{t('packageManager.subtitleField')}</label>
-                  <input type="text" value={d.subtitle} aria-label={aria(t('packageManager.subtitleField'))} onChange={(e) => setField(item, 'subtitle', e.target.value)} className={inputCls} />
-                </div>
-                <div className="sm:col-span-1">
-                  <label className={labelCls}>{t('packageManager.price')}</label>
-                  <input type="number" min="0" value={d.price} aria-label={aria(t('packageManager.price'))} onChange={(e) => setField(item, 'price', e.target.value)} className={`${inputCls} text-center`} />
-                </div>
-                <div className="sm:col-span-6">
-                  <label className={labelCls}>{t('packageManager.descriptionField')}</label>
-                  <textarea rows={2} value={d.description} aria-label={aria(t('packageManager.descriptionField'))} onChange={(e) => setField(item, 'description', e.target.value)} className={inputCls} />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className={labelCls}>{t('packageManager.benefitsField')}</label>
-                  <input type="text" value={d.benefits} aria-label={aria(t('packageManager.benefitsField'))} onChange={(e) => setField(item, 'benefits', e.target.value)} className={inputCls} />
-                </div>
+                <div className="sm:col-span-3"><label className={labelCls}>{t('packageManager.titleField')}</label><input type="text" value={d.title} aria-label={aria(t('packageManager.titleField'))} onChange={(e) => setField(item, 'title', e.target.value)} className={inputCls} /></div>
+                <div className="sm:col-span-2"><label className={labelCls}>{t('packageManager.subtitleField')}</label><input type="text" value={d.subtitle} aria-label={aria(t('packageManager.subtitleField'))} onChange={(e) => setField(item, 'subtitle', e.target.value)} className={inputCls} /></div>
+                <div className="sm:col-span-1"><label className={labelCls}>{t('packageManager.price')}</label><input type="number" min="0" value={d.price} aria-label={aria(t('packageManager.price'))} onChange={(e) => setField(item, 'price', e.target.value)} className={`${inputCls} text-center`} /></div>
+                <div className="sm:col-span-6"><label className={labelCls}>{t('packageManager.descriptionField')}</label><textarea rows={2} value={d.description} aria-label={aria(t('packageManager.descriptionField'))} onChange={(e) => setField(item, 'description', e.target.value)} className={inputCls} /></div>
+                <div className="sm:col-span-2"><label className={labelCls}>{t('packageManager.benefitsField')}</label><input type="text" value={d.benefits} aria-label={aria(t('packageManager.benefitsField'))} onChange={(e) => setField(item, 'benefits', e.target.value)} className={inputCls} /></div>
                 <div className="grid grid-cols-2 gap-2 sm:col-span-4 sm:grid-cols-4">
                   {imageControl(`${item.id}:1`, d.image_url, (u) => setField(item, 'image_url', u), 1, item)}
                   {imageControl(`${item.id}:2`, d.image_url_2, (u) => setField(item, 'image_url_2', u), 2, item)}
@@ -467,35 +434,15 @@ export function PackageManager() {
 
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <button type="button" onClick={() => save(item)} disabled={busy || !isDirty(item)} className="flex items-center gap-1.5 rounded-lg bg-[#B29259] px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[#8C6D3F] disabled:cursor-not-allowed disabled:opacity-40">
-                  <Save className="h-3.5 w-3.5" aria-hidden="true" />
-                  {busy ? t('packageManager.saving') : savedId === item.id ? t('packageManager.saved') : t('packageManager.save')}
+                  <Save className="h-3.5 w-3.5" aria-hidden="true" />{busy ? t('packageManager.saving') : savedId === item.id ? t('packageManager.saved') : t('packageManager.save')}
                 </button>
-
                 <button type="button" onClick={() => toggleHidden(item)} disabled={busy} className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-600 transition-colors hover:border-[#B29259] disabled:opacity-40">
-                  {item.hidden ? <Eye className="h-3.5 w-3.5" aria-hidden="true" /> : <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />}
-                  {item.hidden ? t('packageManager.show') : t('packageManager.hide')}
+                  {item.hidden ? <Eye className="h-3.5 w-3.5" aria-hidden="true" /> : <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />}{item.hidden ? t('packageManager.show') : t('packageManager.hide')}
                 </button>
-
-                {item.isCustom ? (
-                  <button type="button" onClick={() => removeItem(item)} disabled={busy} className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-bold text-red-500 transition-colors hover:text-red-700 disabled:opacity-40">
-                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                    {t('packageManager.delete')}
-                  </button>
-                ) : (
-                  item.hasOverride && (
-                    <button type="button" onClick={() => removeItem(item)} disabled={busy} className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-bold text-gray-500 transition-colors hover:text-red-500 disabled:opacity-40">
-                      <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-                      {t('packageManager.reset')}
-                    </button>
-                  )
-                )}
-
-                {errorId === item.id && (
-                  <span className="flex items-center gap-1 text-[11px] font-bold text-red-500">
-                    <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
-                    {t('packageManager.saveError')}
-                  </span>
-                )}
+                <button type="button" onClick={() => deleteItem(item)} disabled={busy} className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-bold text-red-500 transition-colors hover:text-red-700 disabled:opacity-40">
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />{t('packageManager.delete')}
+                </button>
+                {errorId === item.id && <span className="flex items-center gap-1 text-[11px] font-bold text-red-500"><AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />{t('packageManager.saveError')}</span>}
               </div>
             </div>
           );
