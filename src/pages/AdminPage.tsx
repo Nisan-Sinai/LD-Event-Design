@@ -11,12 +11,14 @@ import { deleteOrder, fetchOrders, type OrderRow } from '../lib/orders';
 type AdminTab = 'catalog' | 'orders' | 'categories';
 
 function readAdminTabFromUrl(): AdminTab {
+  /* v8 ignore next -- defensive guard for non-browser imports */
   if (typeof window === 'undefined') return 'catalog';
   const value = new URLSearchParams(window.location.search).get('tab');
   return value === 'orders' || value === 'categories' || value === 'catalog' ? value : 'catalog';
 }
 
 function writeAdminTabToUrl(tab: AdminTab) {
+  /* v8 ignore next -- defensive guard for non-browser imports */
   if (typeof window === 'undefined') return;
   const url = new URL(window.location.href);
   url.searchParams.set('tab', tab);
