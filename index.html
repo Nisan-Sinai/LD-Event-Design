@@ -23,6 +23,22 @@
       rel="stylesheet"
     />
     <!-- Brand logo sizing is controlled by the app component; keep global circular image rules out of this document. -->
+    <style>
+      /* Admin product cards: details first, four-image gallery underneath. */
+      #admin-products article > div.grid.gap-4 {
+        display: flex;
+        flex-direction: column;
+      }
+
+      #admin-products article > div.grid.gap-4 > div:first-child {
+        order: 2;
+        margin-top: 0.25rem;
+      }
+
+      #admin-products article > div.grid.gap-4 > div:nth-child(2) {
+        order: 1;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
