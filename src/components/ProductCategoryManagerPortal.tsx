@@ -260,7 +260,7 @@ export function ProductCategoryManagerPortal({ overrides, saveOverride }: Produc
 
   return (
     <>
-      <style>{'#admin-products button:has(.lucide-rotate-ccw):not([data-category-restore]){display:none!important}'}</style>
+      <style>{'#admin-products button:has(.lucide-rotate-ccw):not([data-category-restore]),#admin-packages button:has(.lucide-rotate-ccw){display:none!important}'}</style>
       {target ? createPortal(<CategoryManager overrides={overrides} saveOverride={saveOverride} />, target) : null}
     </>
   );
