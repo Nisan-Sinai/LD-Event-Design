@@ -83,7 +83,7 @@ export function AdminPage() {
       type="button"
       onClick={() => setTab(key)}
       aria-pressed={tab === key}
-      className={`flex min-h-12 min-w-0 items-center justify-center gap-1 rounded-2xl border px-1.5 py-2.5 text-[9px] font-extrabold leading-tight transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B29259]/50 focus-visible:ring-offset-2 sm:rounded-full sm:px-3 sm:text-[11px] ${
+      className={`flex min-h-12 min-w-0 items-center justify-center gap-1 rounded-full border px-1.5 py-2.5 text-[9px] font-extrabold leading-tight transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B29259]/50 focus-visible:ring-offset-2 sm:px-3 sm:text-[11px] ${
         tab === key
           ? 'border-[#B29259] bg-gradient-to-r from-[#A9854F] via-[#B29259] to-[#C7A769] text-white shadow-[0_8px_22px_rgba(178,146,89,0.24)]'
           : 'border-[#E0D4C3] bg-[#FFFDF9] text-[#5F554D] shadow-sm hover:border-[#B29259]/70 hover:bg-[#FAF7F2] hover:text-[#8C6D3F]'
