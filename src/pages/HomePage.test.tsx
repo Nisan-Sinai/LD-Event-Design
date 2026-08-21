@@ -116,20 +116,23 @@ describe('HomePage', () => {
     expect(screen.getByRole('link', { name: /לצפייה בעגלה/ })).toHaveAttribute('href', '/cart');
   });
 
-  it('adds an item twice from both product-card controls', () => {
+  it('keeps one explicit add-to-cart button per product and supports quantity controls', () => {
     renderHome();
     const first = SHOP_PRODUCTS[0];
-
-    fireEvent.click(screen.getByRole('button', { name: `הוספה לסל: ${first.title}` }));
     const firstArticle = screen.getAllByText(first.title)
       .map((node) => node.closest('article'))
       .find((node): node is HTMLElement => node instanceof HTMLElement)!;
-    fireEvent.click(within(firstArticle).getByRole('button', { name: 'נוסף לסל' }));
+    const addButton = within(firstArticle).getByRole('button', { name: `הוספה לסל: ${first.title}` });
+
+    expect(within(firstArticle).getAllByRole('button', { name: `הוספה לסל: ${first.title}` })).toHaveLength(1);
+    fireEvent.click(addButton);
+    expect(addButton).toHaveTextContent('הוספה לסל');
+    expect(within(firstArticle).queryByText('נוסף לסל')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: `הגדלת כמות ${first.title}` }));
     fireEvent.click(screen.getByRole('button', { name: `הפחתת כמות ${first.title}` }));
 
-    expect(screen.getByText('עגלת קניות: 2 פריטים')).toBeInTheDocument();
+    expect(screen.getByText('עגלת קניות: 1 פריט')).toBeInTheDocument();
   });
 
   it('renders package categories, media controls and from prices separately', () => {
@@ -145,17 +148,19 @@ describe('HomePage', () => {
     expect(screen.getByLabelText('סרטון עיצוב אירוע עם סידורי פרחים')).toHaveAttribute('controls');
   });
 
-  it('adds a package to the same cart', () => {
+  it('adds a package to the same cart while keeping the add label unchanged', () => {
     renderHome();
     const sample = PACKAGES.find((pkg) => pkg.id === 'classic-s')!;
+    const addButton = screen.getByRole('button', { name: `הוספה לסל: ${sample.title}` });
 
-    fireEvent.click(screen.getByRole('button', { name: `הוספה לסל: ${sample.title}` }));
+    fireEvent.click(addButton);
 
     fireEvent.click(screen.getByRole('button', { name: `הגדלת כמות ${sample.title}` }));
     fireEvent.click(screen.getByRole('button', { name: `הפחתת כמות ${sample.title}` }));
 
     expect(screen.getByText('עגלת קניות: 1 פריט')).toBeInTheDocument();
-    expect(screen.getAllByText('נוסף לסל').length).toBeGreaterThan(0);
+    expect(addButton).toHaveTextContent('הוספה לסל');
+    expect(screen.queryByText('נוסף לסל')).not.toBeInTheDocument();
   });
 
   it('shows product and package media uploaded by the manager', () => {
@@ -201,6 +206,7 @@ describe('HomePage', () => {
     expect(screen.getByText('Your celebration. Our art.')).toBeInTheDocument();
     expect(screen.getByText('Wedding Design Package — Classic S')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /Add to cart/ }).length).toBeGreaterThan(0);
+    expect(screen.queryByText('Added to cart')).not.toBeInTheDocument();
   });
 
   it('uses the original text for a custom package in English', () => {
