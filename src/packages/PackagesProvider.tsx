@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import { BrandingCategoryPortal } from '../components/BrandingCategoryPortal';
 import { ProductCategoryManagerPortal } from '../components/ProductCategoryManagerPortal';
 import { normalizeProductCategoryOverrides, syncShopProductCategories } from '../catalog/shopProducts';
 import {
@@ -79,6 +80,7 @@ export function PackagesProvider({ children }: { children: React.ReactNode }) {
   return (
     <PackagesContext.Provider value={{ overrides, loading, refresh, saveOverride, saveImage, removeOverride }}>
       {children}
+      <BrandingCategoryPortal />
       <ProductCategoryManagerPortal overrides={overrides} saveOverride={saveOverride} />
     </PackagesContext.Provider>
   );
