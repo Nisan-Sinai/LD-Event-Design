@@ -249,7 +249,7 @@ export function ProductCategoryManagerPortal({ overrides, saveOverride }: Produc
   const [target, setTarget] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
-    const syncTarget = () => setTarget(document.getElementById('admin-products'));
+    const syncTarget = () => setTarget(document.getElementById('admin-category-management'));
     syncTarget();
 
     if (typeof MutationObserver === 'undefined') return undefined;
@@ -258,13 +258,10 @@ export function ProductCategoryManagerPortal({ overrides, saveOverride }: Produc
     return () => observer.disconnect();
   }, []);
 
-  if (!target) return null;
-
-  return createPortal(
+  return (
     <>
       <style>{'#admin-products button:has(.lucide-rotate-ccw):not([data-category-restore]){display:none!important}'}</style>
-      <CategoryManager overrides={overrides} saveOverride={saveOverride} />
-    </>,
-    target
+      {target ? createPortal(<CategoryManager overrides={overrides} saveOverride={saveOverride} />, target) : null}
+    </>
   );
 }
