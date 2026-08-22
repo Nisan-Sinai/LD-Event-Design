@@ -32,7 +32,7 @@ describe('CartPage', () => {
   it('shows an empty state', () => {
     renderCart();
     expect(screen.getByText('העגלה עדיין ריקה')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'חזרה לחנות' })).toHaveAttribute('href', '/#packages');
+    expect(screen.getByRole('link', { name: 'חזרה לחנות' })).toHaveAttribute('href', '/#products');
   });
 
   it('shows quote totals without a fixed delivery charge when the minimum is reached', () => {
@@ -42,6 +42,7 @@ describe('CartPage', () => {
     expect(screen.getAllByText('₪2,900').length).toBeGreaterThan(0);
     expect(screen.queryByText('₪3,400')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'המשך להשלמת בחירת ההזמנה' })).toHaveAttribute('href', '/checkout');
+    expect(screen.getByRole('link', { name: 'חזרה לחנות' })).toHaveAttribute('href', '/#products');
   });
 
   it('updates quantities with plus and minus buttons', () => {
