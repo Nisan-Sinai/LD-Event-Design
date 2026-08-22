@@ -18,11 +18,12 @@ test.describe('Luxury quote storefront (guest)', () => {
 
     await page.getByRole('link', { name: /עגלת קניות: 1/ }).click();
     await expect(page).toHaveURL(/\/cart$/);
-    await expect(page.getByRole('heading', { name: 'סל העיצוב שלכם' })).toBeVisible();
-    await expect(page.getByText('חבילת עיצוב חתונה - Classic S')).toBeVisible();
-    await expect(page.getByText(/אין צורך בהרשמה/)).toBeVisible();
+    const cartPage = page.locator('section[aria-label="עגלת קניות"]');
+    await expect(cartPage.getByRole('heading', { name: 'סל העיצוב שלכם' })).toBeVisible();
+    await expect(cartPage.getByRole('heading', { name: 'חבילת עיצוב חתונה - Classic S' })).toBeVisible();
+    await expect(cartPage.getByText(/אין צורך בהרשמה/)).toBeVisible();
 
-    await page.getByRole('link', { name: 'המשך להשלמת בחירת ההזמנה' }).click();
+    await cartPage.getByRole('link', { name: 'המשך להשלמת בחירת ההזמנה' }).click();
     await expect(page).toHaveURL(/\/checkout$/);
     await expect(page.getByRole('heading', { name: 'שליחת בחירת ההזמנה' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'שליחת ההזמנה (ללא תשלום כרגע)' })).toBeVisible();
@@ -69,14 +70,15 @@ test.describe('Luxury quote storefront (guest)', () => {
     await page.getByRole('link', { name: /עגלת קניות: 1/ }).click();
 
     await expect(page).toHaveURL(/\/cart$/);
-    await expect(page.getByText(/מינימום להזמנה הינו 2,900 ש״ח/)).toBeVisible();
-    await expect(page.getByRole('button', { name: 'המשך להשלמת בחירת ההזמנה' })).toBeDisabled();
+    const cartPage = page.locator('section[aria-label="עגלת קניות"]');
+    await expect(cartPage.getByText(/מינימום להזמנה הינו 2,900 ש״ח/)).toBeVisible();
+    await expect(cartPage.getByRole('button', { name: 'המשך להשלמת בחירת ההזמנה' })).toBeDisabled();
 
-    await page.getByLabel('קוד קופון').fill('קוד שגוי');
-    await page.getByRole('button', { name: 'הפעלת קופון' }).click();
-    await expect(page.getByRole('alert')).toHaveText('הקוד אינו תקין.');
-    await expect(page.getByRole('status')).toHaveCount(0);
-    await expect(page.getByText(/הקוד (?:הנכון|התקין) הוא/)).toHaveCount(0);
+    await cartPage.getByRole('textbox', { name: 'קוד קופון' }).fill('קוד שגוי');
+    await cartPage.getByRole('button', { name: 'הפעלת קופון' }).click();
+    await expect(cartPage.getByRole('alert')).toHaveText('הקוד אינו תקין.');
+    await expect(cartPage.getByRole('status')).toHaveCount(0);
+    await expect(cartPage.getByText(/הקוד (?:הנכון|התקין) הוא/)).toHaveCount(0);
   });
 
   for (const width of [360, 390, 430]) {
