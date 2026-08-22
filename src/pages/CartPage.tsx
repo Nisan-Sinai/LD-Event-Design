@@ -137,7 +137,7 @@ export function CartPage() {
         </div>
         <h2 className="font-display mt-6 text-4xl font-black text-[#2C2C2C]">{copy.emptyTitle}</h2>
         <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-[#6C625A]">{copy.emptyBody}</p>
-        <Link to="/#packages" className="mt-7 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#B8860B] to-[#D4AF37] px-7 py-3.5 text-sm font-extrabold text-white shadow-lg">
+        <Link to="/#products" className="mt-7 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#B8860B] to-[#D4AF37] px-7 py-3.5 text-sm font-extrabold text-white shadow-lg">
           {copy.back}
           <Arrow className="h-4 w-4" aria-hidden="true" />
         </Link>
@@ -255,7 +255,7 @@ export function CartPage() {
               </button>
             )}
 
-            <Link to="/#packages" className="mt-4 flex w-full items-center justify-center text-xs font-bold text-[#B8860B] hover:underline">
+            <Link to="/#products" className="mt-4 flex w-full items-center justify-center text-xs font-bold text-[#B8860B] hover:underline">
               {copy.back}
             </Link>
           </aside>

@@ -8,7 +8,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('Luxury quote storefront (guest)', () => {
-  test('adds a package, opens the slide-in cart and continues to signed checkout', async ({ page }) => {
+  test('adds a package, opens the full cart and continues to signed checkout', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1, name: /LD Event Design/ })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'האירוע שלכם. האמנות שלנו.' })).toBeVisible();
@@ -17,12 +17,13 @@ test.describe('Luxury quote storefront (guest)', () => {
     await expect(page.getByRole('link', { name: /עגלת קניות: 1/ })).toBeVisible();
 
     await page.getByRole('link', { name: /עגלת קניות: 1/ }).click();
-    const drawer = page.getByRole('dialog', { name: 'סל הצעת מחיר' });
-    await expect(drawer).toBeVisible();
-    await expect(drawer.getByText('חבילת עיצוב חתונה - Classic S')).toBeVisible();
-    await expect(drawer.getByText(/לא משלמים כרגע/)).toBeVisible();
+    await expect(page).toHaveURL(/\/cart$/);
+    const cartPage = page.locator('section[aria-label="עגלת קניות"]');
+    await expect(cartPage.getByRole('heading', { name: 'סל העיצוב שלכם' })).toBeVisible();
+    await expect(cartPage.getByRole('heading', { name: 'חבילת עיצוב חתונה - Classic S' })).toBeVisible();
+    await expect(cartPage.getByText(/אין צורך בהרשמה/)).toBeVisible();
 
-    await drawer.getByRole('link', { name: 'המשך להשלמת בחירת ההזמנה' }).click();
+    await cartPage.getByRole('link', { name: 'המשך להשלמת בחירת ההזמנה' }).click();
     await expect(page).toHaveURL(/\/checkout$/);
     await expect(page.getByRole('heading', { name: 'שליחת בחירת ההזמנה' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'שליחת ההזמנה (ללא תשלום כרגע)' })).toBeVisible();
@@ -68,15 +69,16 @@ test.describe('Luxury quote storefront (guest)', () => {
     await page.getByRole('button', { name: /הוספה לסל: קומפוזיציית פרחים ונרות לשולחן/ }).first().click();
     await page.getByRole('link', { name: /עגלת קניות: 1/ }).click();
 
-    const drawer = page.getByRole('dialog', { name: 'סל הצעת מחיר' });
-    await expect(drawer.getByText(/מינימום להזמנה הינו ₪2,900/)).toBeVisible();
-    await expect(drawer.getByRole('button', { name: 'יש להגיע למינימום כדי להמשיך' })).toBeDisabled();
+    await expect(page).toHaveURL(/\/cart$/);
+    const cartPage = page.locator('section[aria-label="עגלת קניות"]');
+    await expect(cartPage.getByText(/מינימום להזמנה הינו 2,900 ש״ח/)).toBeVisible();
+    await expect(cartPage.getByRole('button', { name: 'המשך להשלמת בחירת ההזמנה' })).toBeDisabled();
 
-    await drawer.getByLabel('יש לכם קוד קופון?').fill('קוד שגוי');
-    await drawer.getByRole('button', { name: 'הפעלה' }).click();
-    await expect(drawer.getByRole('alert')).toHaveText('הקוד אינו תקין.');
-    await expect(drawer.getByRole('status')).toHaveCount(0);
-    await expect(drawer.getByText(/הקוד (?:הנכון|התקין) הוא/)).toHaveCount(0);
+    await cartPage.getByRole('textbox', { name: 'קוד קופון' }).fill('קוד שגוי');
+    await cartPage.getByRole('button', { name: 'הפעלת קופון' }).click();
+    await expect(cartPage.getByRole('alert')).toHaveText('הקוד אינו תקין.');
+    await expect(cartPage.getByRole('status')).toHaveCount(0);
+    await expect(cartPage.getByText(/הקוד (?:הנכון|התקין) הוא/)).toHaveCount(0);
   });
 
   for (const width of [360, 390, 430]) {
@@ -134,10 +136,10 @@ test.describe('Luxury quote storefront (guest)', () => {
 
     await page.goto('/cart');
     await page.getByRole('link', { name: 'חזרה לחנות' }).click();
-    await expect(page).toHaveURL(/\/#packages$/);
-    await expect.poll(() => page.locator('#packages').evaluate((element) => element.getBoundingClientRect().top)).toBeLessThan(190);
-    const packagesTop = await page.locator('#packages').evaluate((element) => element.getBoundingClientRect().top);
-    expect(packagesTop).toBeGreaterThanOrEqual(0);
+    await expect(page).toHaveURL(/\/#products$/);
+    await expect.poll(() => page.locator('#products').evaluate((element) => element.getBoundingClientRect().top)).toBeLessThan(190);
+    const productsTop = await page.locator('#products').evaluate((element) => element.getBoundingClientRect().top);
+    expect(productsTop).toBeGreaterThanOrEqual(0);
   });
 
   test('switches language to English and back', async ({ page }) => {

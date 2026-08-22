@@ -80,37 +80,47 @@ function syncPromoLanguage(section: HTMLElement) {
 
 export function installPromoVideo(): () => void {
   let section: HTMLElement | null = null;
-  let contentObserver: MutationObserver | null = null;
   let languageObserver: MutationObserver | null = null;
 
-  const mount = () => {
-    const packages = document.getElementById('packages');
-    if (!packages) return false;
-    section = document.querySelector<HTMLElement>('[data-ld-promo-video]');
-    if (!section) {
-      section = createPromoSection();
-      packages.insertAdjacentElement('afterend', section);
-    }
-    syncPromoLanguage(section);
+  const stopLanguageObserver = () => {
     languageObserver?.disconnect();
-    languageObserver = new MutationObserver(() => section && syncPromoLanguage(section));
-    languageObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
-    return true;
+    languageObserver = null;
   };
 
-  if (!mount()) {
-    contentObserver = new MutationObserver(() => {
-      if (mount()) {
-        contentObserver?.disconnect();
-        contentObserver = null;
-      }
-    });
-    contentObserver.observe(document.body, { childList: true, subtree: true });
-  }
+  const syncForCurrentContent = () => {
+    const packages = document.getElementById('packages');
+
+    if (!packages) {
+      stopLanguageObserver();
+      section?.remove();
+      section = null;
+      return;
+    }
+
+    const existing = document.querySelector<HTMLElement>('[data-ld-promo-video]');
+    if (existing) {
+      section = existing;
+      return;
+    }
+
+    section = createPromoSection();
+    packages.insertAdjacentElement('afterend', section);
+    syncPromoLanguage(section);
+
+    stopLanguageObserver();
+    languageObserver = new MutationObserver(() => section && syncPromoLanguage(section));
+    languageObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+  };
+
+  syncForCurrentContent();
+
+  const contentObserver = new MutationObserver(syncForCurrentContent);
+  contentObserver.observe(document.body, { childList: true, subtree: true });
 
   return () => {
-    contentObserver?.disconnect();
-    languageObserver?.disconnect();
+    contentObserver.disconnect();
+    stopLanguageObserver();
     section?.remove();
+    section = null;
   };
 }

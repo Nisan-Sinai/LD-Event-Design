@@ -188,7 +188,6 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
 
             <Link
               to="/cart"
-              onClick={() => setCartOpen(true)}
               aria-label={`${cartText}: ${itemCount}`}
               className="relative inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#B8860B] to-[#D4AF37] px-3 py-2.5 text-xs font-extrabold text-white shadow-[0_10px_25px_rgba(184,134,11,0.23)] transition hover:-translate-y-0.5"
             >

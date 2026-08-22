@@ -9,7 +9,7 @@ afterEach(() => {
 });
 
 describe('installPromoVideo', () => {
-  it('mounts after packages, syncs Hebrew and English copy, reuses an existing section, and cleans up', async () => {
+  it('mounts after packages, syncs Hebrew and English copy, and cleans up', async () => {
     document.documentElement.lang = 'he';
     const packages = document.createElement('section');
     packages.id = 'packages';
@@ -27,12 +27,8 @@ describe('installPromoVideo', () => {
     expect(section?.querySelector('[data-promo-copy="title"]')).toHaveTextContent('From an idea');
     expect(section?.querySelector('video')).toHaveAttribute('aria-label', 'LD Event Design promotional film');
 
-    const secondDispose = installPromoVideo();
-    expect(document.querySelectorAll('[data-ld-promo-video="true"]')).toHaveLength(1);
-    secondDispose();
-    expect(document.querySelector('[data-ld-promo-video="true"]')).toBeNull();
-
     dispose();
+    expect(document.querySelector('[data-ld-promo-video="true"]')).toBeNull();
   });
 
   it('waits for lazy content when the packages section is not in the DOM yet', async () => {
@@ -47,6 +43,27 @@ describe('installPromoVideo', () => {
     expect(document.querySelector('[data-ld-promo-video="true"]')).toBeTruthy();
     dispose();
     expect(document.querySelector('[data-ld-promo-video="true"]')).toBeNull();
+  });
+
+  it('removes the promo when home content unmounts and restores it when home returns', async () => {
+    const packages = document.createElement('section');
+    packages.id = 'packages';
+    document.body.append(packages);
+
+    const dispose = installPromoVideo();
+    expect(document.querySelector('[data-ld-promo-video="true"]')).toBeTruthy();
+
+    packages.remove();
+    await tick();
+    expect(document.querySelector('[data-ld-promo-video="true"]')).toBeNull();
+
+    const returnedPackages = document.createElement('section');
+    returnedPackages.id = 'packages';
+    document.body.append(returnedPackages);
+    await tick();
+
+    expect(document.querySelector('[data-ld-promo-video="true"]')).toBeTruthy();
+    dispose();
   });
 
   it('uses Hebrew as the fallback for any language other than English', () => {
