@@ -75,26 +75,18 @@ describe('SiteLayout', () => {
     expect(managerLogin).toHaveAttribute('href', '/login');
   });
 
-  it('opens and closes the slide-in quote cart from the header', async () => {
+  it('routes the header cart directly to the full cart page', () => {
     renderLayout();
-    fireEvent.click(within(screen.getByRole('banner')).getByRole('link', { name: /עגלת קניות: 0/ }));
-
-    const drawer = screen.getByRole('dialog', { name: 'סל הצעת מחיר' });
-    await waitFor(() => expect(drawer).toHaveFocus());
-    expect(screen.getByText('הסל מחכה לעיצוב שלכם')).toBeInTheDocument();
-    expect(document.body).toHaveStyle({ overflow: 'hidden' });
-
-    fireEvent.keyDown(window, { key: 'Escape' });
+    const cartLink = within(screen.getByRole('banner')).getByRole('link', { name: /עגלת קניות: 0/ });
+    expect(cartLink).toHaveAttribute('href', '/cart');
     expect(screen.queryByRole('dialog', { name: 'סל הצעת מחיר' })).not.toBeInTheDocument();
-    expect(document.body.style.overflow).toBe('');
   });
 
-  it('closes the cart drawer from its close action', () => {
+  it('keeps the header cart route consistent in English', () => {
+    window.localStorage.setItem('ld-lang', 'en');
     renderLayout();
-    fireEvent.click(within(screen.getByRole('banner')).getByRole('link', { name: /עגלת קניות: 0/ }));
-    const drawer = screen.getByRole('dialog', { name: 'סל הצעת מחיר' });
-    fireEvent.click(within(drawer).getByRole('button', { name: 'סגירה' }));
-    expect(screen.queryByRole('dialog', { name: 'סל הצעת מחיר' })).not.toBeInTheDocument();
+    const cartLink = within(screen.getByRole('banner')).getByRole('link', { name: /Shopping cart: 0/ });
+    expect(cartLink).toHaveAttribute('href', '/cart');
   });
 
   it('shows account and logout for a customer but not management', () => {
