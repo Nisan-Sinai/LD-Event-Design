@@ -12,6 +12,7 @@ import './storefront.css';
 import './storefront-refinement.css';
 import './mobile-cart-summary.css';
 import './promo-video.css';
+import './add-to-cart-enhancements.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
