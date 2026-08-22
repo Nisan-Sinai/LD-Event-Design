@@ -237,15 +237,15 @@ export function CartPage() {
               {couponError && <p role="alert" className="mt-2 text-xs font-bold text-red-600">{couponError}</p>}
             </div>
 
-            <div className="mt-5 rounded-[1.5rem] bg-[#FAF6F0] p-4">
-              <p className="text-xs font-extrabold text-[#2C2C2C]">{copy.minimum}</p>
-              {minimumMissing > 0 && <p className="mt-2 text-xs font-bold text-red-600">{copy.missing}: {money(minimumMissing, lang)}</p>}
+            <div className={`mt-5 rounded-2xl border p-4 text-xs font-bold leading-relaxed ${canCheckout ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-[#E8C5B8] bg-[#F4E3E3] text-[#7A493D]'}`}>
+              <p>{copy.minimum}</p>
+              {!canCheckout && <p className="mt-1">{copy.missing}: {money(minimumMissing, lang)}</p>}
             </div>
 
-            <QuoteNotice className="mt-5" />
+            <div className="mt-5"><QuoteNotice compact /></div>
 
             {canCheckout ? (
-              <Link to="/checkout" className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#B8860B] to-[#D4AF37] px-5 py-3.5 text-sm font-extrabold text-white shadow-lg">
+              <Link to="/checkout" className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#C69A71] px-5 py-3.5 text-sm font-extrabold text-white shadow-lg transition hover:-translate-y-0.5">
                 {copy.checkout}
                 <Arrow className="h-4 w-4" aria-hidden="true" />
               </Link>
