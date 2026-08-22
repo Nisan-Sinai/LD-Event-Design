@@ -14,6 +14,7 @@ import './storefront-refinement.css';
 import './mobile-cart-summary.css';
 import './promo-video.css';
 import './add-to-cart-enhancements.css';
+import './accessibility-contrast.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
