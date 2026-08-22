@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { Root } from './Root';
 import { I18nProvider } from './i18n/i18n';
 import { initHashNavigation } from './lib/hashNavigation';
+import { installInertHiddenOverlays } from './lib/inertHiddenOverlays';
 import { installNavigationActiveState } from './lib/navigationActiveState';
 import { installProductImageLightbox } from './lib/productImageLightbox';
 import { installPromoVideo } from './lib/promoVideo';
@@ -23,6 +24,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 );
 
 initHashNavigation();
+installInertHiddenOverlays();
 installNavigationActiveState();
 installSecondaryCatalogMedia();
 installProductImageLightbox();
