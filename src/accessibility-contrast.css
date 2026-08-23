@@ -7,6 +7,10 @@
   color: #6F4D3A !important;
 }
 
+[class~="text-[#9B8A7D]"] {
+  color: #6B5C52 !important;
+}
+
 [class~="text-[#B8860B]"] {
   color: #6E4D00 !important;
 }
