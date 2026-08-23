@@ -1,33 +1,35 @@
 /* WCAG AA contrast corrections discovered by the real-browser QA audit.
-   Keep the LD gold/brown palette while using the darker brand variants for text. */
+   Attribute-token selectors are intentional: Tailwind arbitrary-value class names
+   contain brackets, slashes and hashes, and matching the class token directly is
+   more robust than relying on escaped CSS identifiers. */
 
-.text-\[\#9B7762\] {
-  color: #7A5A46 !important;
+[class~="text-[#9B7762]"] {
+  color: #6F4D3A !important;
 }
 
-.text-\[\#B8860B\] {
-  color: #8C6300 !important;
+[class~="text-[#B8860B]"] {
+  color: #6E4D00 !important;
 }
 
-.text-gray-400 {
-  color: #6B7280 !important;
+[class~="text-gray-400"] {
+  color: #4B5563 !important;
 }
 
-.text-white\/40 {
-  color: rgba(255, 255, 255, 0.65) !important;
+[class~="text-white/40"] {
+  color: rgba(255, 255, 255, 0.78) !important;
 }
 
 /* White on the medium-gold language pill is below 4.5:1. */
-button[aria-pressed="true"].bg-\[\#B8860B\] {
+button[aria-pressed="true"][class~="bg-[#B8860B]"] {
   color: #24211F !important;
 }
 
-/* Auth submit buttons keep white text, but use the darker brand gold. */
-button[type="submit"].bg-\[\#B29259\] {
-  background-color: #8C6D3F !important;
+/* Auth submit buttons keep white text, but use a darker brand brown. */
+button[type="submit"][class~="bg-[#B29259]"] {
+  background-color: #76552F !important;
 }
 
 /* Skip navigation becomes visible only on focus, so give that state AA contrast too. */
 a[href="#main"]:focus {
-  background-color: #8C6D3F !important;
+  background-color: #76552F !important;
 }
