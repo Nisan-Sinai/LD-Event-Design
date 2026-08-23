@@ -13,6 +13,12 @@ body:has(div.fixed.bottom-4 a[href="/cart"]) .no-print.fixed.bottom-4 {
   bottom: calc(7.25rem + env(safe-area-inset-bottom));
 }
 
+/* WhatsApp uses transition-all. Excluding positional properties keeps the
+   control from travelling through the sticky cart while the summary appears. */
+.no-print.fixed.bottom-4 {
+  transition-property: color, background-color, border-color, opacity, box-shadow, transform, filter !important;
+}
+
 @media (min-width: 640px) {
   div.fixed.bottom-4:has(a[href="/cart"]) {
     bottom: calc(1.5rem + env(safe-area-inset-bottom));

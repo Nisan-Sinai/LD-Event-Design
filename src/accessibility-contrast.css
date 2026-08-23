@@ -1,0 +1,39 @@
+/* WCAG AA contrast corrections discovered by the real-browser QA audit.
+   Attribute-token selectors are intentional: Tailwind arbitrary-value class names
+   contain brackets, slashes and hashes, and matching the class token directly is
+   more robust than relying on escaped CSS identifiers. */
+
+[class~="text-[#9B7762]"] {
+  color: #6F4D3A !important;
+}
+
+[class~="text-[#9B8A7D]"] {
+  color: #6B5C52 !important;
+}
+
+[class~="text-[#B8860B]"] {
+  color: #6E4D00 !important;
+}
+
+[class~="text-gray-400"] {
+  color: #4B5563 !important;
+}
+
+[class~="text-white/40"] {
+  color: rgba(255, 255, 255, 0.78) !important;
+}
+
+/* White on the medium-gold language pill is below 4.5:1. */
+button[aria-pressed="true"][class~="bg-[#B8860B]"] {
+  color: #24211F !important;
+}
+
+/* Auth submit buttons keep white text, but use a darker brand brown. */
+button[type="submit"][class~="bg-[#B29259]"] {
+  background-color: #76552F !important;
+}
+
+/* Skip navigation becomes visible only on focus, so give that state AA contrast too. */
+a[href="#main"]:focus {
+  background-color: #76552F !important;
+}
