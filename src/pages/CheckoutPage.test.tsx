@@ -186,8 +186,21 @@ describe('CheckoutPage', () => {
   });
 
   it('submits signatures and optional delivery, clears the cart and shows success', async () => {
-    const scrollIntoView = vi.fn();
-    Object.defineProperty(Element.prototype, 'scrollIntoView', { configurable: true, value: scrollIntoView });
+    const scrollTo = vi.fn();
+    Object.defineProperty(window, 'scrollTo', { configurable: true, value: scrollTo });
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 100 });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 800 });
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+      x: 0,
+      y: 500,
+      top: 500,
+      right: 600,
+      bottom: 700,
+      left: 0,
+      width: 600,
+      height: 200,
+      toJSON: () => ({})
+    });
     vi.mocked(submitCartOrder).mockResolvedValue({ id: 'order-123' });
     renderCheckout();
     await waitFor(() => expect(coupon.validate).toHaveBeenCalledWith(STORED_COUPON));
@@ -200,7 +213,7 @@ describe('CheckoutPage', () => {
     expect(screen.getByRole('button', { name: /ההזמנה נשלחת/ })).toBeDisabled();
 
     await waitFor(() => expect(screen.getByText('בחירת ההזמנה התקבלה')).toBeInTheDocument());
-    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' }));
+    await waitFor(() => expect(scrollTo).toHaveBeenCalledWith({ top: 210, behavior: 'smooth' }));
     expect(screen.getByRole('link', { name: /מעבר למערכת אישורי ההגעה/ })).toHaveAttribute('href', 'https://arrival-confirmations.vercel.app/');
     expect(screen.getByText(/order-123/)).toBeInTheDocument();
     expect(submitCartOrder).toHaveBeenCalledWith(expect.objectContaining({
