@@ -289,8 +289,8 @@ export function CheckoutPage() {
     if (!orderId) return;
 
     const frame = window.requestAnimationFrame(() => {
-      const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
-      rsvpPromoRef.current?.scrollIntoView({ behavior, block: 'center' });
+      const reduceMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      rsvpPromoRef.current?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
     });
 
     return () => window.cancelAnimationFrame(frame);
