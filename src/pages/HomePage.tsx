@@ -73,7 +73,12 @@ const COPY = {
     instagramTitle: 'מהאינסטגרם שלנו',
     openInstagram: (title: string) => `פתיחת אינסטגרם — ${title}`,
     contactTitle: 'בואו נדבר על האירוע שלכם',
-    contactBody: 'אנחנו כאן לכל שאלה, רעיון או חלום עיצובי — גם לפני שבחרתם חבילה.'
+    contactBody: 'אנחנו כאן לכל שאלה, רעיון או חלום עיצובי — גם לפני שבחרתם חבילה.',
+    promoEyebrow: 'גם אישורי הגעה? מסודרים.',
+    promoTitle: 'ניהול מוזמנים ואישורי הגעה — במקום אחד',
+    promoBody: 'שלחו קישור אישי, עקבו אחרי תשובות בזמן אמת וקבלו תמונת מצב ברורה לקראת האירוע.',
+    promoCta: 'למערכת אישורי הגעה',
+    promoNewTab: 'נפתח בחלון חדש'
   },
   en: {
     eyebrow: 'Event design in a click!',
@@ -117,7 +122,12 @@ const COPY = {
     instagramTitle: 'From our Instagram',
     openInstagram: (title: string) => `Open Instagram — ${title}`,
     contactTitle: 'Let’s talk about your event',
-    contactBody: 'We are here for every question, idea or design dream — even before you choose a package.'
+    contactBody: 'We are here for every question, idea or design dream — even before you choose a package.',
+    promoEyebrow: 'RSVPs too? Sorted.',
+    promoTitle: 'Guest management and RSVPs — all in one place',
+    promoBody: 'Send personal links, track replies in real time and stay on top of your guest list before the big day.',
+    promoCta: 'Open RSVP system',
+    promoNewTab: 'opens in a new tab'
   }
 } as const;
 
@@ -290,6 +300,35 @@ export function HomePage() {
             </div>
           </div>
         </div>
+      </section>
+
+      <section className="bg-[#FDFBF7] px-4 py-5 sm:py-7" aria-label={copy.promoTitle}>
+        <a
+          href="https://arrival-confirmations.vercel.app/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`${copy.promoCta} — ${copy.promoNewTab}`}
+          className="group relative mx-auto flex max-w-6xl flex-col overflow-hidden rounded-[2rem] border border-[#D4AF37]/35 bg-gradient-to-r from-[#2C2C2C] via-[#3B342F] to-[#6A4D32] p-5 text-white shadow-[0_18px_55px_rgba(44,44,44,0.14)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_65px_rgba(44,44,44,0.2)] sm:flex-row sm:items-center sm:justify-between sm:gap-8 sm:p-7"
+        >
+          <div className="pointer-events-none absolute -start-16 -top-20 h-48 w-48 rounded-full bg-[#D4AF37]/15 blur-3xl" aria-hidden="true" />
+          <div className="pointer-events-none absolute -bottom-24 end-4 h-52 w-52 rounded-full bg-[#E8C5B8]/12 blur-3xl" aria-hidden="true" />
+
+          <div className="relative flex items-start gap-4">
+            <span className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-[#F5D978] shadow-inner backdrop-blur-sm">
+              <Check className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.28em] text-[#F5D978]">{copy.promoEyebrow}</p>
+              <h2 className="font-display mt-1.5 text-xl font-black leading-tight sm:text-2xl">{copy.promoTitle}</h2>
+              <p className="mt-2 max-w-2xl text-xs leading-relaxed text-white/72 sm:text-sm">{copy.promoBody}</p>
+            </div>
+          </div>
+
+          <span className="relative mt-5 inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-full bg-white px-5 py-3 text-xs font-extrabold text-[#6A4D32] shadow-lg transition group-hover:bg-[#FFF7DF] sm:mt-0 sm:self-auto">
+            {copy.promoCta}
+            <Arrow className="h-4 w-4 transition-transform group-hover:-translate-x-0.5 rtl:group-hover:translate-x-0.5" aria-hidden="true" />
+          </span>
+        </a>
       </section>
 
       <nav aria-label={copy.shopNav} className="sticky top-[73px] z-40 border-y border-[#E8C5B8]/60 bg-[#FDFBF7]/92 shadow-sm backdrop-blur-xl">
