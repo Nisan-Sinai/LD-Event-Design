@@ -3,7 +3,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
-  ExternalLink,
   Heart,
   Instagram,
   MessageCircle,
@@ -74,14 +73,7 @@ const COPY = {
     instagramTitle: 'מהאינסטגרם שלנו',
     openInstagram: (title: string) => `פתיחת אינסטגרם — ${title}`,
     contactTitle: 'בואו נדבר על האירוע שלכם',
-    contactBody: 'אנחנו כאן לכל שאלה, רעיון או חלום עיצובי — גם לפני שבחרתם חבילה.',
-    promoBadge: 'שירות נוסף · אתר נפרד',
-    promoEyebrow: 'Arrival Confirmations',
-    promoTitle: 'צריכים גם אישורי הגעה וניהול מוזמנים?',
-    promoBody: 'זהו שירות נפרד מ־LD Event Design. לחיצה תעביר אתכם לאתר Arrival Confirmations ותפתח אותו בחלון חדש.',
-    promoCta: 'מעבר לאתר Arrival Confirmations',
-    promoNewTab: 'נפתח באתר נפרד ובחלון חדש'
-  },
+    contactBody: 'אנחנו כאן לכל שאלה, רעיון או חלום עיצובי — גם לפני שבחרתם חבילה.'  },
   en: {
     eyebrow: 'Event design in a click!',
     hero: 'Your celebration. Our art.',
@@ -124,14 +116,7 @@ const COPY = {
     instagramTitle: 'From our Instagram',
     openInstagram: (title: string) => `Open Instagram — ${title}`,
     contactTitle: 'Let’s talk about your event',
-    contactBody: 'We are here for every question, idea or design dream — even before you choose a package.',
-    promoBadge: 'Additional service · separate website',
-    promoEyebrow: 'Arrival Confirmations',
-    promoTitle: 'Need RSVPs and guest management too?',
-    promoBody: 'This is a separate service from LD Event Design. Clicking will take you to the Arrival Confirmations website in a new tab.',
-    promoCta: 'Go to Arrival Confirmations',
-    promoNewTab: 'opens a separate website in a new tab'
-  }
+    contactBody: 'We are here for every question, idea or design dream — even before you choose a package.'  }
 } as const;
 
 function money(value: number, lang: Lang) {
@@ -302,39 +287,6 @@ export function HomePage() {
               </a>
             </div>
           </div>
-        </div>
-      </section>
-
-      <section className="border-y border-[#BFDBFE] bg-[#EFF6FF] px-4 py-6 sm:py-8" aria-label={copy.promoTitle}>
-        <div className="mx-auto max-w-6xl">
-          <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#93C5FD] bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-[#1D4ED8] shadow-sm">
-            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-            {copy.promoBadge}
-          </p>
-
-          <a
-            href="https://arrival-confirmations.vercel.app/"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`${copy.promoCta} — ${copy.promoNewTab}`}
-            className="group flex flex-col overflow-hidden rounded-[2rem] border-2 border-[#60A5FA] bg-white p-5 shadow-[0_18px_45px_rgba(37,99,235,0.12)] transition duration-300 hover:-translate-y-1 hover:border-[#2563EB] hover:shadow-[0_24px_60px_rgba(37,99,235,0.18)] sm:flex-row sm:items-center sm:justify-between sm:gap-8 sm:p-7"
-          >
-            <div className="flex items-start gap-4">
-              <span className="mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#2563EB] text-white shadow-lg shadow-blue-200">
-                <ExternalLink className="h-5 w-5" aria-hidden="true" />
-              </span>
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#2563EB]">{copy.promoEyebrow}</p>
-                <h2 className="mt-1.5 text-xl font-black leading-tight text-[#0F172A] sm:text-2xl">{copy.promoTitle}</h2>
-                <p className="mt-2 max-w-2xl text-xs font-medium leading-relaxed text-[#475569] sm:text-sm">{copy.promoBody}</p>
-              </div>
-            </div>
-
-            <span className="mt-5 inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-full bg-[#2563EB] px-5 py-3 text-xs font-black text-white shadow-lg shadow-blue-200 transition group-hover:bg-[#1D4ED8] sm:mt-0 sm:self-auto">
-              {copy.promoCta}
-              <ExternalLink className="h-4 w-4" aria-hidden="true" />
-            </span>
-          </a>
         </div>
       </section>
 
