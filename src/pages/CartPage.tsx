@@ -260,6 +260,7 @@ export function CartPage() {
             </Link>
           </aside>
         </div>
+
       </div>
     </section>
   );

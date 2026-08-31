@@ -73,8 +73,7 @@ const COPY = {
     instagramTitle: 'מהאינסטגרם שלנו',
     openInstagram: (title: string) => `פתיחת אינסטגרם — ${title}`,
     contactTitle: 'בואו נדבר על האירוע שלכם',
-    contactBody: 'אנחנו כאן לכל שאלה, רעיון או חלום עיצובי — גם לפני שבחרתם חבילה.'
-  },
+    contactBody: 'אנחנו כאן לכל שאלה, רעיון או חלום עיצובי — גם לפני שבחרתם חבילה.'  },
   en: {
     eyebrow: 'Event design in a click!',
     hero: 'Your celebration. Our art.',
@@ -117,8 +116,7 @@ const COPY = {
     instagramTitle: 'From our Instagram',
     openInstagram: (title: string) => `Open Instagram — ${title}`,
     contactTitle: 'Let’s talk about your event',
-    contactBody: 'We are here for every question, idea or design dream — even before you choose a package.'
-  }
+    contactBody: 'We are here for every question, idea or design dream — even before you choose a package.'  }
 } as const;
 
 function money(value: number, lang: Lang) {
