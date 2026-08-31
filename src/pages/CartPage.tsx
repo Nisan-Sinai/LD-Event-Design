@@ -214,8 +214,6 @@ export function CartPage() {
           </button>
         </div>
 
-        <div className="mb-7"><RsvpPromo copy={copy} /></div>
-
         <div className="grid gap-7 lg:grid-cols-[1fr_380px]">
           <div className="space-y-4">
             {items.map((item) => {
@@ -314,6 +312,9 @@ export function CartPage() {
             <Link to="/#products" className="mt-4 flex w-full items-center justify-center text-xs font-bold text-[#B8860B] hover:underline">
               {copy.back}
             </Link>
+            <div className="mt-5">
+              <RsvpPromo copy={copy} />
+            </div>
           </aside>
         </div>
       </div>
