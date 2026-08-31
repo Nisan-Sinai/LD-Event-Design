@@ -289,8 +289,18 @@ export function CheckoutPage() {
     if (!orderId) return;
 
     const frame = window.requestAnimationFrame(() => {
+      const promo = rsvpPromoRef.current;
+      if (!promo) return;
+
       const reduceMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      rsvpPromoRef.current?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+      const rect = promo.getBoundingClientRect();
+      const centeredTop = window.scrollY + rect.top - (window.innerHeight - rect.height) / 2;
+      const targetTop = Math.max(0, centeredTop - 90);
+
+      window.scrollTo({
+        top: targetTop,
+        behavior: reduceMotion ? 'auto' : 'smooth'
+      });
     });
 
     return () => window.cancelAnimationFrame(frame);
