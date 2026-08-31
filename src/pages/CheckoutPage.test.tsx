@@ -186,6 +186,8 @@ describe('CheckoutPage', () => {
   });
 
   it('submits signatures and optional delivery, clears the cart and shows success', async () => {
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(Element.prototype, 'scrollIntoView', { configurable: true, value: scrollIntoView });
     vi.mocked(submitCartOrder).mockResolvedValue({ id: 'order-123' });
     renderCheckout();
     await waitFor(() => expect(coupon.validate).toHaveBeenCalledWith(STORED_COUPON));
@@ -198,6 +200,8 @@ describe('CheckoutPage', () => {
     expect(screen.getByRole('button', { name: /ההזמנה נשלחת/ })).toBeDisabled();
 
     await waitFor(() => expect(screen.getByText('בחירת ההזמנה התקבלה')).toBeInTheDocument());
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' }));
+    expect(screen.getByRole('link', { name: /מעבר למערכת אישורי ההגעה/ })).toHaveAttribute('href', 'https://arrival-confirmations.vercel.app/');
     expect(screen.getByText(/order-123/)).toBeInTheDocument();
     expect(submitCartOrder).toHaveBeenCalledWith(expect.objectContaining({
       subtotal: 2900,
