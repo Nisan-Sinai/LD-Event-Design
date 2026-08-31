@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import {
   CheckCircle2,
@@ -283,6 +283,18 @@ export function CheckoutPage() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [orderId, setOrderId] = useState('');
+  const rsvpPromoRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!orderId) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+      rsvpPromoRef.current?.scrollIntoView({ behavior, block: 'center' });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [orderId]);
 
   const requiresTwoHosts = form.eventType === 'wedding' || form.eventType === 'engagement';
   const deliveryPrice = includeDelivery ? DELIVERY_PRICE : 0;
@@ -368,7 +380,9 @@ export function CheckoutPage() {
           {copy.home}
           <Arrow className="h-4 w-4" aria-hidden="true" />
         </Link>
-        <RsvpSuccessPromo copy={copy} />
+        <div ref={rsvpPromoRef} className="scroll-mt-24">
+          <RsvpSuccessPromo copy={copy} />
+        </div>
       </section>
     );
   }
