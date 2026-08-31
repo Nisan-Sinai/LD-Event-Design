@@ -87,6 +87,45 @@ function money(value: number, lang: Lang) {
   return `₪${value.toLocaleString(lang === 'he' ? 'he-IL' : 'en-US')}`;
 }
 
+function RsvpPromo({ copy }: { copy: (typeof COPY)[Lang] }) {
+  return (
+    <aside className="overflow-hidden rounded-[1.5rem] border border-[#E5DCD7] bg-[#FDF8F4] shadow-[0_10px_28px_rgba(43,29,29,0.08)]" aria-label={copy.rsvpTitle}>
+      <div className="h-1 bg-[#DBB06B]" aria-hidden="true" />
+      <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <div className="flex min-w-0 items-start gap-4">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#5C1B24] text-[#FDF8F4] shadow-sm">
+            <Check className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <div className="mb-1.5 flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-[#DBB06B] bg-[#FFFDFB] px-2.5 py-1 text-[9px] font-black tracking-[0.08em] text-[#886029]">
+                {copy.rsvpBadge}
+              </span>
+              <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5C1B24]">{copy.rsvpEyebrow}</span>
+            </div>
+            <h3 className="font-display text-xl font-black leading-tight text-[#2B1D1D] sm:text-2xl">{copy.rsvpTitle}</h3>
+            <p className="mt-2 max-w-2xl text-xs font-medium leading-relaxed text-[#655756] sm:text-sm">{copy.rsvpBody}</p>
+          </div>
+        </div>
+
+        <a
+          href="https://arrival-confirmations.vercel.app/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`${copy.rsvpCta} — ${copy.rsvpNewTab}`}
+          className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-full bg-[#5C1B24] px-5 py-3 text-xs font-black text-[#FDF8F4] shadow-sm transition hover:bg-[#4E0A18] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DBB06B] focus-visible:ring-offset-2 sm:self-auto"
+        >
+          {copy.rsvpCta}
+          <ExternalLink className="h-4 w-4" aria-hidden="true" />
+        </a>
+      </div>
+      <div className="border-t border-[#E5DCD7] bg-[#F8E6E5] px-5 py-2 text-[10px] font-bold text-[#512225] sm:px-6">
+        arrival-confirmations.vercel.app · {copy.rsvpNewTab}
+      </div>
+    </aside>
+  );
+}
+
 function localizedCartItem(item: CartItem, lang: Lang) {
   if (lang !== 'en') return item;
 
@@ -153,6 +192,9 @@ export function CartPage() {
           {copy.back}
           <Arrow className="h-4 w-4" aria-hidden="true" />
         </Link>
+        <div className="mt-10 text-start">
+          <RsvpPromo copy={copy} />
+        </div>
       </section>
     );
   }
@@ -172,40 +214,7 @@ export function CartPage() {
           </button>
         </div>
 
-        <aside className="mb-7 overflow-hidden rounded-[1.5rem] border border-[#E5DCD7] bg-[#FDF8F4] shadow-[0_10px_28px_rgba(43,29,29,0.08)]" aria-label={copy.rsvpTitle}>
-          <div className="h-1 bg-[#DBB06B]" aria-hidden="true" />
-          <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-            <div className="flex min-w-0 items-start gap-4">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#5C1B24] text-[#FDF8F4] shadow-sm">
-                <Check className="h-5 w-5" aria-hidden="true" />
-              </span>
-              <div className="min-w-0">
-                <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                  <span className="rounded-full border border-[#DBB06B] bg-[#FFFDFB] px-2.5 py-1 text-[9px] font-black tracking-[0.08em] text-[#886029]">
-                    {copy.rsvpBadge}
-                  </span>
-                  <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5C1B24]">{copy.rsvpEyebrow}</span>
-                </div>
-                <h3 className="font-display text-xl font-black leading-tight text-[#2B1D1D] sm:text-2xl">{copy.rsvpTitle}</h3>
-                <p className="mt-2 max-w-2xl text-xs font-medium leading-relaxed text-[#655756] sm:text-sm">{copy.rsvpBody}</p>
-              </div>
-            </div>
-
-            <a
-              href="https://arrival-confirmations.vercel.app/"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`${copy.rsvpCta} — ${copy.rsvpNewTab}`}
-              className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-full bg-[#5C1B24] px-5 py-3 text-xs font-black text-[#FDF8F4] shadow-sm transition hover:bg-[#4E0A18] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DBB06B] focus-visible:ring-offset-2 sm:self-auto"
-            >
-              {copy.rsvpCta}
-              <ExternalLink className="h-4 w-4" aria-hidden="true" />
-            </a>
-          </div>
-          <div className="border-t border-[#E5DCD7] bg-[#F8E6E5] px-5 py-2 text-[10px] font-bold text-[#512225] sm:px-6">
-            arrival-confirmations.vercel.app · {copy.rsvpNewTab}
-          </div>
-        </aside>
+        <div className="mb-7"><RsvpPromo copy={copy} /></div>
 
         <div className="grid gap-7 lg:grid-cols-[1fr_380px]">
           <div className="space-y-4">
