@@ -312,10 +312,11 @@ export function CartPage() {
             <Link to="/#products" className="mt-4 flex w-full items-center justify-center text-xs font-bold text-[#B8860B] hover:underline">
               {copy.back}
             </Link>
-            <div className="mt-5">
-              <RsvpPromo copy={copy} />
-            </div>
           </aside>
+        </div>
+
+        <div className="mt-10 sm:mt-12">
+          <RsvpPromo copy={copy} />
         </div>
       </div>
     </section>
