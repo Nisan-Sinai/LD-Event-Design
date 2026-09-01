@@ -17,11 +17,11 @@
     "qa": "npm run audit:prod && npm run type-check && npm run test:coverage && npm run build && npm run test:e2e"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.112.3",
-    "lucide-react": "^1.31.0",
+    "@supabase/supabase-js": "^2.112.4",
+    "lucide-react": "^1.35.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-router": "^8.3.0"
+    "react-router": "^8.3.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
