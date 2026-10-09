@@ -18,6 +18,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Scan pull-request changes for secrets
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITLEAKS_ENABLE_COMMENTS: 'false'
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: 'false'
+      - name: Scan every commit in repository history
+        run: gitleaks git --redact --verbose .
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -56,6 +66,30 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+      - name: Lighthouse performance budgets
+        run: |
+          npm run build
+          npm run preview -- --host 127.0.0.1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          for attempt in {1..30}; do
+            curl --fail --silent http://127.0.0.1:4173/ >/dev/null && break
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:4173/ >/dev/null
+          export CHROME_PATH="$(node -e "console.log(require('playwright').chromium.executablePath())")"
+          npx --yes lighthouse@12 http://127.0.0.1:4173/ --quiet --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" --output=json --output-path=lighthouse-home.json
+          npx --yes lighthouse@12 http://127.0.0.1:4173/cart --quiet --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" --output=json --output-path=lighthouse-cart.json
+          npx --yes lighthouse@12 http://127.0.0.1:4173/login --quiet --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" --output=json --output-path=lighthouse-login.json
+          node scripts/report-lighthouse.mjs
+      - name: Upload Lighthouse measurement artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: lighthouse-audits
+          path: lighthouse-*.json
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v7
