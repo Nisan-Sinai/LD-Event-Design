@@ -44,7 +44,7 @@ jobs:
           npm run test:coverage 2>&1 | tee vitest.log
       - name: Upload unit-test diagnostics
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v6
         with:
           name: unit-test-diagnostics
           path: |
@@ -84,7 +84,7 @@ jobs:
           node scripts/report-lighthouse.mjs
       - name: Upload Lighthouse measurement artifacts
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v6
         with:
           name: lighthouse-audits
           path: lighthouse-*.json
@@ -92,7 +92,7 @@ jobs:
           retention-days: 14
       - name: Upload Playwright report
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v6
         with:
           name: playwright-report
           path: playwright-report
