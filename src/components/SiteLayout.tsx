@@ -188,7 +188,7 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
 
             <Link
               to="/cart"
-              aria-label={`${cartText}: ${itemCount}`}
+              aria-label={`${cartText}: ${itemCount} ${money(subtotal, lang)}`}
               className="relative inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#B8860B] to-[#D4AF37] px-3 py-2.5 text-xs font-extrabold text-white shadow-[0_10px_25px_rgba(184,134,11,0.23)] transition hover:-translate-y-0.5"
             >
               <ShoppingBag className="h-4 w-4" aria-hidden="true" />
