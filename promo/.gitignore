@@ -1,0 +1,9 @@
+*_work/
+*_draft*
+*_frame_*.png
+*_preview.jpg
+assets/sfx/*.wav
+assets/voiceover.wav
+tts/*.mp3
+tts/*.wav
+media/*.mp4
