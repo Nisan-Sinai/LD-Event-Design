@@ -19,7 +19,7 @@
  "music": {
   "file": "assets/sfx/music.wav",
   "start": 0,
-  "volume": 0.55,
+  "volume": 0.5,
   "beat_sync": false
  },
  "voiceover": {
@@ -54,7 +54,7 @@
    "small": "חולמים על חופשה",
    "big": "מול הכנרת?",
    "size": 200,
-   "dur": 2.2,
+   "dur": 2.4,
    "clip": {
     "src": "media/view_marina.mp4",
     "start": 0
@@ -66,7 +66,7 @@
   },
   {
    "type": "logo",
-   "dur": 4.0,
+   "dur": 4.9,
    "clip": {
     "src": "media/view_marina2.mp4",
     "start": 0
@@ -76,7 +76,7 @@
    "type": "title",
    "small": "דירת נופש מרהיבה",
    "big": "על קו המים",
-   "dur": 2.6,
+   "dur": 3.3,
    "transition": "fade",
    "clip": {
     "src": "media/view_promenade.mp4",
@@ -87,7 +87,7 @@
    "type": "title",
    "small": "סלון מפנק ומפואר",
    "big": "נוף לכנרת",
-   "dur": 3.2,
+   "dur": 4.0,
    "transition": "whip",
    "clip": {
     "src": "media/living.mp4",
@@ -104,7 +104,7 @@
    "items": [
     {
      "text": "מפוארים",
-     "dur": 1.9,
+     "dur": 2.4,
      "clip": {
       "src": "media/bed_master.mp4",
       "start": 0,
@@ -115,7 +115,7 @@
     },
     {
      "text": "+ לינה בסלון",
-     "dur": 1.9,
+     "dur": 2.4,
      "clip": {
       "src": "media/bed_green.mp4",
       "start": 0,
@@ -131,7 +131,7 @@
   },
   {
    "type": "checklist",
-   "dur": 5.0,
+   "dur": 6.0,
    "clip": {
     "src": "media/kitchen.mp4",
     "start": 0
@@ -147,7 +147,7 @@
    "small": "מרפסת ענקית",
    "big": "קו ראשון",
    "big2": "למים",
-   "dur": 4.4,
+   "dur": 5.3,
    "transition": "zoom",
    "clip": {
     "src": "media/balcony_sofa.mp4",
@@ -158,7 +158,7 @@
    "type": "collage",
    "small": "אירוח",
    "big": "ברמה מלונאית",
-   "dur": 4.1,
+   "dur": 5.0,
    "clips": [
     "media/bed_master.jpg",
     "media/living.jpg",
@@ -173,7 +173,7 @@
    "prefix": "מתאים עד",
    "value": 10,
    "label": "נפשות",
-   "dur": 2.4,
+   "dur": 2.6,
    "clip": {
     "src": "media/hermon.mp4",
     "start": 0
@@ -181,11 +181,11 @@
   },
   {
    "type": "text",
-   "dur": 4.3,
+   "dur": 5.4,
    "transition": "fade",
    "clip": {
     "src": "media/hermon.mp4",
-    "start": 2.4
+    "start": 2.6
    },
    "lines": [
     {
@@ -205,9 +205,9 @@
   },
   {
    "type": "cta",
-   "dur": 6.5,
+   "dur": 7.8,
    "clip": {
-    "src": "media/view_promenade.mp4",
+    "src": "media/view_promenade_cta.mp4",
     "start": 0
    },
    "eyebrow": "המקומות נתפסים מהר!",
