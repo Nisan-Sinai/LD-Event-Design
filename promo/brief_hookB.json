@@ -1,0 +1,219 @@
+{
+ "out": "resort_kinneret_reel_hookB.mp4",
+ "format": "9x16",
+ "theme": {
+  "preset": "gold",
+  "type": "classic",
+  "bg": "#0A1A2F",
+  "primary": "#E9C46A",
+  "primary2": "#B07D2B",
+  "hi": "#FFF3D1"
+ },
+ "brand": {
+  "name": "ריזורט כנרת",
+  "tagline": "מיני פנטהאוז על קו המים • טבריה",
+  "initials": "רכ",
+  "phone": "054-574-0423",
+  "corner_logo": false
+ },
+ "music": {
+  "file": "assets/sfx/music.wav",
+  "start": 0,
+  "volume": 0.5,
+  "beat_sync": false
+ },
+ "voiceover": {
+  "file": "assets/vo_hookB.wav",
+  "at": 0,
+  "volume": 1.0
+ },
+ "sfx": {
+  "whoosh": {
+   "file": "assets/sfx/whoosh.wav",
+   "sync": 0.293
+  },
+  "pop": {
+   "file": "assets/sfx/pop.wav",
+   "sync": 0.054
+  },
+  "click": {
+   "file": "assets/sfx/click.wav",
+   "sync": 0.005
+  },
+  "reveal": {
+   "file": "assets/sfx/reveal.wav",
+   "sync": 0.325,
+   "max": 2.5,
+   "gain": 0.6
+  }
+ },
+ "sfx_volume": 0.35,
+ "scenes": [
+  {
+   "type": "hook",
+   "small": "נוף כזה",
+   "big": "מהמרפסת שלכם",
+   "size": 200,
+   "dur": 3.2,
+   "clip": {
+    "src": "media/balcony_sofa.mp4",
+    "start": 0
+   },
+   "style": "plain",
+   "look": {
+    "dim": 0.8
+   }
+  },
+  {
+   "type": "logo",
+   "dur": 4.9,
+   "clip": {
+    "src": "media/view_marina2.mp4",
+    "start": 0
+   }
+  },
+  {
+   "type": "title",
+   "small": "דירת נופש מרהיבה",
+   "big": "על קו המים",
+   "dur": 3.3,
+   "transition": "fade",
+   "clip": {
+    "src": "media/view_promenade.mp4",
+    "start": 0
+   }
+  },
+  {
+   "type": "title",
+   "small": "סלון מפנק ומפואר",
+   "big": "נוף לכנרת",
+   "dur": 4.0,
+   "transition": "whip",
+   "clip": {
+    "src": "media/living.mp4",
+    "start": 0
+   },
+   "look": {
+    "dim": 0.7
+   }
+  },
+  {
+   "type": "services",
+   "small": "2 חדרי שינה",
+   "transition": "fade",
+   "items": [
+    {
+     "text": "מפוארים",
+     "dur": 2.4,
+     "clip": {
+      "src": "media/bed_master.mp4",
+      "start": 0,
+      "look": {
+       "dim": 0.62
+      }
+     }
+    },
+    {
+     "text": "+ לינה בסלון",
+     "dur": 2.4,
+     "clip": {
+      "src": "media/bed_green.mp4",
+      "start": 0,
+      "look": {
+       "dim": 0.62
+      }
+     }
+    }
+   ],
+   "look": {
+    "dim": 0.62
+   }
+  },
+  {
+   "type": "checklist",
+   "dur": 6.0,
+   "clip": {
+    "src": "media/kitchen.mp4",
+    "start": 0
+   },
+   "items": [
+    "2 חדרי רחצה",
+    "מטבח מאובזר",
+    "מיחם לשבת"
+   ]
+  },
+  {
+   "type": "title",
+   "small": "מרפסת ענקית",
+   "big": "קו ראשון",
+   "big2": "למים",
+   "dur": 5.3,
+   "transition": "zoom",
+   "clip": {
+    "src": "media/balcony_sofa.mp4",
+    "start": 0
+   }
+  },
+  {
+   "type": "collage",
+   "small": "אירוח",
+   "big": "ברמה מלונאית",
+   "dur": 5.0,
+   "clips": [
+    "media/bed_master.jpg",
+    "media/living.jpg",
+    "media/balcony_rail.jpg",
+    "media/view_marina.jpg",
+    "media/bed_twin.jpg",
+    "media/kitchen.jpg"
+   ]
+  },
+  {
+   "type": "counter",
+   "prefix": "מתאים עד",
+   "value": 10,
+   "label": "נפשות",
+   "dur": 2.6,
+   "clip": {
+    "src": "media/hermon.mp4",
+    "start": 0
+   }
+  },
+  {
+   "type": "text",
+   "dur": 5.4,
+   "transition": "fade",
+   "clip": {
+    "src": "media/hermon.mp4",
+    "start": 2.6
+   },
+   "lines": [
+    {
+     "text": "צמוד לרב קוק",
+     "style": "big",
+     "size": 140
+    },
+    {
+     "text": "מול השטיבלאך",
+     "style": "small"
+    },
+    {
+     "text": "במרחק הליכה מהכנרת",
+     "style": "small"
+    }
+   ]
+  },
+  {
+   "type": "cta",
+   "dur": 7.8,
+   "clip": {
+    "src": "media/view_promenade_cta.mp4",
+    "start": 0
+   },
+   "eyebrow": "המקומות נתפסים מהר!",
+   "headline": "לפרטים והזמנות",
+   "button": "שלחו הודעה בוואטסאפ",
+   "tap_at": 2.2
+  }
+ ]
+}

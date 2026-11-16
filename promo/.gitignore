@@ -9,3 +9,6 @@ tts/*.wav
 media/*.mp4
 tts/v2/
 resort_kinneret_reel_v2.mp4
+media/*/
+assets/vo_*.wav
+.brief_*.json

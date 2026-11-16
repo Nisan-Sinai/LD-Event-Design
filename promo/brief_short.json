@@ -1,0 +1,128 @@
+{
+ "out": "resort_kinneret_reel_short.mp4",
+ "format": "9x16",
+ "theme": {
+  "preset": "gold",
+  "type": "classic",
+  "bg": "#0A1A2F",
+  "primary": "#E9C46A",
+  "primary2": "#B07D2B",
+  "hi": "#FFF3D1"
+ },
+ "brand": {
+  "name": "ריזורט כנרת",
+  "tagline": "מיני פנטהאוז על קו המים • טבריה",
+  "initials": "רכ",
+  "phone": "054-574-0423",
+  "corner_logo": false
+ },
+ "music": {
+  "file": "assets/sfx/music.wav",
+  "start": 0,
+  "volume": 0.5,
+  "beat_sync": false
+ },
+ "voiceover": {
+  "file": "assets/vo_short.wav",
+  "at": 0,
+  "volume": 1.0
+ },
+ "sfx": {
+  "whoosh": {
+   "file": "assets/sfx/whoosh.wav",
+   "sync": 0.293
+  },
+  "pop": {
+   "file": "assets/sfx/pop.wav",
+   "sync": 0.054
+  },
+  "click": {
+   "file": "assets/sfx/click.wav",
+   "sync": 0.005
+  },
+  "reveal": {
+   "file": "assets/sfx/reveal.wav",
+   "sync": 0.325,
+   "max": 2.5,
+   "gain": 0.6
+  }
+ },
+ "sfx_volume": 0.35,
+ "scenes": [
+  {
+   "type": "hook",
+   "small": "חולמים על חופשה",
+   "big": "מול הכנרת?",
+   "size": 200,
+   "dur": 2.4,
+   "clip": {
+    "src": "media/view_marina.mp4",
+    "start": 0
+   },
+   "style": "plain",
+   "look": {
+    "dim": 0.8
+   }
+  },
+  {
+   "type": "logo",
+   "dur": 3.8,
+   "clip": {
+    "src": "media/view_marina2.mp4",
+    "start": 0
+   }
+  },
+  {
+   "type": "title",
+   "small": "סלון מפואר",
+   "big": "נוף לכנרת",
+   "dur": 2.0,
+   "transition": "whip",
+   "look": {
+    "dim": 0.7
+   },
+   "clip": {
+    "src": "media/living.mp4",
+    "start": 0.6
+   }
+  },
+  {
+   "type": "title",
+   "small": "2 חדרי שינה",
+   "big": "מפוארים",
+   "dur": 1.8,
+   "transition": "fade",
+   "clip": {
+    "src": "media/bed_master.mp4",
+    "start": 0,
+    "look": {
+     "dim": 0.62
+    }
+   }
+  },
+  {
+   "type": "title",
+   "small": "מרפסת ענקית",
+   "big": "קו ראשון",
+   "big2": "למים",
+   "dur": 2.4,
+   "transition": "zoom",
+   "clip": {
+    "src": "media/balcony_sofa.mp4",
+    "start": 0.5
+   }
+  },
+  {
+   "type": "cta",
+   "dur": 6.0,
+   "clip": {
+    "src": "media/view_promenade_cta.mp4",
+    "start": 0
+   },
+   "eyebrow": "עד 10 נפשות • צמוד לרב קוק",
+   "headline": "לפרטים והזמנות",
+   "button": "שלחו הודעה בוואטסאפ",
+   "tap_at": 2.2
+  }
+ ]
+}

@@ -5,7 +5,8 @@ import sys, subprocess, numpy as np
 from PIL import Image, ImageOps
 src, out, dur, x0, x1, z0, z1 = sys.argv[1], sys.argv[2], *map(float, sys.argv[3:8])
 fy = float(sys.argv[8]) if len(sys.argv) > 8 else 0.5
-W, H, FPS = 1080, 1920, 30
+import os
+W, H, FPS = int(os.environ.get("CLIP_W", 1080)), int(os.environ.get("CLIP_H", 1920)), 30
 im = ImageOps.exif_transpose(Image.open(src)).convert("RGB")
 s = max(W / im.width, H / im.height) * max(z0, z1) * 1.0
 big = im.resize((int(im.width * s), int(im.height * s)), Image.LANCZOS)
