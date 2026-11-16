@@ -1,0 +1,183 @@
+{
+ "out": "resort_kinneret_reel_WOW.mp4",
+ "format": "9x16",
+ "theme": {
+  "preset": "gold",
+  "type": "bold",
+  "bg": "#0A1A2F",
+  "primary": "#F2C14E",
+  "primary2": "#B07D2B",
+  "hi": "#FFF3D1",
+  "accent": "#FF4D5E"
+ },
+ "brand": {
+  "name": "ריזורט כנרת",
+  "tagline": "דירת נופש על קו המים • טבריה",
+  "initials": "רכ",
+  "phone": "054-574-0423",
+  "corner_logo": false
+ },
+ "music": {
+  "file": "assets/sfx/music_wow_edit.wav",
+  "start": 0,
+  "volume": 0.8,
+  "beat_sync": false
+ },
+ "voiceover": {
+  "file": "assets/vo_wow.wav",
+  "at": 0,
+  "volume": 1.0
+ },
+ "sfx": {
+  "whoosh": {
+   "file": "assets/sfx/whoosh.wav",
+   "sync": 0.293
+  },
+  "pop": {
+   "file": "assets/sfx/pop.wav",
+   "sync": 0.054
+  },
+  "click": {
+   "file": "assets/sfx/click.wav",
+   "sync": 0.005
+  },
+  "reveal": {
+   "file": "assets/sfx/reveal.wav",
+   "sync": 0.325,
+   "max": 2.5,
+   "gain": 0.7
+  }
+ },
+ "sfx_volume": 0.6,
+ "scenes": [
+  {
+   "type": "hook",
+   "small": "דמיינו להתעורר מול",
+   "big": "הכנרת",
+   "size": 270,
+   "dur": 3.7547,
+   "clip": {
+    "src": "media/wow/hook.mp4",
+    "start": 0
+   }
+  },
+  {
+   "type": "logo",
+   "dur": 2.816,
+   "clip": {
+    "src": "media/wow/logo.mp4",
+    "start": 0
+   }
+  },
+  {
+   "type": "services",
+   "transition": "whip",
+   "items": [
+    {
+     "text": "סלון מפואר",
+     "dur": 1.408,
+     "clip": {
+      "src": "media/wow/living.mp4",
+      "start": 0
+     }
+    },
+    {
+     "text": "2 חדרי שינה",
+     "dur": 1.408,
+     "clip": {
+      "src": "media/wow/bed.mp4",
+      "start": 0,
+      "look": {
+       "dim": 0.65
+      }
+     }
+    },
+    {
+     "text": "2 חדרי רחצה",
+     "dur": 1.408,
+     "clip": null
+    },
+    {
+     "text": "מטבח מאובזר",
+     "dur": 1.408,
+     "clip": {
+      "src": "media/wow/kitchen.mp4",
+      "start": 0,
+      "look": {
+       "dim": 0.65
+      }
+     }
+    },
+    {
+     "text": "מרפסת ענקית",
+     "dur": 1.408,
+     "clip": {
+      "src": "media/wow/balcony.mp4",
+      "start": 0
+     }
+    }
+   ]
+  },
+  {
+   "type": "stamp",
+   "line": "על המים",
+   "stamp": "קו ראשון",
+   "bw": false,
+   "dur": 1.8773,
+   "clip": {
+    "src": "media/wow/balcony2.mp4",
+    "start": 0
+   }
+  },
+  {
+   "type": "collage",
+   "small": "נוף כמו",
+   "big": "בגלויות",
+   "dur": 2.816,
+   "clips": [
+    "media/view_marina.jpg",
+    "media/living.jpg",
+    "media/bed_master.jpg",
+    "media/view_promenade.jpg",
+    "media/balcony_sofa.jpg",
+    "media/kitchen.jpg"
+   ]
+  },
+  {
+   "type": "counter",
+   "prefix": "עד",
+   "value": 10,
+   "label": "נפשות",
+   "dur": 2.3467,
+   "clip": {
+    "src": "media/wow/counter.mp4",
+    "start": 0
+   }
+  },
+  {
+   "type": "checklist",
+   "dur": 4.6933,
+   "clip": {
+    "src": "media/wow/check.mp4",
+    "start": 0
+   },
+   "items": [
+    "צמוד לרב קוק",
+    "מול השטיבלאך",
+    "ליד הכנרת"
+   ]
+  },
+  {
+   "type": "cta",
+   "dur": 6.5707,
+   "clip": {
+    "src": "media/wow/cta.mp4",
+    "start": 0
+   },
+   "eyebrow": "המקומות נתפסים מהר!",
+   "headline": "לפרטים והזמנות",
+   "button": "שלחו הודעה בוואטסאפ",
+   "tap_at": 2.3
+  }
+ ]
+}

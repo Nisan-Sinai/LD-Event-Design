@@ -5,3 +5,4 @@
 - click.wav — "Mouse Click Warm" — https://soundza.com/sound/mouse-click-warm
 - reveal.wav — "Dramatic Impact Hit" — https://soundza.com/sound/dramatic-impact-hit
 Voiceover: Microsoft Edge neural TTS, voice he-IL-HilaNeural.
+- music_wow.wav — AI-generated with Soundza (Lyria), "upbeat tropical house"
